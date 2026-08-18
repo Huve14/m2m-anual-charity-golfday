@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import Image from "next/image";
 
 const FORM_ENDPOINT =
   "https://docs.google.com/forms/u/0/d/e/1FAIpQLSfGurQDw1YMzAt_FQrvq5o3fa6933jxjz7hPag1tEtU6FZuAQ/formResponse";
@@ -85,13 +84,10 @@ export default function Home() {
     <main>
       <header className="masthead">
         <div className="masthead-inner">
-          <Image
+          <img
             className="brand-logo"
             src="/m2m-brand-header.png"
             alt="M2M — Marketing 2 The Max"
-            width={1600}
-            height={400}
-            priority
           />
           <div className="masthead-tagline">
             <ArrowMark />
@@ -245,11 +241,9 @@ export default function Home() {
       </section>
 
       <footer>
-        <Image
+        <img
           src="/m2m-brand-header.png"
           alt="M2M — Marketing 2 The Max"
-          width={1600}
-          height={400}
         />
         <div>
           <span>Charity Golf Day</span>
