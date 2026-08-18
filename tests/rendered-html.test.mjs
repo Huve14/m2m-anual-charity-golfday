@@ -10,7 +10,8 @@ test("builds the M2M four-ball registration experience for Vercel", async () => 
 
   assert.match(html, /M2M Charity Golf Day \| Four-ball Registration/);
   assert.match(html, /m2m-golf-social\.png/);
-  assert.match(page, /Make your/);
+  assert.match(page, /Drive change/);
+  assert.match(page, /Play with purpose/);
   assert.match(page, /Four-ball registration/);
   assert.match(page, /First name/);
   assert.match(page, /Cell phone number/);

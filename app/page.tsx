@@ -89,37 +89,63 @@ export default function Home() {
             src="/m2m-brand-header.png"
             alt="M2M — Marketing 2 The Max"
           />
-          <div className="masthead-tagline">
-            <ArrowMark />
-            <span>Inspired execution</span>
+          <div className="masthead-actions">
+            <span className="masthead-tagline">Inspired execution</span>
+            <a className="masthead-link" href="#registration">
+              Register now
+              <ArrowMark />
+            </a>
           </div>
         </div>
       </header>
 
       <section className="hero" aria-labelledby="page-title">
-        <div className="hero-copy">
-          <p className="eyebrow"><span /> Charity Golf Day</p>
-          <h1 id="page-title">Make your<br /><em>four-ball</em> count.</h1>
-          <p className="hero-intro">
-            Bring your team to the green for a day built around good company,
-            generous spirit and a great cause.
-          </p>
-          <div className="hero-note">
-            <span aria-hidden="true">01</span>
-            <p>One four-ball accommodates up to four players.</p>
+        <div className="hero-content">
+          <div className="hero-copy">
+            <p className="hero-kicker"><span /> M2M Charity Golf Day</p>
+            <h1 id="page-title">Drive change.<br /><em>Play with purpose.</em></h1>
+            <p className="hero-intro">
+              Rally your four-ball for a day where sharp play, generous spirit and
+              meaningful impact share the same fairway.
+            </p>
+            <div className="hero-actions">
+              <a className="hero-cta" href="#registration">
+                <span>Register a four-ball</span>
+                <ArrowMark />
+              </a>
+              <p><strong>4</strong> players per four-ball</p>
+            </div>
+            <dl className="hero-meta">
+              <div>
+                <dt>Format</dt>
+                <dd>Four-ball</dd>
+              </div>
+              <div>
+                <dt>Team size</dt>
+                <dd>Up to four</dd>
+              </div>
+              <div>
+                <dt>Purpose</dt>
+                <dd>Play for impact</dd>
+              </div>
+            </dl>
           </div>
-        </div>
 
-        <div className="golf-visual" aria-hidden="true">
-          <div className="score-line score-line-one">PAR</div>
-          <div className="score-line score-line-two">04</div>
-          <div className="golf-ball" />
-          <div className="red-chevron" />
-          <div className="fairway-line" />
+          <div className="hero-art" aria-hidden="true">
+            <div className="hero-score">
+              <span>Players</span>
+              <strong>04</strong>
+            </div>
+            <div className="hero-art-caption">
+              <span>Good golf</span>
+              <strong>Greater impact.</strong>
+            </div>
+            <div className="hero-art-stripe">Charity Golf Day</div>
+          </div>
         </div>
       </section>
 
-      <section className="form-shell" aria-label="Four-ball registration form">
+      <section id="registration" className="form-shell" aria-label="Four-ball registration form">
         <div className="form-rail">
           <p>Register your team</p>
           <span>Complete the form below</span>
