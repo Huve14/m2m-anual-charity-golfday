@@ -41,7 +41,11 @@ export default function Home() {
     const fourballs = fourballsValue === "5+" ? 5 : Number(fourballsValue);
     const firstName = String(nativeData.get("firstName") || "");
     const surname = String(nativeData.get("surname") || "");
-    const packageChoice = String(nativeData.get("packageChoice") || "");
+    const sponsorship = String(nativeData.get("sponsorship") || "");
+    const packageChoice =
+      sponsorship === "with-alcohol" || sponsorship === "without-alcohol"
+        ? "Four-ball + hole sponsorship"
+        : "Four-ball package";
 
     const playerNames = String(nativeData.get("players") || "")
       .split("\n")
@@ -66,11 +70,8 @@ export default function Home() {
           dietary: String(nativeData.get("dietary") || ""),
           fourballs,
           players: playerNames,
-          notes: [
-            String(nativeData.get("dietary") || ""),
-            String(nativeData.get("notes") || ""),
-          ].filter(Boolean).join("\n\n"),
-          sponsorship: "",
+          notes: String(nativeData.get("notes") || ""),
+          sponsorship,
           consent: true,
         }),
       });
@@ -229,6 +230,14 @@ export default function Home() {
                 <span>Company / organisation <small>Optional</small></span>
                 <input name="company" type="text" autoComplete="organization" />
               </label>
+              <label>
+                <span>Hole sponsorship</span>
+                <select name="sponsorship" defaultValue="" required={false}>
+                  <option value="">No hole sponsorship</option>
+                  <option value="with-alcohol">Hole sponsorship with alcohol</option>
+                  <option value="without-alcohol">Hole sponsorship without alcohol</option>
+                </select>
+              </label>
             </div>
 
             <SectionHeading number="02">Your four-ball</SectionHeading>
@@ -273,16 +282,6 @@ export default function Home() {
                 <textarea name="notes" rows={4} />
               </label>
             </div>
-            <label className="textarea-field">
-              <span>Package selected <b>*</b></span>
-              <select name="packageChoice" required>
-                <option value="">Select package</option>
-                <option value="fourballs-only">Four-ball package</option>
-                <option value="with-alcohol">Four-ball + hole sponsorship with alcohol</option>
-                <option value="without-alcohol">Four-ball + hole sponsorship without alcohol</option>
-              </select>
-            </label>
-
             <label className="confirmation">
               <input name="confirmation" type="checkbox" value={CONFIRMATION_TEXT} required />
               <span aria-hidden="true" />
