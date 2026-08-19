@@ -1,5 +1,5 @@
-/* <golf-stage>: one continuous photoreal dawn golf scene, three camera shots.
-   Shot 0 TEE  · Shot 1 DRIVER · Shot 2 HOLE 07
+/* <golf-stage>: one continuous photoreal dawn golf scene, two camera shots.
+   Shot 0 TEE  · Shot 1 HOLE 07
    Everything (turf, dimples, sky, sand) is generated procedurally on canvas. */
 
 const THREE_URL = 'https://unpkg.com/three@0.184.0/build/three.module.js';
@@ -382,28 +382,11 @@ function teePatchMaps(THREE, S = 1024) {
   return { map, nrm, alpha, PATCH };
 }
 
-/* milled face grooves for the driver */
-function grooveNormal(THREE) {
-  const W = 512, H = 512, c = document.createElement('canvas');
-  c.width = W; c.height = H;
-  const x = c.getContext('2d');
-  x.fillStyle = 'rgb(128,128,255)'; x.fillRect(0, 0, W, H);
-  for (let y = 0; y < H; y += 11) {
-    x.fillStyle = 'rgb(128,186,214)'; x.fillRect(0, y, W, 2);
-    x.fillStyle = 'rgb(128,70,214)'; x.fillRect(0, y + 3, W, 2);
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(3, 3);
-  return t;
-}
-
 /* ---------- shots ---------- */
 const MACRO = { exp: 1.06, env: 0.95, bg: 0.9, fog: 0.0125, sun: 3.5, fill: 0.62 };
 const AERIAL = { exp: 1.34, env: 1.35, bg: 1.05, fog: 0.0055, sun: 4.1, fill: 0.9 };
 const SHOTS = [
   { key: 'tee',    pos: [0.215, 0.104, 0.215], tgt: [-0.112, 0.064, -0.018], fov: 33, shadow: 1.1,  drift: 0.009, grade: MACRO },
-  { key: 'driver', pos: [-0.206, 0.078, 0.197], tgt: [-0.252, 0.033, 0.065], fov: 30, shadow: 1.1, drift: 0.005, grade: MACRO },
   { key: 'flyover', orbit: true, fov: 44, shadow: 66, drift: 0, grade: AERIAL }
 ];
 
@@ -528,7 +511,7 @@ class GolfStage extends HTMLElement {
   startCycle() {
     if (this.isExplore || this._userLocked) return;
     this.stopCycle();
-    const dwell = [7000, 6000, 15000];            // flyover earns the longest hold
+    const dwell = [7000, 15000];                  // flyover earns the longest hold
     const step = () => {
       if (this._userLocked) return;
       const next = (this._shot + 1) % SHOTS.length;
@@ -732,43 +715,6 @@ class GolfStage extends HTMLElement {
     scene.add(ball);
     this._ball = ball;
 
-    /* driver: titanium head, piano-black crown, milled face */
-    const driver = new THREE.Group(); driver.name = 'driver';
-    const ti = new THREE.MeshPhysicalMaterial({ color: 0xd8dadd, metalness: 1, roughness: 0.30, envMapIntensity: 1.25 });
-    const crown = new THREE.MeshPhysicalMaterial({ color: 0x14161a, metalness: 0.55, roughness: 0.10, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.1 });
-    const faceMat = new THREE.MeshPhysicalMaterial({
-      color: 0xb9bdc2, metalness: 1, roughness: 0.34,
-      normalMap: grooveNormal(THREE), normalScale: new THREE.Vector2(0.55, 0.55), envMapIntensity: 1.3
-    });
-    const shell = new THREE.SphereGeometry(0.058, 72, 48);
-    shell.scale(1.0, 0.52, 0.80);
-    const body = new THREE.Mesh(shell, ti);
-    body.name = 'headSole';
-    const crownGeo = new THREE.SphereGeometry(0.0578, 72, 48, 0, Math.PI * 2, 0, Math.PI * 0.5);
-    crownGeo.scale(1.0, 0.53, 0.80);
-    const crownMesh = new THREE.Mesh(crownGeo, crown);
-    crownMesh.position.y = 0.0004;
-    crownMesh.name = 'headCrown';
-    const face = new THREE.Mesh(new THREE.CylinderGeometry(0.0345, 0.0345, 0.0026, 48), faceMat);
-    face.rotation.set(Math.PI / 2, 0, 0);
-    face.scale.set(1, 1, 0.64);
-    face.position.set(0.004, 0.0035, 0.0482);
-    face.name = 'clubFace';
-    const hosel = new THREE.Mesh(new THREE.CylinderGeometry(0.0062, 0.0072, 0.05, 32), ti);
-    hosel.position.set(-0.046, 0.024, 0.014);
-    hosel.rotation.set(0.16, 0, 0.34);
-    hosel.name = 'hosel';
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.0042, 0.0062, 0.42, 24), crown);
-    shaft.position.set(-0.106, 0.20, -0.028);
-    shaft.rotation.set(0.20, 0, 0.36);
-    shaft.name = 'shaft';
-    driver.add(body, crownMesh, face, hosel, shaft);
-    driver.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    driver.position.set(-0.272, 0.0295, 0.022);
-    driver.rotation.set(0, 0.34, -0.03);
-    scene.add(driver);
-    this._driver = driver;
-
     /* flagstick on the green */
     const flag = new THREE.Group(); flag.name = 'flagstick';
     const gy2 = terrainY(GREEN.x + 0.9, GREEN.z + 0.6);
@@ -906,7 +852,6 @@ class GolfStage extends HTMLElement {
 
     if (!this._reduced) {
       this._ball.rotation.y += 0.00035;
-      this._driver.rotation.y = 0.34 + Math.sin(T * 0.018) * 0.018;
     }
 
     if (this.isExplore) { this._poseExplore(now, T); this._renderer.render(this._scene, this._cam); return; }
@@ -944,7 +889,6 @@ class GolfStage extends HTMLElement {
 
     if (!this._reduced) {
       this._ball.rotation.y += 0.00035;
-      this._driver.rotation.y = 0.34 + Math.sin(T * 0.23) * 0.018;
     }
 
     this._renderer.render(this._scene, this._cam);

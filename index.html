@@ -108,7 +108,7 @@
 
   <!-- ══ shared 3D backdrop: sits under the hero and the entry form ══ -->
   <div aria-hidden="true" style="position:fixed;inset:0;z-index:0;background:#0E1116 url('assets/m2m-golf-plate.png') center right/cover no-repeat">
-    <x-import component-from-global-scope="golf-stage" from="./golf-3d.js" start-shot="2" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%"></x-import>
+    <x-import component-from-global-scope="golf-stage" from="./golf-3d.js" start-shot="0" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%"></x-import>
   </div>
 
   <!-- ══ nav ══ -->
@@ -199,10 +199,9 @@
     <div data-camera-selector="true" style="position:absolute;z-index:3;right:clamp(16px,3vw,44px);top:clamp(82px,11vh,116px);display:flex;flex-direction:column;align-items:flex-end;gap:12px;animation:fade 1.2s ease 1s both">
       <div style="font:400 9px/1 'Montserrat',sans-serif;letter-spacing:.26em;text-transform:uppercase;color:#7c828a">Camera</div>
       <div style="position:relative;display:flex;gap:2px;padding:4px;background:rgba(20,23,27,.72);border:1px solid rgba(215,217,220,.14);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">
-        <div aria-hidden="true" style="position:absolute;top:4px;bottom:4px;width:calc((100% - 8px)/3);background:#C8102E;transition:transform .55s cubic-bezier(.16,1,.3,1);left:4px;transform:translateX({{ shotBar }})"></div>
+        <div aria-hidden="true" style="position:absolute;top:4px;bottom:4px;width:calc((100% - 8px)/2);background:#C8102E;transition:transform .55s cubic-bezier(.16,1,.3,1);left:4px;transform:translateX({{ shotBar }})"></div>
         <button type="button" onClick="{{ shot0 }}" style="position:relative;z-index:1;padding:9px 14px;background:none;border:0;cursor:pointer;font:500 9.5px/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#EEF0F1">Tee</button>
-        <button type="button" onClick="{{ shot1 }}" style="position:relative;z-index:1;padding:9px 14px;background:none;border:0;cursor:pointer;font:500 9.5px/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#EEF0F1">Driver</button>
-        <button type="button" onClick="{{ shot2 }}" style="position:relative;z-index:1;padding:9px 14px;background:none;border:0;cursor:pointer;font:500 9.5px/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#EEF0F1">Flyover</button>
+        <button type="button" onClick="{{ shot1 }}" style="position:relative;z-index:1;padding:9px 14px;background:none;border:0;cursor:pointer;font:500 9.5px/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#EEF0F1">Flyover</button>
       </div>
       <div style="font:400 9px/1 'Montserrat',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#9aa0a8;text-align:right;white-space:nowrap;text-shadow:0 1px 6px rgba(14,17,22,.9)">Live 3D &middot; tap to hold a camera</div>
     </div>
@@ -251,6 +250,17 @@
               <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Email for the confirmation <span style="color:#C8102E">*</span></span>
               <input required type="email" name="email" autocomplete="email" inputmode="email" value="{{ f.email }}" onChange="{{ set.email }}" placeholder="name@company.co.za" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
             </label>
+            <sc-if value="{{ sponsorOn }}" hint-placeholder-val="{{ true }}">
+              <label style="display:block">
+                <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Hole sponsorship</span>
+                <select name="sponsorship" value="{{ f.sponsorship }}" onChange="{{ set.sponsorship }}" style="width:100%;padding:14px 42px 14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;cursor:pointer" style-focus="border-color:#C8102E">
+                  <option value="">No hole sponsorship</option>
+                  <option value="with-alcohol">Hole sponsorship with alcohol, R17,000</option>
+                  <option value="without-alcohol">Hole sponsorship without alcohol, R12,500</option>
+                </select>
+                <span style="display:block;margin-top:10px;font-size:12px;line-height:1.55;color:#7c828a">The best hole wins an award and prize.</span>
+              </label>
+            </sc-if>
           </fieldset>
 
           <!-- quantity -->
@@ -293,20 +303,21 @@
           <fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:16px">
             <legend style="width:100%;padding:0 0 13px;border-bottom:1px solid rgba(215,217,220,.12);margin:0 0 20px;font:500 10px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#7c828a">Anything we should know</legend>
             <label style="display:block">
-              <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Dietary requirements, cart requests, notes</span>
-              <textarea rows="3" name="notes" value="{{ f.notes }}" onChange="{{ set.notes }}" placeholder="Two vegetarian, one halaal. One player needs a single cart." style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);color:#FFFDFC;font-size:15px;line-height:1.55;resize:vertical;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F"></textarea>
+              <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Dietary requirements</span>
+              <select name="dietary" value="{{ f.dietary }}" onChange="{{ set.dietary }}" style="width:100%;padding:14px 42px 14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;cursor:pointer" style-focus="border-color:#C8102E">
+                <option value="">No dietary requirements</option>
+                <option value="Vegetarian">Vegetarian</option>
+                <option value="Vegan">Vegan</option>
+                <option value="Gluten-free">Gluten-free</option>
+                <option value="Halal">Halal</option>
+                <option value="Kosher">Kosher</option>
+                <option value="Other">Other (add below)</option>
+              </select>
             </label>
-            <sc-if value="{{ sponsorOn }}" hint-placeholder-val="{{ true }}">
-              <label style="display:block;padding:16px 18px;background:#1E2126;border:1px solid rgba(215,217,220,.12);transition:border-color .25s ease" style-hover="border-color:rgba(200,16,46,.5)">
-                <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:11px">Hole sponsorship</span>
-                <select name="sponsorship" value="{{ f.sponsorship }}" onChange="{{ set.sponsorship }}" style="width:100%;padding:14px 42px 14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;cursor:pointer" style-focus="border-color:#C8102E">
-                  <option value="">No hole sponsorship</option>
-                  <option value="with-alcohol">Hole sponsorship with alcohol, R17,000</option>
-                  <option value="without-alcohol">Hole sponsorship without alcohol, R12,500</option>
-                </select>
-                <span style="display:block;margin-top:10px;font-size:12px;line-height:1.55;color:#7c828a">The best hole wins an award and prize.</span>
-              </label>
-            </sc-if>
+            <label style="display:block">
+              <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Notes</span>
+              <textarea rows="3" name="notes" value="{{ f.notes }}" onChange="{{ set.notes }}" placeholder="One player needs a single cart. Add any extra notes for support." style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);color:#FFFDFC;font-size:15px;line-height:1.55;resize:vertical;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F"></textarea>
+            </label>
           </fieldset>
 
           <!-- submit -->
@@ -531,8 +542,8 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 
 class Component extends DCLogic {
   state = {
-    shot: 2, done: false, sending: false, error: false,
-    f: { company: '', contact: '', phone: '', email: '', notes: '', sponsorship: '', qty: 1, players: {} }
+    shot: 0, done: false, sending: false, error: false,
+    f: { company: '', contact: '', phone: '', email: '', notes: '', dietary: '', sponsorship: '', qty: 1, players: {} }
   };
 
   componentDidMount() {
@@ -662,6 +673,7 @@ class Component extends DCLogic {
           cellPhone: f.phone,
           email: f.email,
           notes: f.notes,
+          dietary: f.dietary,
           sponsorship: f.sponsorship,
           fourballs: f.qty,
           players,
@@ -681,9 +693,9 @@ class Component extends DCLogic {
       });
       return;
     }
-    this.setState({ done: true, sending: false, shot: 2 });
+    this.setState({ done: true, sending: false, shot: 1 });
     const st = this._stage || document.querySelector('golf-stage');
-    if (st && st.setShot) { if (st.lockCamera) st.lockCamera(); st.setShot(2); }  // finish on the flyover
+    if (st && st.setShot) { if (st.lockCamera) st.lockCamera(); st.setShot(1); }  // finish on the flyover
     setTimeout(() => {
       const a = document.querySelector('#register aside');
       if (a) window.scrollTo({ top: a.getBoundingClientRect().top + window.scrollY - 120, behavior: 'smooth' });
@@ -747,13 +759,12 @@ class Component extends DCLogic {
       shotBar: `${this.state.shot * 100}%`,
       shot0: () => this.setShot(0),
       shot1: () => this.setShot(1),
-      shot2: () => this.setShot(2),
       inc: () => this.bumpQty(1),
       dec: () => this.bumpQty(-1),
       set: {
         company: this.field('company'), contact: this.field('contact'),
         phone: this.field('phone'), email: this.field('email'),
-        notes: this.field('notes'), sponsorship: this.field('sponsorship')
+        notes: this.field('notes'), dietary: this.field('dietary'), sponsorship: this.field('sponsorship')
       },
       onSubmit: this.submit
     };
