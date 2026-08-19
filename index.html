@@ -16,9 +16,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-<style>
+  <style>
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;background:#191B1F;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  *{color:#ffffff!important}
   @font-face {
     font-family: 'Aquire';
     src: url('/assets/fonts/Aquire-SemiBold.woff2') format('woff2'),
@@ -27,7 +28,12 @@
     font-style:normal;
     font-display: swap;
   }
-  :root{--heading-font:'Aquire', 'Montserrat', sans-serif}
+  :root{
+    --heading-font:'Aquire', 'Montserrat', sans-serif;
+    --m2m-red:#C8102E;
+    --m2m-navy:#243752;
+    --m2m-navy-soft:#8ea6ca;
+  }
   body{margin:0;background:#191B1F;color:#D7D9DC;font-family:'Montserrat','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-wrap:break-word;overflow-x:hidden}
   img,video,canvas{max-width:100%}
   section[id]{scroll-margin-top:84px}
@@ -38,8 +44,36 @@
   input,select,textarea,button,a{touch-action:manipulation}
   input,select,textarea,button{min-height:44px}
   input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:1px solid #C8102E;outline-offset:2px}
-  input::placeholder,textarea::placeholder{color:#6a6f77}
+  [data-entry-form] input[type="text"],
+  [data-entry-form] input[type="email"],
+  [data-entry-form] input[type="tel"],
+  [data-entry-form] select,
+  [data-entry-form] textarea {
+    background:#FFFFFF!important;
+    color:#111418!important;
+    border-color:rgba(20, 24, 33, 0.5)!important;
+  }
+  [data-entry-form] input[type="text"]:focus,
+  [data-entry-form] input[type="email"]:focus,
+  [data-entry-form] input[type="tel"]:focus,
+  [data-entry-form] select:focus,
+  [data-entry-form] textarea:focus {
+    background:#FFFFFF!important;
+  }
+  [data-entry-form] input[type="text"]::placeholder,
+  [data-entry-form] input[type="email"]::placeholder,
+  [data-entry-form] input[type="tel"]::placeholder,
+  [data-entry-form] textarea::placeholder {
+    color:#5e6670!important;
+  }
+  [data-entry-form] select option {
+    background:#FFFFFF;
+    color:#111418;
+  }
+  input::placeholder,textarea::placeholder{color:#c5ccd5}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  [style*="color:#C8102E"]{color:var(--m2m-red)!important}
+  [style*="color:#7c828a"],[style*="color:#7c828a!important"],[style*="color:#8f959d"],[style*="color:#8f959d!important"],[style*="color:#9aa0a8"],[style*="color:#9aa0a8!important"],[style*="color:#5f656d"],[style*="color:#6a6f77"],[style*="color:#4d525a"]{color:var(--m2m-navy-soft)!important}
   @keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
   @keyframes wipe{from{transform:scaleX(0)}to{transform:scaleX(1)}}
   @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -141,7 +175,7 @@
   </div>
 
   <!-- ══ nav ══ -->
-  <header data-site-header="true" style="position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 clamp(16px,3vw,44px);height:clamp(62px,7vh,84px);background:linear-gradient(180deg,rgba(15,17,20,.95),rgba(15,17,20,.72) 55%,rgba(15,17,20,.1));border-bottom:1px solid rgba(215,217,220,.07)">
+  <header data-site-header="true" style="position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 clamp(16px,3vw,44px);height:clamp(62px,7vh,84px);background:linear-gradient(180deg,rgba(15,17,20,.95),rgba(15,17,20,.72) 55%,rgba(15,17,20,.1));border-bottom:1px solid rgba(36,55,82,.34)">
     <a href="#top" data-lockup="true" style="display:flex;align-items:center;gap:clamp(10px,1.3vw,18px);flex:0 0 auto;min-width:0">
       <img src="assets/m2m-logo.png" alt="Marketing 2 The Max" style="height:clamp(18px,2.2vw,26px);width:auto;display:block;filter:brightness(1.5) contrast(1.05)">
       <span aria-hidden="true" style="width:1px;height:clamp(20px,2.4vw,30px);background:rgba(215,217,220,.22)"></span>
@@ -166,8 +200,8 @@
 
 
     <!-- legibility scrim: dark from the left, floor shadow at the base -->
-    <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(100deg,rgba(14,17,22,.97) 0%,rgba(14,17,22,.9) 26%,rgba(14,17,22,.6) 48%,rgba(14,17,22,.12) 68%,rgba(14,17,22,.42) 100%)"></div>
-    <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(0deg,rgba(14,17,22,.92) 0%,rgba(14,17,22,.35) 18%,transparent 44%)"></div>
+    <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(100deg,rgba(14,17,22,.97) 0%,rgba(14,17,22,.9) 26%,rgba(14,17,22,.6) 48%,rgba(14,17,22,.12) 68%,rgba(36,55,82,.42) 100%)"></div>
+    <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(0deg,rgba(14,17,22,.92) 0%,rgba(14,17,22,.35) 18%,rgba(36,55,82,.18) 100%)"></div>
 
     <!-- M2M chevron, held back to a watermark bleeding off the left edge -->
     <div aria-hidden="true" style="position:absolute;z-index:1;pointer-events:none;top:50%;left:-6%;transform:translateY(-50%);width:clamp(150px,20vw,300px);aspect-ratio:1/1.08;opacity:.22;background:linear-gradient(155deg,#C8102E,rgba(167,11,36,0) 88%);clip-path:polygon(0 0,17% 0,57% 50%,17% 100%,0 100%,40% 50%)"></div>
@@ -182,8 +216,8 @@
       </div>
 
       <h1 data-hero-title="true" style="margin:0;font-family:var(--heading-font);font-weight:600;font-size:clamp(38px,6.6vw,112px);line-height:1;letter-spacing:-.035em;text-transform:uppercase;color:#FFFDFC;text-wrap:balance;display:flex;flex-direction:column;gap:clamp(10px,1.2vw,20px)">
-        <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .12s both">An Iconic</span>
-        <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .22s both">Course.</span>
+        <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .12s both;color:#FFFDFC">An Iconic</span>
+        <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .22s both;color:#FFFDFC">Course.</span>
         <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .32s both;color:#C8102E">A Greater Cause.</span>
       </h1>
 
@@ -239,7 +273,7 @@
   <!-- ══ REGISTER ══ -->
   <section id="register" data-screen-label="Registration" style="position:relative;z-index:1;padding:clamp(64px,11vh,132px) clamp(18px,4.4vw,72px) clamp(56px,9vh,110px);background:linear-gradient(180deg,rgba(14,17,22,.94) 0%,rgba(20,23,27,.72) 26%,rgba(20,23,27,.64) 62%,rgba(20,23,27,.7) 100%);border-top:1px solid rgba(215,217,220,.1)">
 
-    <div aria-hidden="true" style="position:absolute;top:0;left:0;width:clamp(120px,18vw,300px);height:2px;background:linear-gradient(90deg,#C8102E,rgba(200,16,46,0))"></div>
+    <div aria-hidden="true" style="position:absolute;top:0;left:0;width:clamp(120px,18vw,300px);height:2px;background:linear-gradient(90deg,var(--m2m-red),rgba(36,55,82,.22))"></div>
 
     <div style="max-width:1680px;margin:0 auto">
 
@@ -250,7 +284,7 @@
       </div>
 
       <h2 style="margin:0 0 clamp(34px,5vh,60px);max-width:22ch;font-family:var(--heading-font);font-weight:600;font-size:clamp(32px,5.4vw,88px);line-height:.88;letter-spacing:-.032em;text-transform:uppercase;color:#FFFDFC;text-wrap:balance;text-shadow:0 4px 30px rgba(14,17,22,.85)">
-        Enter your <em style="font-family:'Montserrat',sans-serif;font-style:italic;font-variation-settings:normal;font-weight:400;text-transform:none;letter-spacing:-.01em;color:#C8102E">fourball</em>
+        <span style="color:#C8102E!important">Enter your</span> <em style="font-family:'Montserrat',sans-serif;font-style:italic;font-variation-settings:normal;font-weight:400;text-transform:none;letter-spacing:-.01em;color:#C8102E">fourball</em>
       </h2>
 
       <div data-registration-grid="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:clamp(24px,3.4vw,58px);align-items:start">
@@ -404,8 +438,8 @@
             </sc-if>
             <div style="height:1px;background:rgba(215,217,220,.14);margin:4px 0"></div>
             <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px">
-              <span style="font:500 10px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#7c828a">Total</span>
-          <span style="font-family:var(--heading-font);font-weight:600;font-size:clamp(28px,3vw,44px);line-height:.9;letter-spacing:-.035em;color:#C8102E;font-variant-numeric:tabular-nums">{{ totalLabel }}</span>
+              <span style="font:500 10px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#7c828a!important">Total</span>
+          <span style="font-family:var(--heading-font);font-weight:600;font-size:clamp(28px,3vw,44px);line-height:.9;letter-spacing:-.035em;color:#C8102E!important;font-variant-numeric:tabular-nums">{{ totalLabel }}</span>
             </div>
             <p style="margin:4px 0 0;font:400 10.5px/1.65 'Montserrat',sans-serif;color:#6a6f77">Shotgun start at 10:00. Sel&rsquo;s 50th Birthday Celebration follows the game.</p>
           </div>
@@ -426,18 +460,18 @@
       <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(14,17,22,.86) 0%,rgba(14,17,22,.32) 34%,rgba(14,17,22,.55) 66%,rgba(14,17,22,.96) 100%)"></div>
       <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;background:linear-gradient(92deg,rgba(14,17,22,.8) 0%,rgba(14,17,22,.2) 46%,transparent 72%)"></div>
 
-      <div style="position:relative;z-index:2;width:100%;max-width:1680px;margin:0 auto;padding:clamp(56px,9vh,110px) clamp(18px,4.4vw,72px) clamp(34px,5vh,60px)">
-        <div style="display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;margin-bottom:clamp(26px,4vh,44px)">
+      <div style="position:relative;z-index:2;width:100%;max-width:1680px;margin:0 auto;padding:clamp(64px,10vh,126px) clamp(20px,5vw,82px) clamp(40px,5.5vh,68px)">
+        <div style="display:flex;align-items:baseline;gap:24px;flex-wrap:wrap;margin-bottom:clamp(32px,5vh,52px)">
           <span style="font:500 clamp(9px,.74vw,11px)/1 'Montserrat',sans-serif;letter-spacing:.26em;text-transform:uppercase;color:#C8102E">02 &middot; The 2nd</span>
           <span style="flex:1;min-width:40px;height:1px;background:rgba(215,217,220,.2)"></span>
           <span style="font:400 clamp(9px,.74vw,11px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#9aa0a8">Glendower Golf Club</span>
         </div>
 
-        <div style="margin:0;max-width:27ch">
-          <p style="margin:0;font-family:var(--heading-font);font-weight:600;font-size:clamp(28px,4.6vw,72px);line-height:1.02;letter-spacing:-.018em;color:#FFFDFC;text-wrap:balance">
+        <div style="margin:0;max-width:33ch;padding-right:clamp(8px,2vw,26px)">
+          <p style="margin:0;font-family:var(--heading-font);font-weight:600;font-size:clamp(28px,4.6vw,72px);line-height:1.08;letter-spacing:-.018em;color:#FFFDFC;text-wrap:balance">
             An Iconic Course. <em style="font-style:italic;color:#C8102E">A Greater Cause.</em>
           </p>
-          <footer style="display:flex;align-items:center;gap:14px;margin-top:clamp(20px,3vh,32px)">
+          <footer style="display:flex;align-items:center;gap:14px;margin-top:clamp(26px,3.6vh,40px)">
             <span style="width:clamp(24px,3vw,44px);height:1px;background:#C8102E"></span>
             <span style="display:flex;flex-direction:column;gap:6px"><span style="font:500 clamp(9.5px,.8vw,12px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#EEF0F1;white-space:nowrap">M2M Invitational</span><span style="font:400 clamp(8.5px,.7vw,10.5px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#7c828a">Supporting mental health and wellness with the BYE Foundation</span></span>
           </footer>
@@ -446,14 +480,14 @@
     </div>
 
     <!-- the 2nd -->
-    <div style="max-width:1680px;margin:0 auto;padding:clamp(46px,7vh,92px) clamp(18px,4.4vw,72px) clamp(56px,9vh,110px)">
-      <div data-course-grid="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:clamp(24px,3.4vw,58px);align-items:center">
+    <div style="max-width:1680px;margin:0 auto;padding:clamp(56px,7.6vh,104px) clamp(20px,5vw,82px) clamp(64px,9.5vh,118px)">
+      <div data-course-grid="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:clamp(30px,4vw,64px);align-items:center">
 
         <div>
-          <h2 style="margin:0 0 clamp(20px,3vh,32px);font-family:var(--heading-font);font-weight:600;font-size:clamp(30px,4.6vw,74px);line-height:.86;letter-spacing:-.034em;text-transform:uppercase;color:#FFFDFC;text-wrap:balance">
+          <h2 style="margin:0 0 clamp(24px,3.4vh,36px);font-family:var(--heading-font);font-weight:600;font-size:clamp(30px,4.6vw,74px);line-height:.86;letter-spacing:-.034em;text-transform:uppercase;color:#FFFDFC;text-wrap:balance">
             Fly the <em style="font-family:'Montserrat',sans-serif;font-style:italic;font-variation-settings:normal;font-weight:400;text-transform:none;letter-spacing:-.015em;color:#C8102E">2nd</em> before you play it
           </h2>
-          <p style="margin:0 0 clamp(26px,4vh,40px);max-width:46ch;font-size:clamp(14px,1.15vw,17px);line-height:1.62;color:#8f959d;text-wrap:pretty">
+          <p style="margin:0 0 clamp(32px,4.5vh,48px);max-width:47ch;font-size:clamp(14px,1.15vw,17px);line-height:1.72;color:#8f959d;text-wrap:pretty">
             We built Glendower&rsquo;s second hole as a live 3D model you can walk the camera through, from tee to green and tree line to bunkering. Open it, fly it, and know the hole before your fourball arrives.
           </p>
 
