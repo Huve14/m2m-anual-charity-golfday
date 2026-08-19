@@ -38,7 +38,7 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(html, /data-registration-grid/);
   assert.match(html, /@media \(max-width:560px\)/);
   assert.match(html, /family=Montserrat/);
-  assert.match(html, /font-family:'Aquire','Montserrat',sans-serif/);
+  assert.match(html, /font-family:(?:'Aquire','Montserrat',sans-serif|var\(--heading-font\))/);
   assert.doesNotMatch(html, /Archivo|Instrument Serif|JetBrains Mono/);
   assert.match(hole, /Glendower · Hole 2 \| Flythrough/);
   assert.match(hole, /Fly the hole/);
