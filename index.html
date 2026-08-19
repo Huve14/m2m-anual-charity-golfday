@@ -312,6 +312,12 @@
                 <option value="Other">Other (add below)</option>
               </select>
             </label>
+            <sc-if value="{{ showDietaryOther }}" hint-placeholder-val="{{ false }}">
+              <label style="display:block">
+                <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Please specify</span>
+                <input type="text" name="dietaryOther" value="{{ f.dietaryOther }}" onChange="{{ set.dietaryOther }}" placeholder="Enter dietary requirement" style="width:100%;padding:14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
+              </label>
+            </sc-if>
             <label style="display:block">
               <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Notes</span>
               <textarea rows="3" name="notes" value="{{ f.notes }}" onChange="{{ set.notes }}" placeholder="One player needs a single cart. Add any extra notes for support." style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);color:#FFFDFC;font-size:15px;line-height:1.55;resize:vertical;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F"></textarea>
@@ -541,7 +547,7 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 class Component extends DCLogic {
   state = {
     shot: 0, done: false, sending: false, error: false,
-    f: { company: '', contact: '', phone: '', email: '', notes: '', dietary: '', sponsorship: '', qty: 1, players: {} }
+    f: { company: '', contact: '', phone: '', email: '', notes: '', dietary: '', dietaryOther: '', sponsorship: '', qty: 1, players: {} }
   };
 
   componentDidMount() {
@@ -654,6 +660,13 @@ class Component extends DCLogic {
       this.setState({ error: 'Enter a valid mobile number.' });
       return;
     }
+    const dietary = f.dietary === 'Other'
+      ? `${f.dietaryOther.trim() ? `Other (${f.dietaryOther.trim()})` : 'Other'}`
+      : f.dietary;
+    if (f.dietary === 'Other' && !f.dietaryOther.trim()) {
+      this.setState({ error: 'Please specify your dietary requirement.' });
+      return;
+    }
     const players = [];
     for (let i = 0; i < f.qty * 4; i++) {
       const p = f.players[i] || {};
@@ -671,7 +684,7 @@ class Component extends DCLogic {
           cellPhone: f.phone,
           email: f.email,
           notes: f.notes,
-          dietary: f.dietary,
+          dietary,
           sponsorship: f.sponsorship,
           fourballs: f.qty,
           players,
@@ -761,8 +774,20 @@ class Component extends DCLogic {
       set: {
         company: this.field('company'), contact: this.field('contact'),
         phone: this.field('phone'), email: this.field('email'),
-        notes: this.field('notes'), dietary: this.field('dietary'), sponsorship: this.field('sponsorship')
+        notes: this.field('notes'),
+        dietary: e => {
+          const v = e.target.value;
+          this.setState(s => ({
+            f: Object.assign({}, s.f, {
+              dietary: v,
+              ...(v !== 'Other' ? { dietaryOther: '' } : {}),
+            }),
+          }));
+        },
+        dietaryOther: this.field('dietaryOther'),
+        sponsorship: this.field('sponsorship')
       },
+      showDietaryOther: f.dietary === 'Other',
       onSubmit: this.submit
     };
   }
