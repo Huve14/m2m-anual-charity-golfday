@@ -162,11 +162,11 @@ function ballColorMap(THREE) {
   x.save();
   x.translate(W * 0.30, H * 0.52); x.rotate(-0.06);
   x.fillStyle = '#c8102e';
-  x.font = '700 62px Helvetica, Arial, sans-serif';
+  x.font = '700 62px Montserrat, Arial, sans-serif';
   x.textAlign = 'center'; x.textBaseline = 'middle';
   x.fillText('M2M', 0, -16);
   x.fillStyle = '#a70b24';
-  x.font = '600 17px Helvetica, Arial, sans-serif';
+  x.font = '600 17px Montserrat, Arial, sans-serif';
   x.letterSpacing = '4px';
   x.fillText('GOLF DAY', 0, 26);
   x.fillRect(-46, 40, 92, 2.4);

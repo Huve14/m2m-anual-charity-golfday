@@ -23,8 +23,14 @@ test("builds the premium M2M charity golf experience for Vercel", async () => {
   assert.match(html, /docs\.google\.com\/forms/);
   assert.match(html, /data-registration-grid/);
   assert.match(html, /@media \(max-width:560px\)/);
+  assert.match(html, /family=Montserrat/);
+  assert.match(html, /font-family:'Aquire','Montserrat',sans-serif/);
+  assert.doesNotMatch(html, /Archivo|Instrument Serif|JetBrains Mono/);
   assert.match(hole, /Glendower · Hole 2 \| Flythrough/);
   assert.match(hole, /Fly the hole/);
+  assert.match(hole, /family=Montserrat/);
+  assert.doesNotMatch(hole, /Archivo|Instrument Serif|JetBrains Mono|Aquire/);
+  assert.match(golfStage, /Montserrat, Arial, sans-serif/);
   assert.match(golfStage, /if \(!this\._camPos \|\| !this\._camTgt \|\| !this\._cam\) return/);
   assert.match(golfStage, /constrained \? 1\.3 : 2/);
 });
