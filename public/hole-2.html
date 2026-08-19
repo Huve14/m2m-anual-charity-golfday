@@ -10,7 +10,7 @@
 <helmet>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Glendower · Hole 2 | Flythrough</title>
-<meta name="description" content="Fly the 2nd at Glendower Golf Club in live 3D. M2M Charity Golf Day.">
+<meta name="description" content="Fly the 2nd at Glendower Golf Club in live 3D for the M2M Invitational on 22 September 2026.">
 <meta name="theme-color" content="#0E1116">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -160,7 +160,7 @@ class Component extends DCLogic {
   };
 
   renderVals() {
-    const dash = '\u2014';
+    const dash = '-';
     const spec = [
       { k: 'Hole', v: String(this.props.holeNumber ?? 2) },
       { k: 'Par', v: this.props.holePar || dash },
@@ -170,7 +170,7 @@ class Component extends DCLogic {
     return {
       spec,
       note: this.props.holeNote ||
-        'A parkland hole in the Glendower mould \u2014 tree-lined off the tee, bunkering that makes you choose a side, and a green that gives nothing away. Fly it before you play it.',
+        'An interpretive 3D view of Glendower\'s second hole, from tee to green. Fly it before you play it.',
       flying: this.state.flying,
       flyLabel: this.state.flying ? 'Stop flythrough' : 'Fly the hole',
       flyGlyph: this.state.flying ? '\u25A0' : '\u25B6',
