@@ -28,13 +28,15 @@
     font-display: swap;
   }
   :root{--heading-font:'Aquire', 'Montserrat', sans-serif}
-  body{margin:0;background:#191B1F;color:#D7D9DC;font-family:'Montserrat','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-wrap:break-word}
+  body{margin:0;background:#191B1F;color:#D7D9DC;font-family:'Montserrat','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-wrap:break-word;overflow-x:hidden}
   img,video,canvas{max-width:100%}
   section[id]{scroll-margin-top:84px}
   a{color:#EEF0F1;text-decoration:none}
   a:hover{color:#C8102E}
   ::selection{background:#C8102E;color:#FFFDFC}
   input,select,textarea,button{font-family:inherit;font-size:inherit;color:inherit}
+  input,select,textarea,button,a{touch-action:manipulation}
+  input,select,textarea,button{min-height:44px}
   input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:1px solid #C8102E;outline-offset:2px}
   input::placeholder,textarea::placeholder{color:#6a6f77}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -49,11 +51,25 @@
     [data-live-pill]{display:none!important}
     [data-registration-grid]{grid-template-columns:minmax(0,1fr)!important}
     [data-entry-summary]{position:relative!important;top:auto!important}
+    [data-entry-summary]{width:100%!important}
+    [data-entry-form]{order:1!important}
+    [data-site-header]{height:72px!important;padding-inline:max(14px,env(safe-area-inset-left))!important}
+    [data-hdr-cta]{padding:10px 14px!important;font-size:9px!important;letter-spacing:.15em!important}
+  }
+  @media (max-width: 1024px){
+    [data-hero-copy]{padding-top:clamp(92px,12vh,128px)!important;padding-inline:max(16px,env(safe-area-inset-left),env(safe-area-inset-right))!important;max-width:100%!important}
+    [data-hero-title]{font-size:clamp(52px,8.2vw,86px)!important;line-height:.9!important}
+    [data-hero-intro]{max-width:52ch!important}
+    [data-meta-grid]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    [data-meta-grid]>div{padding-left:clamp(14px,2.4vw,20px)!important;padding-right:clamp(14px,2.4vw,20px)!important}
+    [data-course-grid], [data-contact-grid]{grid-template-columns:minmax(0,1fr)!important}
+    [data-entry-summary]{width:100%!important}
+    [data-entry-summary] > div{width:100%!important}
   }
   @media (max-width:820px){
     [data-nav-links]{display:none!important}
-    [data-hero-copy]{padding-top:clamp(104px,15vh,132px)!important;padding-bottom:30px!important;max-width:100%!important;min-width:0!important}
-    [data-hero-kicker]{flex-wrap:wrap!important;gap:10px 12px!important;max-width:88%}
+    [data-hero-copy]{padding-top:clamp(102px,14vh,130px)!important;padding-bottom:26px!important;max-width:100%!important;min-width:0!important}
+    [data-hero-kicker]{max-width:100%!important;flex-wrap:wrap!important;gap:10px 12px!important}
     [data-hero-kicker]>span:last-child{flex-basis:100%;padding-left:calc(clamp(26px,4vw,62px) + 12px)}
     [data-hero-title]{font-size:clamp(46px,11.4vw,92px)!important;line-height:.86!important;max-width:100%!important}
     [data-hero-intro]{max-width:38ch!important}
@@ -62,6 +78,10 @@
     [data-meta-grid]>div{border-bottom:1px solid rgba(215,217,220,.1);min-width:0!important;overflow:hidden}
     [data-meta-grid]>div>div:last-child{overflow-wrap:anywhere}
     [data-course-grid],[data-contact-grid]{grid-template-columns:minmax(0,1fr)!important}
+    [data-course-grid] > *[style*="order"]{width:100%}
+    [data-qty-stepper]{width:100%!important}
+    [data-qty-stepper] > div{min-width:0!important;flex:1 1 auto!important}
+    [data-qty-stepper] button{width:52px!important}
     [data-entry-summary]{box-shadow:0 26px 60px -46px rgba(0,0,0,.9)!important}
     [data-footer-inner]{align-items:flex-start!important;flex-direction:column!important}
   }
@@ -161,7 +181,7 @@
         <span style="font:400 clamp(9px,.78vw,11.5px)/1 'Montserrat',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#7c828a">Glendower Golf Club &middot; Edenvale, Gauteng</span>
       </div>
 
-      <h1 data-hero-title="true" style="margin:0;font-family:var(--heading-font);font-weight:600;font-size:clamp(46px,9.1vw,168px);line-height:.84;letter-spacing:-.035em;text-transform:uppercase;color:#FFFDFC;text-wrap:balance">
+      <h1 data-hero-title="true" style="margin:0;font-family:var(--heading-font);font-weight:600;font-size:clamp(38px,6.6vw,112px);line-height:1;letter-spacing:-.035em;text-transform:uppercase;color:#FFFDFC;text-wrap:balance;display:flex;flex-direction:column;gap:clamp(10px,1.2vw,20px)">
         <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .12s both">An Iconic</span>
         <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .22s both">Course.</span>
         <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .32s both;color:#C8102E">A Greater Cause.</span>
@@ -273,7 +293,7 @@
           <!-- quantity -->
           <fieldset style="border:0;margin:0;padding:0">
             <legend style="width:100%;padding:0 0 13px;border-bottom:1px solid rgba(215,217,220,.12);margin:0 0 20px;font:500 10px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#7c828a">How many fourballs</legend>
-            <div style="display:flex;align-items:stretch;border:1px solid rgba(215,217,220,.14);background:#22252A;width:fit-content">
+            <div data-qty-stepper="true" style="display:flex;align-items:stretch;border:1px solid rgba(215,217,220,.14);background:#22252A;width:fit-content">
               <button type="button" onClick="{{ dec }}" aria-label="One fewer fourball" style="width:clamp(48px,5vw,60px);background:none;border:0;border-right:1px solid rgba(215,217,220,.14);color:#D7D9DC;font-size:22px;line-height:1;cursor:pointer;transition:background .2s ease,color .2s ease" style-hover="background:#C8102E;color:#FFFDFC">&minus;</button>
               <div style="min-width:clamp(78px,9vw,120px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 10px">
                 <span style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:clamp(26px,3vw,40px);line-height:1;letter-spacing:-.03em;color:#FFFDFC;font-variant-numeric:tabular-nums">{{ f.qty }}</span>
