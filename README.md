@@ -94,6 +94,13 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 - `npm test`: build the starter and verify its rendered loading skeleton
 - `npm run db:generate`: generate Drizzle migrations after schema changes
 
+## Deployment Environment Variables
+
+- `M2M_EXCEL_WORKBOOK_ID` and `M2M_EXCEL_TABLE_ID`: required for writing registrations to Excel.
+- `COMPOSIO_API_KEY`: required for the Excel connector session.
+- `SUPABASE_URL`: Supabase project URL (for example `https://<project-ref>.supabase.co`) for automatic account creation.
+- `SUPABASE_SERVICE_ROLE_KEY`: service role key used by the server route to provision users.
+
 ## Learn More
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)

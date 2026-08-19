@@ -13,6 +13,7 @@ export const SPONSORSHIP_LABELS = Object.freeze({
   "with-alcohol": "Hole sponsorship with alcohol",
   "without-alcohol": "Hole sponsorship without alcohol",
 });
+const DEFAULT_PACKAGE_LABEL = "Four-ball package";
 
 export class RegistrationInputError extends Error {
   constructor(message) {
@@ -39,6 +40,8 @@ export function buildRegistration(body, options = {}) {
   }
 
   const company = text(body.company, "Company", { required: true, max: 120 });
+  const firstName = text(body.firstName, "First name", { required: false, max: 120 });
+  const surname = text(body.surname, "Surname", { required: false, max: 120 });
   const contactName = text(body.contactName, "Contact name", {
     required: true,
     max: 120,
@@ -49,6 +52,10 @@ export function buildRegistration(body, options = {}) {
     max: 30,
   });
   const notes = text(body.notes, "Notes", { max: 1500 });
+  const dietary = text(body.dietary, "Dietary requirements", { max: 120 });
+  const packageChoice = text(body.packageChoice || body.package, "Package", {
+    max: 120,
+  }) || DEFAULT_PACKAGE_LABEL;
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new RegistrationInputError("Enter a valid email address.");
@@ -69,7 +76,11 @@ export function buildRegistration(body, options = {}) {
   }
 
   const sponsorship =
-    typeof body.sponsorship === "string" ? body.sponsorship : "";
+    typeof body.sponsorship === "string" && Object.hasOwn(SPONSORSHIP_PRICES, body.sponsorship)
+      ? body.sponsorship
+      : ["with-alcohol", "without-alcohol"].includes(packageChoice)
+        ? packageChoice
+        : "";
   if (!Object.hasOwn(SPONSORSHIP_PRICES, sponsorship)) {
     throw new RegistrationInputError("Select a valid sponsorship option.");
   }
@@ -108,6 +119,17 @@ export function buildRegistration(body, options = {}) {
   return {
     registrationId,
     submittedAt,
+    account: {
+      firstName,
+      surname,
+      email,
+      cellPhone,
+      company,
+      contactName,
+      packageChoice,
+      dietary,
+      registrationId,
+    },
     row: [
       submittedAt,
       registrationId,

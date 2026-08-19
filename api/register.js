@@ -3,6 +3,7 @@ import {
   RegistrationInputError,
   buildRegistration,
 } from "./_registration.js";
+import { createOrUpdateRegistrationAccount } from "./_supabase-account.js";
 
 const USER_ID = "m2m-charity-golf-admin";
 
@@ -45,6 +46,7 @@ export default async function handler(req, res) {
     }
 
     const registration = buildRegistration(body);
+    let autoAccount = null;
     const workbookId = process.env.M2M_EXCEL_WORKBOOK_ID;
     const tableId = process.env.M2M_EXCEL_TABLE_ID;
     if (!process.env.COMPOSIO_API_KEY || !workbookId || !tableId) {
@@ -68,9 +70,22 @@ export default async function handler(req, res) {
       throw new Error("Registration storage rejected the row.");
     }
 
+    try {
+      autoAccount = await createOrUpdateRegistrationAccount(registration.account);
+    } catch (accountError) {
+      console.error("[M2M Invitational] account provisioning failed", accountError);
+      autoAccount = {
+        status: "error",
+        reason:
+          accountError instanceof Error
+            ? accountError.message
+            : "Unknown account provisioning failure",
+      };
+    }
     send(res, 201, {
       ok: true,
       registrationId: registration.registrationId,
+      autoAccount,
     });
   } catch (error) {
     if (error instanceof RegistrationInputError) {

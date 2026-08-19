@@ -391,7 +391,7 @@ form, .success-card { padding: 62px 72px 72px; }
 .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
 label > span, legend { display: block; margin: 0 0 10px; color: #373a40; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
 label small { margin-left: 6px; color: #909298; font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
-input[type="text"], input[type="email"], input[type="tel"], textarea {
+input[type="text"], input[type="email"], input[type="tel"], textarea, select {
   width: 100%;
   border: 1px solid #d4d6d9;
   border-radius: 0;
@@ -400,9 +400,9 @@ input[type="text"], input[type="email"], input[type="tel"], textarea {
   outline: none;
   transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
 }
-input[type="text"], input[type="email"], input[type="tel"] { height: 54px; padding: 0 16px; }
+input[type="text"], input[type="email"], input[type="tel"], select { height: 54px; padding: 0 16px; }
 textarea { padding: 15px 16px; line-height: 1.5; resize: vertical; }
-input:focus, textarea:focus { border-color: var(--red); background: var(--white); box-shadow: 0 0 0 3px rgba(200,16,46,.1); }
+input:focus, textarea:focus, select:focus { border-color: var(--red); background: var(--white); box-shadow: 0 0 0 3px rgba(200,16,46,.1); }
 .span-two { grid-column: 1 / -1; }
 
 .quantity-fieldset { margin: 0; padding: 0; border: 0; }

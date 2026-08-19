@@ -26,6 +26,7 @@ function SectionHeading({ number, children }: { number: string; children: React.
 export default function Home() {
   const formRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [accountStatus, setAccountStatus] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,6 +39,10 @@ export default function Home() {
 
     const fourballsValue = String(nativeData.get("fourBalls") || "1");
     const fourballs = fourballsValue === "5+" ? 5 : Number(fourballsValue);
+    const firstName = String(nativeData.get("firstName") || "");
+    const surname = String(nativeData.get("surname") || "");
+    const packageChoice = String(nativeData.get("packageChoice") || "");
+
     const playerNames = String(nativeData.get("players") || "")
       .split("\n")
       .map((name) => name.trim())
@@ -52,13 +57,17 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           company: String(nativeData.get("company") || "Individual registration"),
-          contactName: `${String(nativeData.get("firstName") || "")} ${String(nativeData.get("surname") || "")}`.trim(),
+          firstName,
+          surname,
+          contactName: `${firstName} ${surname}`.trim(),
           email: String(nativeData.get("email") || ""),
           cellPhone: String(nativeData.get("cell") || ""),
+          packageChoice,
+          dietary: String(nativeData.get("dietary") || ""),
           fourballs,
           players: playerNames,
           notes: [
-            String(nativeData.get("requirements") || ""),
+            String(nativeData.get("dietary") || ""),
             String(nativeData.get("notes") || ""),
           ].filter(Boolean).join("\n\n"),
           sponsorship: "",
@@ -66,16 +75,34 @@ export default function Home() {
         }),
       });
       if (!response.ok) throw new Error("Registration failed");
+      const result = (await response.json()) as {
+        autoAccount?: {
+          status: string;
+          userId?: string;
+          reason?: string;
+        };
+      };
+      setAccountStatus(
+        result.autoAccount?.userId
+          ? `Account created (${result.autoAccount.status})`
+          : result.autoAccount?.status
+            ? `Account ${result.autoAccount.status}${
+                result.autoAccount.reason ? `: ${result.autoAccount.reason}` : ""
+              }`
+            : null,
+      );
       form.reset();
       setStatus("success");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setStatus("error");
+      setAccountStatus(null);
     }
   }
 
   function resetForm() {
     setStatus("idle");
+    setAccountStatus(null);
     requestAnimationFrame(() => formRef.current?.querySelector<HTMLInputElement>("input")?.focus());
   }
 
@@ -159,6 +186,7 @@ export default function Home() {
               Thank you. Your four-ball registration has been recorded and the M2M team
               will use the details provided to follow up with you.
             </p>
+            {accountStatus && <p>{accountStatus}. You can now log in to your registration account when prompted.</p>}
             <button type="button" onClick={resetForm}>Register another four-ball</button>
           </div>
         ) : (
@@ -229,13 +257,31 @@ export default function Home() {
             <div className="field-grid">
               <label className="textarea-field">
                 <span>Dietary or accessibility requirements <small>Optional</small></span>
-                <textarea name="requirements" rows={4} />
+                <select name="dietary" defaultValue="" required={false}>
+                  <option value="">Select an option</option>
+                  <option value="No requirements">No dietary requirements</option>
+                  <option value="Vegetarian">Vegetarian</option>
+                  <option value="Vegan">Vegan</option>
+                  <option value="Gluten-free">Gluten-free</option>
+                  <option value="Halal">Halal</option>
+                  <option value="Nut-free">Nut-free</option>
+                  <option value="Other">Other (explain in notes)</option>
+                </select>
               </label>
               <label className="textarea-field">
                 <span>Additional notes or questions <small>Optional</small></span>
                 <textarea name="notes" rows={4} />
               </label>
             </div>
+            <label className="textarea-field">
+              <span>Package selected <b>*</b></span>
+              <select name="packageChoice" required>
+                <option value="">Select package</option>
+                <option value="fourballs-only">Four-ball package</option>
+                <option value="with-alcohol">Four-ball + hole sponsorship with alcohol</option>
+                <option value="without-alcohol">Four-ball + hole sponsorship without alcohol</option>
+              </select>
+            </label>
 
             <label className="confirmation">
               <input name="confirmation" type="checkbox" value={CONFIRMATION_TEXT} required />
