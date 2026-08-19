@@ -18,7 +18,11 @@
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: var(--paper);
+  background:
+    radial-gradient(circle at 14% -12%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.48) 28%, transparent 52%),
+    radial-gradient(circle at 82% -6%, rgba(255, 245, 255, 0.85) 0%, rgba(255, 245, 255, 0.35) 22%, transparent 52%),
+    radial-gradient(circle at 72% 35%, rgba(229, 243, 255, 0.9) 0%, rgba(229, 243, 255, 0.32) 24%, transparent 48%),
+    linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
   color: var(--ink);
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -30,7 +34,7 @@ main { min-height: 100vh; overflow: hidden; }
 .masthead {
   position: relative;
   z-index: 10;
-  background: linear-gradient(180deg, #ffffff 0%, var(--paper-soft) 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f7fdff 45%, #f6f3ff 100%);
   border-top: 5px solid var(--red);
   border-bottom: 1px solid #e2e9f7;
 }
@@ -99,18 +103,26 @@ main { min-height: 100vh; overflow: hidden; }
 .hero {
   min-height: 745px;
   position: relative;
-  background: linear-gradient(140deg, #ffffff 0%, #f2f9ff 45%, #f5eeff 100%);
+  background:
+    radial-gradient(circle at 88% 22%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.35) 34%, transparent 54%),
+    radial-gradient(circle at 18% 68%, rgba(243, 250, 255, 0.8) 0%, rgba(243, 250, 255, 0.32) 30%, transparent 58%),
+    linear-gradient(140deg, #ffffff 0%, #f2f9ff 45%, #f5eeff 100%);
   color: var(--ink);
   isolation: isolate;
+  overflow: hidden;
 }
 .hero::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -2;
+  filter: blur(26px);
   background-image:
-    linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.026) 1px, transparent 1px);
+    radial-gradient(circle 260px at 12% 34%, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.35) 32%, transparent 68%),
+    radial-gradient(circle 220px at 82% 14%, rgba(236, 246, 255, 0.8) 0%, rgba(236, 246, 255, 0.38) 36%, transparent 72%),
+    radial-gradient(circle 220px at 48% 86%, rgba(255, 239, 247, 0.72) 0%, rgba(255, 239, 247, 0.24) 38%, transparent 72%),
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: linear-gradient(90deg, black, rgba(0,0,0,.45) 55%, transparent 78%);
 }
@@ -258,7 +270,7 @@ main { min-height: 100vh; overflow: hidden; }
   margin-left: -20px;
   background-image:
     linear-gradient(90deg, rgba(255,255,255,.82) 0%, rgba(255,255,255,.18) 21%, transparent 46%),
-    linear-gradient(0deg, rgba(47,126,192,.24), transparent 44%),
+    linear-gradient(0deg, rgba(47,126,192,.19), transparent 44%),
     url("/m2m-golf-social.png");
   background-size: cover;
   background-position: 60% center;
@@ -276,6 +288,17 @@ main { min-height: 100vh; overflow: hidden; }
   box-shadow: 22px 22px 0 rgba(31, 181, 199, .35);
   transform: rotate(-45deg);
 }
+.hero-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.56), transparent 44%),
+    radial-gradient(circle at 78% 82%, rgba(255, 255, 255, 0.44), transparent 50%);
+  filter: blur(16px);
+  z-index: 0;
+}
+
 .hero-score {
   position: absolute;
   top: 46px;
@@ -345,7 +368,9 @@ main { min-height: 100vh; overflow: hidden; }
   margin: -54px auto 92px;
   position: relative;
   z-index: 3;
-  background: var(--white);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.62);
   box-shadow: 0 24px 52px rgba(31, 53, 90, 0.14);
 }
 .form-rail {
