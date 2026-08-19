@@ -250,17 +250,15 @@
               <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Email for the confirmation <span style="color:#C8102E">*</span></span>
               <input required type="email" name="email" autocomplete="email" inputmode="email" value="{{ f.email }}" onChange="{{ set.email }}" placeholder="name@company.co.za" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
             </label>
-            <sc-if value="{{ sponsorOn }}" hint-placeholder-val="{{ true }}">
-              <label style="display:block">
-                <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Hole sponsorship</span>
-                <select name="sponsorship" value="{{ f.sponsorship }}" onChange="{{ set.sponsorship }}" style="width:100%;padding:14px 42px 14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;cursor:pointer" style-focus="border-color:#C8102E">
-                  <option value="">No hole sponsorship</option>
-                  <option value="with-alcohol">Hole sponsorship with alcohol, R17,000</option>
-                  <option value="without-alcohol">Hole sponsorship without alcohol, R12,500</option>
-                </select>
-                <span style="display:block;margin-top:10px;font-size:12px;line-height:1.55;color:#7c828a">The best hole wins an award and prize.</span>
-              </label>
-            </sc-if>
+            <label style="display:block">
+              <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Hole sponsorship</span>
+              <select name="sponsorship" value="{{ f.sponsorship }}" onChange="{{ set.sponsorship }}" style="width:100%;padding:14px 42px 14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;cursor:pointer" style-focus="border-color:#C8102E">
+                <option value="">No hole sponsorship</option>
+                <option value="with-alcohol">Hole sponsorship with alcohol, R17,000</option>
+                <option value="without-alcohol">Hole sponsorship without alcohol, R12,500</option>
+              </select>
+              <span style="display:block;margin-top:10px;font-size:12px;line-height:1.55;color:#7c828a">The best hole wins an award and prize.</span>
+            </label>
           </fieldset>
 
           <!-- quantity -->
@@ -738,7 +736,6 @@ class Component extends DCLogic {
 
     return {
       f, groups, done: this.state.done, error: this.state.error,
-      sponsorOn: this.props.showSponsorOption !== false,
       dateShort, dateLong,
       priceLabel: this.money(this.price),
       totalLabel: this.money(total),
