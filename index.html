@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -103,7 +104,7 @@
 <div style="position:relative;background:#191B1F;overflow-x:clip">
 
   <!-- ══ grain + vignette over the whole page ══ -->
-  <div aria-hidden="true" style="position:fixed;inset:0;z-index:60;pointer-events:none;mix-blend-mode:overlay;opacity:.22;background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%22.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/></filter><rect width=%22160%22 height=%22160%22 filter=%22url(%23n%22)%22/></svg>')"></div>
+  <div aria-hidden="true" style="position:fixed;inset:0;z-index:60;pointer-events:none;mix-blend-mode:overlay;opacity:.22;background-image:url('/assets/grain.svg')"></div>
 
   <!-- ══ shared 3D backdrop: sits under the hero and the entry form ══ -->
   <div aria-hidden="true" style="position:fixed;inset:0;z-index:0;background:#0E1116 url('assets/m2m-golf-plate.png') center right/cover no-repeat">
@@ -310,10 +311,14 @@
 
           <!-- submit -->
           <div style="display:flex;flex-direction:column;gap:16px">
+            <label aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden">Website<input type="text" name="website" value="" tabindex="-1" autocomplete="off"></label>
             <button type="submit" style="position:relative;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;width:100%;padding:clamp(18px,2vw,24px) clamp(22px,2.4vw,32px);background:#C8102E;border:0;color:#FFFDFC;font:700 clamp(11px,.9vw,13px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);box-shadow:0 18px 50px -20px rgba(200,16,46,.9);transition:background .3s ease,transform .3s ease" style-hover="background:#A70B24;transform:translateY(-2px)">
               <span>{{ submitLabel }}</span>
               <span style="font-size:1.2em;line-height:0">&#8594;</span>
             </button>
+            <sc-if value="{{ error }}" hint-placeholder-val="{{ false }}">
+              <p role="alert" style="margin:0;padding:13px 15px;border-left:2px solid #C8102E;background:rgba(200,16,46,.1);font:500 12px/1.6 'Montserrat',sans-serif;color:#EEF0F1">{{ error }}</p>
+            </sc-if>
             <p style="margin:0;font:400 11px/1.7 'Montserrat',sans-serif;letter-spacing:.04em;color:#6a6f77">Submitting this form records your RSVP and selected sponsorship option. The event team will follow up using the contact details above.</p>
           </div>
         </form>
@@ -521,7 +526,7 @@
 </div>
 
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:940},&quot;pricePerFourBall&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:15000,&quot;min&quot;:0,&quot;max&quot;:50000,&quot;step&quot;:500,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Entry&quot;},&quot;currency&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;R&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Entry&quot;},&quot;maxFourBalls&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:6,&quot;min&quot;:1,&quot;max&quot;:12,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Entry&quot;},&quot;showSponsorOption&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Entry&quot;},&quot;eventDate&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;2026-09-22&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Event&quot;},&quot;googleFormUrl&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Event&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:940},&quot;pricePerFourBall&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:15000,&quot;min&quot;:0,&quot;max&quot;:50000,&quot;step&quot;:500,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Entry&quot;},&quot;currency&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;R&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Entry&quot;},&quot;maxFourBalls&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:6,&quot;min&quot;:1,&quot;max&quot;:12,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Entry&quot;},&quot;showSponsorOption&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Entry&quot;},&quot;eventDate&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;2026-09-22&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Event&quot;}}">
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 class Component extends DCLogic {
@@ -628,42 +633,52 @@ class Component extends DCLogic {
     e.preventDefault();
     if (this.state.sending) return;
     const f = this.state.f;
-    const nameParts = f.contact.trim().split(/\s+/).filter(Boolean);
-    const surname = nameParts.length > 1 ? nameParts.pop() : (nameParts[0] || 'Not provided');
-    const firstName = nameParts.join(' ') || f.contact.trim() || 'Not provided';
+    if (!f.company.trim() || !f.contact.trim() || !f.phone.trim() || !f.email.trim()) {
+      this.setState({ error: 'Complete the company, contact person, mobile and email fields.' });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
+      this.setState({ error: 'Enter a valid email address.' });
+      return;
+    }
+    if (!/^[+()\d\s.-]{7,30}$/.test(f.phone.trim())) {
+      this.setState({ error: 'Enter a valid mobile number.' });
+      return;
+    }
     const players = [];
     for (let i = 0; i < f.qty * 4; i++) {
       const p = f.players[i] || {};
-      if (p.name || p.hcp) players.push(`${i + 1}. ${p.name || 'Name to follow'}${p.hcp ? `, HCP ${p.hcp}` : ''}`);
+      players.push({ name: p.name || '', handicap: p.hcp || '' });
     }
-    const payload = new FormData();
-    payload.append('entry.437593400', firstName);
-    payload.append('entry.399152369', surname);
-    payload.append('entry.1367203282', f.email);
-    payload.append('entry.1037039320', f.phone);
-    payload.append('entry.1907380092', f.company);
-    payload.append('entry.368685638', f.qty >= 5 ? '5+' : String(f.qty));
-    payload.append('entry.277494656', players.join('\n'));
-    const sponsorshipNote = f.sponsorship
-      ? `Sponsorship selection: ${this.sponsorLabel(f.sponsorship)}, ${this.money(this.sponsorPrice(f.sponsorship))}`
-      : 'Sponsorship selection: No hole sponsorship';
-    const trackedNotes = [f.notes.trim(), sponsorshipNote].filter(Boolean).join('\n\n');
-    payload.append('entry.1033228854', trackedNotes);
-    payload.append('entry.1302663669', trackedNotes);
-    payload.append('entry.912449741', 'I confirm that the information provided is correct and agree to be contacted about this M2M Invitational registration.');
-    payload.append('fvv', '1');
-    payload.append('pageHistory', '0');
 
-    this.setState({ sending: true, error: false });
+    this.setState({ sending: true, error: '' });
     try {
-      await fetch('https://docs.google.com/forms/u/0/d/e/1FAIpQLSfGurQDw1YMzAt_FQrvq5o3fa6933jxjz7hPag1tEtU6FZuAQ/formResponse', {
+      const response = await fetch('/api/register', {
         method: 'POST',
-        mode: 'no-cors',
-        body: payload
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company: f.company,
+          contactName: f.contact,
+          cellPhone: f.phone,
+          email: f.email,
+          notes: f.notes,
+          sponsorship: f.sponsorship,
+          fourballs: f.qty,
+          players,
+          consent: true
+        })
       });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'We could not save your entry. Please try again.');
+      }
     } catch (error) {
-      console.error('[M2M Invitational] submission failed', error);
-      this.setState({ sending: false, error: true });
+      this.setState({
+        sending: false,
+        error: error && error.message
+          ? error.message
+          : 'We could not save your entry. Please try again.'
+      });
       return;
     }
     this.setState({ done: true, sending: false, shot: 2 });
@@ -710,7 +725,7 @@ class Component extends DCLogic {
     const named = Object.values(f.players).filter(p => p && p.name && p.name.trim()).length;
 
     return {
-      f, groups, done: this.state.done,
+      f, groups, done: this.state.done, error: this.state.error,
       sponsorOn: this.props.showSponsorOption !== false,
       dateShort, dateLong,
       priceLabel: this.money(this.price),

@@ -2,24 +2,8 @@
 
 import { FormEvent, useRef, useState } from "react";
 
-const FORM_ENDPOINT =
-  "https://docs.google.com/forms/u/0/d/e/1FAIpQLSfGurQDw1YMzAt_FQrvq5o3fa6933jxjz7hPag1tEtU6FZuAQ/formResponse";
-
 const CONFIRMATION_TEXT =
   "I confirm that the information provided is correct and agree to be contacted about this M2M Golf Day registration.";
-
-const fieldIds = {
-  firstName: "entry.437593400",
-  surname: "entry.399152369",
-  email: "entry.1367203282",
-  cell: "entry.1037039320",
-  company: "entry.1907380092",
-  fourBalls: "entry.368685638",
-  players: "entry.277494656",
-  requirements: "entry.1033228854",
-  notes: "entry.1302663669",
-  confirmation: "entry.912449741",
-} as const;
 
 function ArrowMark() {
   return (
@@ -52,21 +36,36 @@ export default function Home() {
     const nativeData = new FormData(form);
     if (nativeData.get("website")) return;
 
-    const submission = new FormData();
-    for (const [key, value] of Object.entries(fieldIds)) {
-      const formValue = nativeData.get(key);
-      if (formValue) submission.append(value, formValue);
-    }
-    submission.append("fvv", "1");
-    submission.append("pageHistory", "0");
+    const fourballsValue = String(nativeData.get("fourBalls") || "1");
+    const fourballs = fourballsValue === "5+" ? 5 : Number(fourballsValue);
+    const playerNames = String(nativeData.get("players") || "")
+      .split("\n")
+      .map((name) => name.trim())
+      .filter(Boolean)
+      .slice(0, fourballs * 4)
+      .map((name) => ({ name, handicap: "" }));
 
     setStatus("sending");
     try {
-      await fetch(FORM_ENDPOINT, {
+      const response = await fetch("/api/register", {
         method: "POST",
-        mode: "no-cors",
-        body: submission,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company: String(nativeData.get("company") || "Individual registration"),
+          contactName: `${String(nativeData.get("firstName") || "")} ${String(nativeData.get("surname") || "")}`.trim(),
+          email: String(nativeData.get("email") || ""),
+          cellPhone: String(nativeData.get("cell") || ""),
+          fourballs,
+          players: playerNames,
+          notes: [
+            String(nativeData.get("requirements") || ""),
+            String(nativeData.get("notes") || ""),
+          ].filter(Boolean).join("\n\n"),
+          sponsorship: "",
+          consent: true,
+        }),
       });
+      if (!response.ok) throw new Error("Registration failed");
       form.reset();
       setStatus("success");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -260,7 +259,7 @@ export default function Home() {
                 <span>{status === "sending" ? "Sending…" : "Submit registration"}</span>
                 <ArrowMark />
               </button>
-              <p>Your details are recorded in M2M’s linked Google response sheet.</p>
+              <p>Your details are recorded in M2M’s secure Excel registration workbook.</p>
             </div>
           </form>
         )}
