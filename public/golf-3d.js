@@ -1,4 +1,4 @@
-/* <golf-stage> — one continuous photoreal dawn golf scene, three camera shots.
+/* <golf-stage>: one continuous photoreal dawn golf scene, three camera shots.
    Shot 0 TEE  · Shot 1 DRIVER · Shot 2 HOLE 07
    Everything (turf, dimples, sky, sand) is generated procedurally on canvas. */
 
@@ -176,7 +176,7 @@ function ballColorMap(THREE) {
   return t;
 }
 
-/* dawn sky, equirect — drives every reflection in the scene */
+/* dawn sky, equirect: drives every reflection in the scene */
 function skyCanvas() {
   const W = 2048, H = 1024, c = document.createElement('canvas');
   c.width = W; c.height = H;
@@ -407,7 +407,7 @@ const SHOTS = [
   { key: 'flyover', orbit: true, fov: 44, shadow: 66, drift: 0, grade: AERIAL }
 ];
 
-/* endless drone orbit over the hole — loops with no cut, so it can sit under a whole page */
+/* endless drone orbit over the hole. It loops with no cut, so it can sit under a whole page */
 function orbitPose(T) {
   const tgt = [1.5, 2.2, -20];
   const th = 0.95 + T * 0.0125;
@@ -651,7 +651,7 @@ class GolfStage extends HTMLElement {
     patch.name = 'teeTurf';
     scene.add(patch);
 
-    /* mown tee-box grass — blades ~13 mm, well under the 21 mm ball radius */
+    /* mown tee-box grass: blades ~13 mm, well under the 21 mm ball radius */
     const bg = new THREE.PlaneGeometry(0.0038, 0.013, 1, 3);
     {
       const p = bg.attributes.position;
@@ -732,7 +732,7 @@ class GolfStage extends HTMLElement {
     scene.add(ball);
     this._ball = ball;
 
-    /* driver — titanium head, piano-black crown, milled face */
+    /* driver: titanium head, piano-black crown, milled face */
     const driver = new THREE.Group(); driver.name = 'driver';
     const ti = new THREE.MeshPhysicalMaterial({ color: 0xd8dadd, metalness: 1, roughness: 0.30, envMapIntensity: 1.25 });
     const crown = new THREE.MeshPhysicalMaterial({ color: 0x14161a, metalness: 0.55, roughness: 0.10, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.1 });

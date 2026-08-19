@@ -9,7 +9,7 @@ test("builds the premium M2M charity golf experience for Vercel", async () => {
     readFile(new URL("../dist/golf-3d.js", import.meta.url), "utf8"),
   ]);
 
-  assert.match(html, /M2M Charity Golf Day — Four-ball Registration/);
+  assert.match(html, /M2M Charity Golf Day \| Four-ball Registration/);
   assert.match(html, /m2m-golf-plate\.png/);
   assert.match(html, /Bring the/);
   assert.match(html, /boardroom/);
@@ -23,7 +23,7 @@ test("builds the premium M2M charity golf experience for Vercel", async () => {
   assert.match(html, /docs\.google\.com\/forms/);
   assert.match(html, /data-registration-grid/);
   assert.match(html, /@media \(max-width:560px\)/);
-  assert.match(hole, /Glendower · Hole 2 — Flythrough/);
+  assert.match(hole, /Glendower · Hole 2 \| Flythrough/);
   assert.match(hole, /Fly the hole/);
   assert.match(golfStage, /if \(!this\._camPos \|\| !this\._camTgt \|\| !this\._cam\) return/);
   assert.match(golfStage, /constrained \? 1\.3 : 2/);
