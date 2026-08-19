@@ -107,6 +107,17 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 - `RESEND_FROM_NAME` (optional): Display name shown on email `from` line.
 - `RESEND_REPLY_TO` (optional): Reply-to email address for credential emails.
 
+### Create the Supabase registration table
+
+- The registration table is defined in `supabase/m2m-registrations-table.sql`.
+- If you have a PostgreSQL connection URL (for example `postgres://...`), run:
+
+```bash
+SUPABASE_DB_URL="your_supabase_postgres_url" npm run supabase:create-table
+```
+
+- Alternatively, open the SQL file in the Supabase SQL Editor and run it directly.
+
 ## Learn More
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)

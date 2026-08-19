@@ -33,6 +33,7 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(html, /const total = qty \* this\.price \+ sponsorshipPrice/);
   assert.match(html, /\/api\/register/);
   assert.match(html, /Complete the company, contact person, mobile and email fields/);
+  assert.match(html, /dietaryOther: f\.dietaryOther/);
   assert.doesNotMatch(html, /6500|6,500|Better-Ball|Entries close|Excl\. VAT|Section 18A|Paul McGinley/);
   assert.doesNotMatch(html, /entry\.\d+|docs\.google\.com\/forms|formResponse/);
   assert.match(html, /data-registration-grid/);

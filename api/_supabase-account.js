@@ -326,7 +326,6 @@ async function createUser(details, username, password) {
       email: details.email,
       password,
       email_confirm: true,
-      phone: details.cellPhone || undefined,
       user_metadata: metadata,
       app_metadata: { provider: "email" },
     }),
@@ -340,7 +339,6 @@ async function updateUser(id, details, username, password) {
     body: JSON.stringify({
       email: details.email,
       password,
-      phone: details.cellPhone || undefined,
       email_confirm: true,
       user_metadata: metadata,
     }),
@@ -405,7 +403,7 @@ function buildRegistrationRow(details, userContext, registrationRecord = null) {
     dietary_requirements: details.dietary || null,
     dietary_other: details.dietaryOther || null,
     notes: details.notes || null,
-    sponsorship_option: details.sponsorship || "No hole sponsorship",
+    sponsorship_option: details.sponsorship || "",
     sponsorship_label:
       details.sponsorship && SPONSORSHIP_LABELS[details.sponsorship]
         ? SPONSORSHIP_LABELS[details.sponsorship]

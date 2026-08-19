@@ -11,7 +11,8 @@
     "start": "vite preview",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "supabase:create-table": "node ./scripts/create-m2m-reg-table.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.17.0",

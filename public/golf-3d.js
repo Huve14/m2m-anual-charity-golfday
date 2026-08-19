@@ -250,11 +250,11 @@ function ballColorMap(THREE) {
   x.save();
   x.translate(W * 0.30, H * 0.52); x.rotate(-0.06);
   x.fillStyle = '#c8102e';
-  x.font = '700 62px Helvetica, Arial, sans-serif';
+  x.font = '700 62px Montserrat, Arial, sans-serif';
   x.textAlign = 'center'; x.textBaseline = 'middle';
   x.fillText('M2M', 0, -16);
   x.fillStyle = '#a70b24';
-  x.font = '600 17px Helvetica, Arial, sans-serif';
+  x.font = '600 17px Montserrat, Arial, sans-serif';
   x.letterSpacing = '4px';
   x.fillText('GOLF DAY', 0, 26);
   x.fillRect(-46, 40, 92, 2.4);
@@ -773,7 +773,9 @@ class GolfStage extends HTMLElement {
       canvas: cv, antialias: true, powerPreference: 'high-performance',
       logarithmicDepthBuffer: true                       // 4 mm dimples and a 400 m hole in one scene
     });
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    const constrained = matchMedia('(max-width: 820px)').matches ||
+      (Number(navigator.deviceMemory || 8) <= 4);
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, constrained ? 1.3 : 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.06;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1333,6 +1335,7 @@ class GolfStage extends HTMLElement {
     if (this._stop) return;
     requestAnimationFrame(() => this._loop());
     if (!this._visible) return;
+    if (!this._camPos || !this._camTgt || !this._cam) return;
     const now = performance.now();
     const T = (now - this._start) / 1000;
 
