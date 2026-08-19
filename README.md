@@ -100,6 +100,12 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 - `COMPOSIO_API_KEY`: required for the Excel connector session.
 - `SUPABASE_URL`: Supabase project URL (for example `https://<project-ref>.supabase.co`) for automatic account creation.
 - `SUPABASE_SERVICE_ROLE_KEY`: service role key used by the server route to provision users.
+- `SUPABASE_REGISTRATION_TABLE` (optional): table name used for capturing four-ball registration rows (defaults to `m2m_registrations`).
+- `SUPABASE_REGISTRATION_TABLE` can be created with `supabase/m2m-registrations-table.sql`.
+- `RESEND_API_KEY`: Resend API key used to email login credentials automatically after registration.
+- `RESEND_FROM_EMAIL`: Sending email address for user credentials (for example `no-reply@m2m-charity.org`).
+- `RESEND_FROM_NAME` (optional): Display name shown on email `from` line.
+- `RESEND_REPLY_TO` (optional): Reply-to email address for credential emails.
 
 ## Learn More
 

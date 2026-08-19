@@ -27,6 +27,13 @@ export default function Home() {
   const formRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
+  const [accountEmailStatus, setAccountEmailStatus] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[] | null>(null);
+  const [accountCredentials, setAccountCredentials] = useState<{
+    username: string;
+    temporaryPassword: string;
+  } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +63,7 @@ export default function Home() {
 
     setStatus("sending");
     try {
+      setErrorMessage(null);
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -75,35 +83,108 @@ export default function Home() {
           consent: true,
         }),
       });
-      if (!response.ok) throw new Error("Registration failed");
       const result = (await response.json()) as {
+        ok?: boolean;
+        message?: string;
+        friendlyMessage?: string;
+        reason?: string;
         autoAccount?: {
           status: string;
           userId?: string;
           reason?: string;
+          username?: string;
+          temporaryPassword?: string;
+          registrationStatus?: string;
+          emailStatus?: {
+            status: string;
+            reason?: string;
+            providerResponse?: unknown;
+          };
         };
+        excel?: {
+          status: string;
+          reason?: string;
+        };
+        warnings?: string[] | null;
       };
-      setAccountStatus(
-        result.autoAccount?.userId
-          ? `Account created (${result.autoAccount.status})`
-          : result.autoAccount?.status
-            ? `Account ${result.autoAccount.status}${
-                result.autoAccount.reason ? `: ${result.autoAccount.reason}` : ""
-              }`
-            : null,
-      );
+      if (!response.ok || result?.ok === false) {
+        throw new Error(
+          result?.friendlyMessage || result?.message || "Registration failed",
+        );
+      }
+      setWarnings(Array.isArray(result.warnings) ? result.warnings : null);
+        if (result.autoAccount?.status && result.autoAccount.status !== "skipped") {
+          setAccountStatus(
+            result.autoAccount?.status === "error"
+              ? `Registration details were saved, but Supabase sync failed: ${
+                  result.autoAccount.reason || "unknown issue"
+                }`
+              : `Account ${result.autoAccount.status}: ${result.autoAccount.username || "username unavailable"}`,
+          );
+          if (result.autoAccount.username && result.autoAccount.temporaryPassword) {
+            setAccountCredentials({
+              username: result.autoAccount.username,
+              temporaryPassword: result.autoAccount.temporaryPassword,
+            });
+          } else {
+            setAccountCredentials(null);
+          }
+          if (result.autoAccount.emailStatus?.status === "sent") {
+            setAccountEmailStatus("Login credentials have been emailed to the registrant.");
+          } else if (result.autoAccount.emailStatus?.status === "skipped") {
+            setAccountEmailStatus(
+              "Email is not configured; temporary credentials are shown here for hand-off.",
+            );
+          } else if (result.autoAccount.emailStatus?.status === "error") {
+            setAccountEmailStatus(
+              `We could not email credentials: ${
+                result.autoAccount.emailStatus.reason || "please contact support."
+              }`,
+            );
+          } else {
+            setAccountEmailStatus(null);
+          }
+        } else {
+          setAccountStatus(null);
+          setAccountCredentials(null);
+          setAccountEmailStatus(null);
+        }
+      if (result.excel?.status && result.excel.status !== "inserted") {
+        setWarnings((previousWarnings) => {
+          const list = [...(previousWarnings || [])];
+          const detail = result.excel?.reason
+            ? `${result.excel.status}: ${result.excel.reason}`
+            : `Excel sync: ${result.excel.status}`;
+          if (list.includes(detail)) return list;
+          list.push(detail);
+          return list;
+        });
+      }
       form.reset();
       setStatus("success");
+      setErrorMessage(null);
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch {
+    } catch (error) {
       setStatus("error");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message || "We couldn’t send the registration. Please try again."
+          : "We couldn’t send the registration. Please try again.",
+      );
       setAccountStatus(null);
+      setAccountEmailStatus(null);
+      setWarnings(null);
+      setAccountCredentials(null);
     }
   }
 
   function resetForm() {
     setStatus("idle");
     setAccountStatus(null);
+    setAccountEmailStatus(null);
+    setWarnings(null);
+    setAccountCredentials(null);
+    setErrorMessage(null);
     requestAnimationFrame(() => formRef.current?.querySelector<HTMLInputElement>("input")?.focus());
   }
 
@@ -187,7 +268,21 @@ export default function Home() {
               Thank you. Your four-ball registration has been recorded and the M2M team
               will use the details provided to follow up with you.
             </p>
-            {accountStatus && <p>{accountStatus}. You can now log in to your registration account when prompted.</p>}
+            {accountStatus && <p>{accountStatus}</p>}
+            {accountEmailStatus && <p className="credential-note">{accountEmailStatus}</p>}
+            {warnings && warnings.length > 0 ? (
+              <ul className="warning-list">
+                {warnings.map((message, index) => (
+                  <li key={`${message}-${index}`}>{message}</li>
+                ))}
+              </ul>
+            ) : null}
+            {accountCredentials ? (
+              <p className="credential-block">
+                Username: <strong>{accountCredentials.username}</strong> — Temporary
+                password: <strong>{accountCredentials.temporaryPassword}</strong>
+              </p>
+            ) : null}
             <button type="button" onClick={resetForm}>Register another four-ball</button>
           </div>
         ) : (
@@ -295,7 +390,8 @@ export default function Home() {
 
             {status === "error" && (
               <p className="error-message" role="alert">
-                We couldn’t send the registration. Please check your connection and try again.
+                {errorMessage ??
+                  "We couldn’t send the registration. Please check your connection and try again."}
               </p>
             )}
 

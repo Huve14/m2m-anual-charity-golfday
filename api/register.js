@@ -25,6 +25,67 @@ function parseBody(req) {
   return req.body;
 }
 
+function isConfigured(value) {
+  return typeof value === "string" ? value.trim().length > 0 : Boolean(value);
+}
+
+function registrationResultState(result) {
+  return typeof result === "object" && result !== null ? result.status : "error";
+}
+
+function excelConfigured() {
+  return (
+    isConfigured(process.env.M2M_EXCEL_WORKBOOK_ID) &&
+    isConfigured(process.env.M2M_EXCEL_TABLE_ID) &&
+    isConfigured(process.env.COMPOSIO_API_KEY)
+  );
+}
+
+async function writeToExcel(workbookId, tableId, registration) {
+  if (!excelConfigured()) {
+    return {
+      status: "skipped",
+      reason: "Excel sync is not configured.",
+    };
+  }
+
+  try {
+    const composio = new Composio();
+    const session = await composio.sessions.create(USER_ID, {
+      toolkits: ["excel"],
+      manageConnections: false,
+      sandbox: { enable: false },
+    });
+    const result = await session.execute("EXCEL_ADD_TABLE_ROW", {
+      drive_id: "me",
+      item_id: workbookId,
+      table_id: tableId,
+      values: [registration.row],
+    });
+
+    if (result.error || !result.logId) {
+      const reason = result.error || "storage provider did not return a log id.";
+      return {
+        status: "error",
+        reason: `Registration storage rejected the row: ${JSON.stringify(reason)}`,
+      };
+    }
+
+    return {
+      status: "inserted",
+      logId: result.logId,
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      reason:
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while saving to Excel.",
+    };
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -46,32 +107,16 @@ export default async function handler(req, res) {
     }
 
     const registration = buildRegistration(body);
-    let autoAccount = null;
     const workbookId = process.env.M2M_EXCEL_WORKBOOK_ID;
     const tableId = process.env.M2M_EXCEL_TABLE_ID;
-    if (!process.env.COMPOSIO_API_KEY || !workbookId || !tableId) {
-      throw new Error("Registration storage is not configured.");
-    }
-
-    const composio = new Composio();
-    const session = await composio.sessions.create(USER_ID, {
-      toolkits: ["excel"],
-      manageConnections: false,
-      sandbox: { enable: false },
-    });
-    const result = await session.execute("EXCEL_ADD_TABLE_ROW", {
-      drive_id: "me",
-      item_id: workbookId,
-      table_id: tableId,
-      values: [registration.row],
-    });
-
-    if (result.error || !result.logId) {
-      throw new Error("Registration storage rejected the row.");
-    }
+    const excel = await writeToExcel(workbookId, tableId, registration);
+    let autoAccount = null;
 
     try {
-      autoAccount = await createOrUpdateRegistrationAccount(registration.account);
+      autoAccount = await createOrUpdateRegistrationAccount(
+        registration.account,
+        registration.supabaseRecord,
+      );
     } catch (accountError) {
       console.error("[M2M Invitational] account provisioning failed", accountError);
       autoAccount = {
@@ -82,20 +127,64 @@ export default async function handler(req, res) {
             : "Unknown account provisioning failure",
       };
     }
+
+    const hasSavedRegistration =
+      registrationResultState(excel) === "inserted" ||
+      registrationResultState(autoAccount) === "created" ||
+      registrationResultState(autoAccount) === "updated" ||
+      autoAccount?.registrationStatus === "inserted" ||
+      autoAccount?.registrationStatus === "duplicate";
+
+    if (!hasSavedRegistration) {
+      const reasons = [
+        excel.reason || null,
+        autoAccount.reason || null,
+      ].filter(Boolean);
+      throw new Error(
+        `No registration sink accepted the submission: ${JSON.stringify(reasons)}`,
+      );
+    }
+
+    const warnings = [];
+    if (excel.status !== "inserted") {
+      warnings.push(`Excel status: ${excel.status}`);
+    }
+    if (autoAccount.status === "error") {
+      warnings.push("Supabase account creation failed.");
+    }
+    if (autoAccount.emailStatus && autoAccount.emailStatus.status !== "sent") {
+      warnings.push(`Email status: ${autoAccount.emailStatus.status}`);
+    }
+    if (autoAccount.emailStatus?.status === "error") {
+      const reason = autoAccount.emailStatus.reason
+        ? ` (${autoAccount.emailStatus.reason})`
+        : "";
+      warnings.push(`Failed to email credentials${reason}`);
+    }
+
     send(res, 201, {
       ok: true,
       registrationId: registration.registrationId,
       autoAccount,
+      excel,
+      warnings: warnings.length > 0 ? warnings : null,
     });
   } catch (error) {
     if (error instanceof RegistrationInputError) {
       send(res, error.statusCode, { ok: false, message: error.message });
       return;
     }
-    console.error("[M2M Invitational] registration storage failed");
+    const reason = error instanceof Error ? error.message : "Unknown registration failure.";
+    console.error("[M2M Invitational] registration storage failed", {
+      error: reason,
+    });
+    const friendlyMessage =
+      "We could not save your entry right now. Please try again shortly.";
     send(res, 503, {
       ok: false,
-      message: "We could not save your entry right now. Please try again shortly.",
+      message: friendlyMessage,
+      reason,
+      friendlyMessage,
     });
   }
 }
