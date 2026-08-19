@@ -1,78 +1,32 @@
-# M2M Annual Charity Golf Day
+# M2M Invitational Charity Golf Day
 
-Full-stack registration and booking system for the M2M Annual Charity Golf Day.
+The official registration website for the M2M Invitational at Glendower Golf Club on 22 September 2026.
 
-## Stack
+## Event details
 
-- Backend: FastAPI, SQLAlchemy, Alembic, Pydantic v2, Celery
-- Frontend: React 18, Vite, TypeScript, Tailwind CSS, TanStack Query
-- Platform: Supabase Postgres, Auth, Storage, Realtime
-- Integrations: SendGrid, Twilio WhatsApp, WeasyPrint, openpyxl
+- Venue: Glendower Golf Club
+- Date: 22 September 2026
+- Shotgun start: 10:00
+- Fourball: R15,000
+- Hole sponsorship with alcohol: R17,000
+- Hole sponsorship without alcohol: R12,500
+- Beneficiary: BYE Foundation
 
-## Layout
+## Website
 
-- `backend/` Python API and workers
-- `frontend/` React SPA
-- `supabase/` database migrations and local config
-- `docker-compose.yml` local services
+The project is a responsive Vite website with a private server-side registration endpoint. Registration records are written to the event team's protected Excel workbook. No credentials or workbook identifiers are included in the browser bundle or repository.
 
 ## Local development
 
-1. Copy `.env.example` to `.env` and fill in any real service secrets.
-2. Start local infrastructure:
-
-   ```bash
-   docker compose up -d
-   ```
-
-3. Install backend dependencies:
-
-   ```bash
-   cd backend
-   python -m venv .venv
-   source .venv/bin/activate
-   python -m pip install -e ".[dev]"
-   ```
-
-4. Install frontend dependencies:
-
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-5. Run the API from `backend/`:
-
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-
-6. Run the web app from `frontend/`:
-
-   ```bash
-   npm run dev
-   ```
-
-The API health check is available at `http://localhost:8000/api/health`.
-The frontend runs at `http://localhost:5173`.
+```bash
+npm install
+npm run dev
+```
 
 ## Validation
 
-Cheapest useful checks for this scaffold:
-
 ```bash
-(cd backend && python -c "from app.main import app; print(app.title)")
-(cd frontend && npm run build)
-python - <<'PY'
-from pathlib import Path
-sql = Path("supabase/migrations/0001_init.sql").read_text()
-tables = [line for line in sql.splitlines() if line.startswith("create table if not exists public.")]
-rls = [line for line in sql.splitlines() if line.startswith("alter table public.") and "enable row level security" in line]
-assert len(tables) == len(rls), f"{len(tables)} tables but {len(rls)} RLS statements"
-print(f"{len(tables)} public tables have RLS enabled")
-PY
+npm test
 ```
 
-## Notes
-
-This repository is scaffolded from the PRD and architecture brief. The first pass focuses on the core application structure and configuration; business workflows, approval logic, draw management, and event-day tooling will be filled in next.
+Production: [m2m-charity-golf-day.vercel.app](https://m2m-charity-golf-day.vercel.app/)
