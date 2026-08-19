@@ -215,8 +215,8 @@ function skyCanvas() {
 
 /* the whole hole, painted: rough, mown fairway stripes, green, bunkers */
 const TEX = { minX: -60, maxX: 60, minZ: -90, maxZ: 30 };
-function courseMaps(THREE) {
-  const S = 1536, c = document.createElement('canvas');
+function courseMaps(THREE, S = 1536) {
+  const c = document.createElement('canvas');
   c.width = S; c.height = S;
   const x = c.getContext('2d');
   const wx = u => TEX.minX + u * (TEX.maxX - TEX.minX);
@@ -335,8 +335,8 @@ function courseMaps(THREE) {
 }
 
 /* tight, high-detail turf right around the tee (the ground map is far too coarse at 3 cm) */
-function teePatchMaps(THREE) {
-  const S = 1024, PATCH = 7;                                        // metres
+function teePatchMaps(THREE, S = 1024) {
+  const PATCH = 7;                                                  // metres
   const cc = document.createElement('canvas'); cc.width = cc.height = S;
   const nc = document.createElement('canvas'); nc.width = nc.height = S;
   const ac = document.createElement('canvas'); ac.width = ac.height = 512;
@@ -563,9 +563,11 @@ class GolfStage extends HTMLElement {
     const THREE = await import(THREE_URL);
     this._THREE = THREE;
     const cv = this._cv;
+    const compact = matchMedia('(max-width: 720px)').matches;
+    const constrained = compact || (navigator.deviceMemory && navigator.deviceMemory <= 4);
 
     const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, constrained ? 1.3 : 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.06;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -598,7 +600,7 @@ class GolfStage extends HTMLElement {
     const sun = new THREE.DirectionalLight(0xffd9ad, 3.5);
     sun.position.set(-13, 5.4, -34);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(constrained ? 1024 : 2048, constrained ? 1024 : 2048);
     sun.shadow.bias = -0.00012;
     sun.shadow.normalBias = 0.006;
     scene.add(sun, sun.target);
@@ -616,7 +618,8 @@ class GolfStage extends HTMLElement {
     await frame();
 
     /* ground */
-    const gGeo = new THREE.PlaneGeometry(120, 120, 320, 320);
+    const groundSegments = constrained ? 190 : 320;
+    const gGeo = new THREE.PlaneGeometry(120, 120, groundSegments, groundSegments);
     gGeo.rotateX(-Math.PI / 2);
     const gp = gGeo.attributes.position;
     for (let i = 0; i < gp.count; i++) {
@@ -626,7 +629,7 @@ class GolfStage extends HTMLElement {
     }
     gGeo.computeVertexNormals();
     const ground = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({
-      map: courseMaps(THREE), roughness: 0.93, metalness: 0, dithering: true
+      map: courseMaps(THREE, constrained ? 1024 : 1536), roughness: 0.93, metalness: 0, dithering: true
     }));
     ground.receiveShadow = true;
     ground.name = 'ground';
@@ -635,7 +638,7 @@ class GolfStage extends HTMLElement {
     await frame();
 
     /* high-detail tee patch */
-    const tp = teePatchMaps(THREE);
+    const tp = teePatchMaps(THREE, constrained ? 768 : 1024);
     const patch = new THREE.Mesh(
       new THREE.PlaneGeometry(tp.PATCH, tp.PATCH, 1, 1).rotateX(-Math.PI / 2),
       new THREE.MeshStandardMaterial({
@@ -660,7 +663,7 @@ class GolfStage extends HTMLElement {
       }
       bg.computeVertexNormals();
     }
-    const NB = 13000;
+    const NB = constrained ? 6500 : 13000;
     const blades = new THREE.InstancedMesh(bg, new THREE.MeshStandardMaterial({
       color: 0xffffff, roughness: 0.86, metalness: 0, side: THREE.DoubleSide
     }), NB);
@@ -712,9 +715,9 @@ class GolfStage extends HTMLElement {
     await frame();
 
     /* ball */
-    const dm = dimpleMaps(THREE);
+    const dm = constrained ? dimpleMaps(THREE, 640, 320, 260) : dimpleMaps(THREE);
     const ball = new THREE.Mesh(
-      new THREE.SphereGeometry(0.02135, 96, 64),
+      new THREE.SphereGeometry(0.02135, constrained ? 64 : 96, constrained ? 40 : 64),
       new THREE.MeshPhysicalMaterial({
         map: ballColorMap(THREE),
         normalMap: dm.normal, normalScale: new THREE.Vector2(1.0, 1.0),

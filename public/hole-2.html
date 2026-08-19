@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="./support.js"></script>
 </head>
 <body>
 <x-dc>
 <helmet>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Glendower · Hole 2 — Flythrough</title>
 <meta name="description" content="Fly the 2nd at Glendower Golf Club in live 3D. M2M Charity Golf Day.">
 <meta name="theme-color" content="#0E1116">
@@ -17,7 +17,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:#0E1116;color:#D7D9DC;font-family:Archivo,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  html,body{margin:0;height:100%;background:#0E1116;color:#D7D9DC;font-family:Archivo,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   a{color:#EEF0F1;text-decoration:none}
   a:hover{color:#C8102E}
   ::selection{background:#C8102E;color:#FFFDFC}
@@ -27,7 +27,15 @@
   @keyframes fade{from{opacity:0}to{opacity:1}}
   @keyframes wipe{from{transform:scaleX(0)}to{transform:scaleX(1)}}
   @media (max-width:820px){[data-spec]{display:none}}
-  @media (max-width:560px){[data-hint]{display:none}}
+  @media (max-width:560px){
+    [data-hint]{display:none}
+    header{padding-left:max(14px,env(safe-area-inset-left))!important;padding-right:max(14px,env(safe-area-inset-right))!important}
+    h1{font-size:clamp(42px,17vw,76px)!important}
+  }
+  @media (max-height:520px){
+    [data-spec],[data-hint]{display:none}
+    h1{font-size:clamp(38px,12vh,60px)!important}
+  }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </helmet>
