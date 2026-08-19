@@ -550,6 +550,10 @@ class GolfStage extends HTMLElement {
     i = clamp(i | 0, 0, SHOTS.length - 1);
     if (i === this._shot) return;
     this._shot = i;
+    // The page controller can select its opening shot while the async Three.js
+    // scene is still being constructed. Remember that choice and let the first
+    // render apply it once the camera vectors exist.
+    if (!this._camPos || !this._camTgt || !this._cam) return;
     this._from = { pos: this._camPos.clone(), tgt: this._camTgt.clone(), fov: this._cam.fov };
     this._t0 = performance.now();
     this.dispatchEvent(new CustomEvent('shotchange', { detail: { shot: i, key: SHOTS[i].key } }));

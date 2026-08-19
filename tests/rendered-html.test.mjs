@@ -3,9 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("builds the premium M2M charity golf experience for Vercel", async () => {
-  const [html, hole] = await Promise.all([
+  const [html, hole, golfStage] = await Promise.all([
     readFile(new URL("../dist/index.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/hole-2.html", import.meta.url), "utf8"),
+    readFile(new URL("../dist/golf-3d.js", import.meta.url), "utf8"),
   ]);
 
   assert.match(html, /M2M Charity Golf Day — Four-ball Registration/);
@@ -19,4 +20,5 @@ test("builds the premium M2M charity golf experience for Vercel", async () => {
   assert.match(html, /docs\.google\.com\/forms/);
   assert.match(hole, /Glendower · Hole 2 — Flythrough/);
   assert.match(hole, /Fly the hole/);
+  assert.match(golfStage, /if \(!this\._camPos \|\| !this\._camTgt \|\| !this\._cam\) return/);
 });
