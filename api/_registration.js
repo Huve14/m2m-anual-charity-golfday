@@ -19,7 +19,7 @@ export const SPONSORSHIP_PRICES = Object.freeze({
 
 export const SPONSORSHIP_LABELS = Object.freeze({
   "": "No hole sponsorship",
-  "with-alcohol": "Hole sponsorship with alcohol",
+  "with-alcohol": "Hole sponsorship with alcohol (SOLD OUT)",
   "without-alcohol": "Hole sponsorship without alcohol",
 });
 const DEFAULT_PACKAGE_LABEL = "Four-ball package";
@@ -178,6 +178,11 @@ export function buildRegistration(body, options = {}) {
         : "";
   if (!Object.hasOwn(SPONSORSHIP_PRICES, sponsorship)) {
     throw new RegistrationInputError("Select a valid sponsorship option.");
+  }
+  if (sponsorship === "with-alcohol") {
+    throw new RegistrationInputError(
+      "Hole sponsorship with alcohol is sold out. Please select another option.",
+    );
   }
 
   const incomingPlayers = Array.isArray(body.players) ? body.players : [];

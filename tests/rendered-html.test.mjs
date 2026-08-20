@@ -36,7 +36,9 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(html, /How many fourballs/);
   assert.match(html, /default&quot;:15000/);
   assert.match(html, /Hole sponsorship without alcohol, R12 500/);
-  assert.match(html, /Hole sponsorship with alcohol, R17 000/);
+  assert.match(html, /Hole sponsorship with alcohol, R17 000 \(SOLD OUT\)/);
+  assert.match(html, /value="with-alcohol" disabled/);
+  assert.match(html, /text-decoration:line-through/);
   assert.match(html, /Shotgun start/);
   assert.match(html, /10:00/);
   assert.match(html, /BYE Foundation/);
@@ -139,7 +141,7 @@ test("builds a validated Excel row using server-side event pricing", () => {
       email: "alex@example.com",
       cellPhone: "+27 82 000 0000",
       fourballs: 2,
-      sponsorship: "with-alcohol",
+      sponsorship: "without-alcohol",
       notes: "Vegetarian meal",
       players: [{ name: "Alex Smith", handicap: "12" }],
       totalAmount: 1,
@@ -158,8 +160,8 @@ test("builds a validated Excel row using server-side event pricing", () => {
   assert.equal(registration.row[1], "M2M-TEST123");
   assert.equal(registration.row[6], 2);
   assert.equal(registration.row[10], 30000);
-  assert.equal(registration.row[12], 17000);
-  assert.equal(registration.row[13], 47000);
+  assert.equal(registration.row[12], 12500);
+  assert.equal(registration.row[13], 42500);
   assert.match(registration.row[8], /Alex Smith, HCP 12/);
 });
 

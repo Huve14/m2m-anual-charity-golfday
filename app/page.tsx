@@ -329,7 +329,9 @@ export default function Home() {
                 <span>Hole sponsorship</span>
                 <select name="sponsorship" defaultValue="" required={false}>
                   <option value="">No hole sponsorship</option>
-                  <option value="with-alcohol">Hole sponsorship with alcohol</option>
+                  <option value="with-alcohol" disabled>
+                    Hole sponsorship with alcohol (SOLD OUT)
+                  </option>
                   <option value="without-alcohol">Hole sponsorship without alcohol</option>
                 </select>
               </label>
