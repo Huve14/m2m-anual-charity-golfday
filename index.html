@@ -106,6 +106,19 @@
   [data-site-header]{background:linear-gradient(180deg,rgba(12,23,53,.98),rgba(12,23,53,.9) 68%,rgba(12,23,53,.28))!important;border-bottom-color:rgba(220,221,222,.18)!important}
   [data-site-header] [data-lockup] img:first-child{filter:none!important;opacity:1!important}
   [data-brand-cta]{background:var(--m2m-red)!important;color:#FFFDFC!important}
+  [data-post-enquiry-cta],
+  [data-post-enquiry-cta]:link,
+  [data-post-enquiry-cta]:visited,
+  [data-post-enquiry-cta]:hover,
+  [data-post-enquiry-cta]:focus-visible{
+    background:#FFFDFC!important;
+    color:var(--m2m-red)!important;
+    -webkit-text-fill-color:var(--m2m-red)!important;
+  }
+  [data-post-enquiry-cta] *{
+    color:inherit!important;
+    -webkit-text-fill-color:inherit!important;
+  }
   [data-brand-red-surface]{background-color:var(--m2m-red)!important}
   [data-entry-form] input[type="checkbox"]{accent-color:var(--m2m-red)!important}
   [data-entry-form] label>span>span{color:var(--m2m-red)!important}
@@ -623,7 +636,7 @@
               <div style="font:500 9.5px/1 'Montserrat',sans-serif;letter-spacing:.26em;text-transform:uppercase;color:#C8102E;margin-bottom:12px">Enquiry received</div>
               <div style="font-size:14px;line-height:1.65;color:#EEF0F1;margin-bottom:clamp(18px,2.4vh,24px)">{{ doneMsg }}</div>
               <div style="margin:-6px 0 clamp(18px,2.4vh,24px);padding:12px 14px;border-left:3px solid #ED1C24;background:rgba(11,31,68,.68);font:600 11px/1.65 'Montserrat',sans-serif;color:#FFFDFC">Availability is limited, and submitting this form is an enquiry, not a confirmed reservation. Our team will contact you within one business day.</div>
-              <a href="/hole-2.html" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:clamp(15px,1.7vw,20px) clamp(16px,1.9vw,22px);background:#FFFDFC;color:#C8102E;font:700 clamp(9.5px,.8vw,11.5px)/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px);transition:background .3s ease,transform .3s ease" style-hover="background:#EEF0F1;color:#C8102E;transform:translateY(-2px)">
+              <a href="/hole-2.html" data-post-enquiry-cta="true" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:clamp(15px,1.7vw,20px) clamp(16px,1.9vw,22px);background:#FFFDFC;color:#C8102E;font:700 clamp(9.5px,.8vw,11.5px)/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px);transition:background .3s ease,transform .3s ease" style-hover="background:#EEF0F1;color:#C8102E;transform:translateY(-2px)">
                 View the iconic hole 2
                 <span style="color:#C8102E;font-size:1.25em;line-height:0">&#8594;</span>
               </a>

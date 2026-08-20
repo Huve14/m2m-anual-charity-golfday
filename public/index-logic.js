@@ -136,13 +136,11 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
     money(n) { return this.cur + n.toLocaleString('en-ZA'); }
   
     sponsorPrice(kind) {
-      if (kind === 'with-alcohol') return 17000;
       if (kind === 'without-alcohol') return 12500;
       return 0;
     }
   
     sponsorLabel(kind) {
-      if (kind === 'with-alcohol') return 'Hole sponsorship with alcohol (SOLD OUT)';
       if (kind === 'without-alcohol') return 'Hole sponsorship without alcohol';
       return '';
     }
@@ -210,6 +208,13 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
       }
       if (!/^[+()\d\s.-]{7,30}$/.test(f.phone.trim())) {
         this.showError('Enter a valid mobile number.', '[name="phone"]');
+        return;
+      }
+      if (f.sponsorship === 'with-alcohol') {
+        this.setState(s => ({
+          f: Object.assign({}, s.f, { sponsorship: '' })
+        }));
+        this.showError('Hole sponsorship with alcohol is sold out. Please select another option.', '[name="sponsorship"]');
         return;
       }
       if (f.dietary === 'Other' && !f.dietaryOther.trim()) {
@@ -374,7 +379,12 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
             }));
           },
           dietaryOther: this.field('dietaryOther'),
-          sponsorship: this.field('sponsorship'),
+          sponsorship: e => {
+            const v = e.target.value === 'without-alcohol' ? 'without-alcohol' : '';
+            this.setState(s => ({
+              f: Object.assign({}, s.f, { sponsorship: v })
+            }));
+          },
           registrationConsent: this.field('registrationConsent'),
           playerDataConsent: this.field('playerDataConsent'),
           marketingConsent: this.field('marketingConsent')
