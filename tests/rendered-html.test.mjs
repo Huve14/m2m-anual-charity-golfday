@@ -9,11 +9,14 @@ import {
 } from "../api/_registration.js";
 
 test("builds the confirmed M2M Invitational experience for Vercel", async () => {
-  const [html, hole, golfStage, privacy] = await Promise.all([
+  const [html, hole, golfStage, privacy, support, indexLogic, holeLogic] = await Promise.all([
     readFile(new URL("../dist/index.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/hole-2.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/golf-3d.js", import.meta.url), "utf8"),
     readFile(new URL("../dist/privacy.html", import.meta.url), "utf8"),
+    readFile(new URL("../dist/support.js", import.meta.url), "utf8"),
+    readFile(new URL("../dist/index-logic.js", import.meta.url), "utf8"),
+    readFile(new URL("../dist/hole-2-logic.js", import.meta.url), "utf8"),
   ]);
 
   assert.match(html, /M2M Invitational \| Fourball Registration/);
@@ -56,6 +59,11 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(golfStage, /Montserrat, Arial, sans-serif/);
   assert.match(golfStage, /\/vendor\/three\.module\.js/);
   assert.doesNotMatch(golfStage, /unpkg\.com\/three/);
+  assert.match(html, /index-logic\.js/);
+  assert.match(hole, /hole-2-logic\.js/);
+  assert.match(indexLogic, /__dcLogicFactories\["index"\]/);
+  assert.match(holeLogic, /__dcLogicFactories\["hole-2"\]/);
+  assert.doesNotMatch(support, /new Function|unpkg\.com|BABEL_URL|ensureBabel/);
   assert.match(golfStage, /if \(!this\._camPos \|\| !this\._camTgt \|\| !this\._cam\) return/);
   assert.match(golfStage, /constrained \? 1\.3 : 2/);
   assert.match(privacy, /Privacy &amp; POPIA Notice/);
@@ -85,6 +93,8 @@ test("keeps secrets and provider diagnostics out of public registration response
   assert.doesNotMatch(healthSource, /serviceRoleConfigured|registrationTable|composioApiConfigured/);
   assert.match(vercelConfig, /Content-Security-Policy/);
   assert.match(vercelConfig, /frame-ancestors 'none'/);
+  assert.match(vercelConfig, /script-src 'self';/);
+  assert.doesNotMatch(vercelConfig, /unsafe-eval|unpkg\.com/);
   assert.match(vercelConfig, /X-Content-Type-Options/);
   assert.match(vercelConfig, /Permissions-Policy/);
 });

@@ -83,6 +83,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (
+      typeof req.body === "string" &&
+      Buffer.byteLength(req.body, "utf8") > MAX_BODY_BYTES
+    ) {
+      send(res, 413, { ok: false, message: "The registration is too large." });
+      return;
+    }
+
     const body = parseBody(req);
     const measuredLength = Buffer.byteLength(JSON.stringify(body ?? null), "utf8");
     if (measuredLength > MAX_BODY_BYTES) {

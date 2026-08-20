@@ -94,3 +94,20 @@ test("rejects non-JSON requests before any storage call", async () => {
     message: "JSON content is required.",
   });
 });
+
+test("measures the raw JSON string before parsing", async () => {
+  const req = {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: `${" ".repeat(32_001)}{}`,
+  };
+  const res = createResponse();
+
+  await registerHandler(req, res);
+
+  assert.equal(res.statusCode, 413);
+  assert.deepEqual(JSON.parse(res.body), {
+    ok: false,
+    message: "The registration is too large.",
+  });
+});
