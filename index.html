@@ -40,7 +40,7 @@
     --m2m-silver:#DCDDDE;
     --m2m-silver-muted:#A9AFB8;
   }
-  body{margin:0;background:#0C1735;color:#DCDDDE;font-family:'Montserrat','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-wrap:break-word;overflow-x:hidden}
+  body{margin:0;min-height:100%;background:#0C1735;color:#DCDDDE;font-family:'Montserrat','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-wrap:break-word;overflow-x:hidden;overscroll-behavior-x:none}
   img,video,canvas{max-width:100%}
   section[id]{scroll-margin-top:84px}
   a{color:#EEF0F1;text-decoration:none}
@@ -48,8 +48,11 @@
   ::selection{background:#ED1C24;color:#FFFDFC}
   input,select,textarea,button{font-family:inherit;font-size:inherit;color:inherit}
   input,select,textarea,button,a{touch-action:manipulation}
-  input,select,textarea,button{min-height:44px}
+  input,select,textarea,button{min-height:48px}
+  input,select,textarea{-webkit-appearance:none;appearance:none;border-radius:0}
+  input[type="checkbox"]{-webkit-appearance:auto;appearance:auto}
   input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:1px solid #ED1C24;outline-offset:2px}
+  button:disabled{cursor:wait;opacity:.72;transform:none!important}
   [data-entry-form] input[type="text"],
   [data-entry-form] input[type="email"],
   [data-entry-form] input[type="tel"],
@@ -58,6 +61,7 @@
     background:#FFFFFF!important;
     color:#111418!important;
     border-color:rgba(20, 24, 33, 0.5)!important;
+    font-size:16px!important;
   }
   [data-entry-form] input[type="text"]:focus,
   [data-entry-form] input[type="email"]:focus,
@@ -76,6 +80,13 @@
     background:#FFFFFF;
     color:#111418;
   }
+  [data-form-progress]{border:1px solid rgba(220,221,222,.2);background:rgba(12,23,53,.92);box-shadow:0 16px 42px -30px rgba(0,0,0,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  [data-progress-track]{overflow:hidden;background:rgba(220,221,222,.14)}
+  [data-progress-bar]{height:100%;background:linear-gradient(90deg,var(--m2m-red),#ff4350);transition:width .35s ease}
+  [data-entry-form] [data-consent-option]{min-height:48px;padding:4px 0}
+  [data-entry-form] [data-consent-option] input{flex:0 0 auto}
+  [data-submit-block]{scroll-margin-top:86px;padding-bottom:max(0px,env(safe-area-inset-bottom))}
+  [data-form-error]{scroll-margin-top:96px}
   input::placeholder,textarea::placeholder{color:#c5ccd5}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   [style*="color:#C8102E"]{color:var(--m2m-red)!important}
@@ -177,6 +188,8 @@
     [data-qty-stepper] button{width:52px!important}
     [data-entry-summary]{box-shadow:0 26px 60px -46px rgba(0,0,0,.9)!important}
     [data-footer-inner]{align-items:flex-start!important;flex-direction:column!important}
+    [data-entry-form] input[type="text"],[data-entry-form] input[type="email"],[data-entry-form] input[type="tel"],[data-entry-form] select,[data-entry-form] textarea{font-size:16px!important}
+    [data-entry-form] label>span:first-child{line-height:1.35!important}
     .m2m-pattern-hero{right:-20%;top:18%;width:66vw;opacity:.13}
     .m2m-pattern-register{right:-24%;top:120px;width:60vw;opacity:.07}
     .m2m-pattern-course{right:-24%;top:12%;width:62vw;opacity:.13}
@@ -204,6 +217,15 @@
     #register,#course>div:last-child,#contact{padding-left:16px!important;padding-right:16px!important}
     [data-registration-grid],[data-course-grid],[data-contact-grid]{min-width:0}
     [data-entry-form]{min-width:0;gap:36px!important}
+    [data-form-progress]{position:sticky!important;top:64px;z-index:14;margin:0 -4px;padding:14px 14px 13px!important}
+    [data-progress-copy]{font-size:9px!important;letter-spacing:.15em!important}
+    [data-entry-form] fieldset{min-width:0}
+    [data-entry-form] select{padding-top:15px!important;padding-bottom:15px!important}
+    [data-entry-form] textarea{min-height:120px}
+    [data-consent-section]{padding:20px 16px!important}
+    [data-entry-form] [data-consent-option]{grid-template-columns:24px minmax(0,1fr)!important;gap:12px!important;padding:7px 0}
+    [data-entry-form] [data-consent-option] input{width:22px!important;height:22px!important;min-height:22px!important}
+    [data-submit-block]{padding-bottom:max(8px,env(safe-area-inset-bottom))}
     [data-contact-fields]{grid-template-columns:minmax(0,1fr)!important}
     [data-player-row]{grid-template-columns:26px minmax(0,1fr) 72px!important;gap:8px!important}
     [data-player-row] input{min-width:0;padding-left:10px!important;padding-right:10px!important}
@@ -241,6 +263,7 @@
     [data-meta-grid]>div{padding-top:12px!important;padding-bottom:12px!important}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}}
 </style>
 </helmet>
 
@@ -373,28 +396,38 @@
       <div data-registration-grid="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:clamp(24px,3.4vw,58px);align-items:start">
 
         <!-- ─── the form ─── -->
-        <form data-entry-form="true" onSubmit="{{ onSubmit }}" style="display:flex;flex-direction:column;gap:clamp(30px,4.4vh,48px);order:1">
+        <form data-entry-form="true" onSubmit="{{ onSubmit }}" aria-busy="{{ sending }}" style="display:flex;flex-direction:column;gap:clamp(30px,4.4vh,48px);order:1">
+
+          <div data-form-progress="true" role="progressbar" aria-label="Registration progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progressValue }}" style="padding:16px 18px">
+            <div data-progress-copy="true" style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px;font:600 9.5px/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase">
+              <span style="color:#FFFDFC">Entry progress</span>
+              <span style="color:#ED1C24">{{ progressLabel }}</span>
+            </div>
+            <div data-progress-track="true" style="height:4px;width:100%">
+              <div data-progress-bar="true" style="width:{{ progressWidth }}"></div>
+            </div>
+          </div>
 
           <!-- company -->
           <fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:16px">
             <legend style="width:100%;padding:0 0 13px;border-bottom:1px solid rgba(215,217,220,.12);margin:0 0 20px;font:500 10px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#9aa0a8;text-shadow:0 1px 8px rgba(14,17,22,.9)">The company</legend>
             <label style="display:block">
               <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Company name <span style="color:#C8102E">*</span></span>
-              <input required type="text" name="company" autocomplete="organization" value="{{ f.company }}" onChange="{{ set.company }}" placeholder="Marketing 2 The Max (Pty) Ltd" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;transition:border-color .25s ease,background .25s ease" style-hover="border-color:rgba(215,217,220,.3)" style-focus="border-color:#C8102E;background:#262A2F">
+              <input required="{{ yes }}" type="text" name="company" autocomplete="organization" autocapitalize="words" enterkeyhint="next" maxlength="140" value="{{ f.company }}" onChange="{{ set.company }}" placeholder="Marketing 2 The Max (Pty) Ltd" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;transition:border-color .25s ease,background .25s ease" style-hover="border-color:rgba(215,217,220,.3)" style-focus="border-color:#C8102E;background:#262A2F">
             </label>
             <div data-contact-fields="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
               <label style="display:block">
                 <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Contact person <span style="color:#C8102E">*</span></span>
-                <input required type="text" name="contact" autocomplete="name" value="{{ f.contact }}" onChange="{{ set.contact }}" placeholder="Full name" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
+                <input required="{{ yes }}" type="text" name="contact" autocomplete="name" autocapitalize="words" enterkeyhint="next" maxlength="120" value="{{ f.contact }}" onChange="{{ set.contact }}" placeholder="Full name" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
               </label>
               <label style="display:block">
                 <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Mobile <span style="color:#C8102E">*</span></span>
-                <input required type="tel" name="phone" autocomplete="tel" inputmode="tel" value="{{ f.phone }}" onChange="{{ set.phone }}" placeholder="082 000 0000" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;font-family:'Montserrat',sans-serif;letter-spacing:.04em;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
+                <input required="{{ yes }}" type="tel" name="phone" autocomplete="tel" inputmode="tel" enterkeyhint="next" maxlength="30" value="{{ f.phone }}" onChange="{{ set.phone }}" placeholder="082 000 0000" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;font-family:'Montserrat',sans-serif;letter-spacing:.04em;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
               </label>
             </div>
             <label style="display:block">
               <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Email for the confirmation <span style="color:#C8102E">*</span></span>
-              <input required type="email" name="email" autocomplete="email" inputmode="email" value="{{ f.email }}" onChange="{{ set.email }}" placeholder="name@company.co.za" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
+              <input required="{{ yes }}" type="email" name="email" autocomplete="email" inputmode="email" enterkeyhint="next" autocapitalize="none" spellcheck="false" maxlength="254" value="{{ f.email }}" onChange="{{ set.email }}" placeholder="name@company.co.za" style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);border-bottom:1px solid rgba(215,217,220,.3);color:#FFFDFC;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
             </label>
             <label style="display:block">
               <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Hole sponsorship</span>
@@ -434,8 +467,8 @@
                   <sc-for list="{{ g.players }}" as="p" hint-placeholder-count="4">
                     <div data-player-row="true" style="display:grid;grid-template-columns:34px 1fr 96px;gap:10px;align-items:center">
                       <span style="font:400 11px/1 'Montserrat',sans-serif;color:#5f656d;font-variant-numeric:tabular-nums">{{ p.num }}</span>
-                      <input type="text" value="{{ p.name }}" onChange="{{ p.onName }}" placeholder="{{ p.ph }}" aria-label="Player name" style="width:100%;padding:13px 14px;background:#22252A;border:1px solid rgba(215,217,220,.12);color:#FFFDFC;font-size:14px;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
-                      <input type="text" inputmode="numeric" value="{{ p.hcp }}" onChange="{{ p.onHcp }}" placeholder="HCP" aria-label="Handicap" style="width:100%;padding:13px 12px;background:#22252A;border:1px solid rgba(215,217,220,.12);color:#FFFDFC;font-size:14px;font-family:'Montserrat',sans-serif;text-align:center;font-variant-numeric:tabular-nums;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
+                      <input type="text" autocomplete="off" autocapitalize="words" enterkeyhint="next" maxlength="120" value="{{ p.name }}" onChange="{{ p.onName }}" placeholder="{{ p.ph }}" aria-label="Player name" style="width:100%;padding:13px 14px;background:#22252A;border:1px solid rgba(215,217,220,.12);color:#FFFDFC;font-size:14px;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
+                      <input type="text" autocomplete="off" inputmode="numeric" enterkeyhint="next" maxlength="4" value="{{ p.hcp }}" onChange="{{ p.onHcp }}" placeholder="HCP" aria-label="Handicap" style="width:100%;padding:13px 12px;background:#22252A;border:1px solid rgba(215,217,220,.12);color:#FFFDFC;font-size:14px;font-family:'Montserrat',sans-serif;text-align:center;font-variant-numeric:tabular-nums;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
                     </div>
                   </sc-for>
                 </div>
@@ -461,12 +494,12 @@
             <sc-if value="{{ showDietaryOther }}" hint-placeholder-val="{{ false }}">
               <label style="display:block">
                 <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Please specify</span>
-                <input type="text" name="dietaryOther" value="{{ f.dietaryOther }}" onChange="{{ set.dietaryOther }}" placeholder="Enter dietary requirement" style="width:100%;padding:14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
+                <input required="{{ yes }}" type="text" name="dietaryOther" autocomplete="off" enterkeyhint="next" maxlength="240" value="{{ f.dietaryOther }}" onChange="{{ set.dietaryOther }}" placeholder="Enter dietary requirement" style="width:100%;padding:14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F">
               </label>
             </sc-if>
             <label style="display:block">
               <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Notes</span>
-              <textarea rows="3" name="notes" value="{{ f.notes }}" onChange="{{ set.notes }}" placeholder="One player needs a single cart. Add any extra notes for support." style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);color:#FFFDFC;font-size:15px;line-height:1.55;resize:vertical;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F"></textarea>
+              <textarea rows="3" name="notes" autocomplete="off" maxlength="1000" value="{{ f.notes }}" onChange="{{ set.notes }}" placeholder="One player needs a single cart. Add any extra notes for support." style="width:100%;padding:15px 16px;background:#22252A;border:1px solid rgba(215,217,220,.14);color:#FFFDFC;font-size:15px;line-height:1.55;resize:vertical;transition:border-color .25s ease,background .25s ease" style-focus="border-color:#C8102E;background:#262A2F"></textarea>
             </label>
           </fieldset>
 
@@ -474,15 +507,15 @@
           <fieldset data-consent-section="true" style="border:1px solid rgba(215,217,220,.18);margin:0;padding:clamp(18px,2.2vw,26px);display:flex;flex-direction:column;gap:16px;background:rgba(14,17,22,.72)">
             <legend style="padding:0 10px;font:600 10px/1 'Montserrat',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#C8102E">Privacy &amp; consent</legend>
             <p style="margin:0;font:400 12px/1.65 'Montserrat',sans-serif;color:#D7D9DC">M2M uses these details to manage your entry and creates a secure backend record that authorised M2M and event administrators can access. Read the <a href="/privacy.html" target="_blank" rel="noopener" style="color:#FFFDFC;text-decoration:underline;text-decoration-color:#C8102E;text-underline-offset:3px">Privacy &amp; POPIA Notice</a>.</p>
-            <label style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start;cursor:pointer">
-              <input required type="checkbox" name="registrationConsent" checked="{{ f.registrationConsent }}" onChange="{{ set.registrationConsent }}" style="width:20px;height:20px;min-height:20px;margin:2px 0 0;accent-color:#C8102E">
+            <label data-consent-option="true" style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start;cursor:pointer">
+              <input required="{{ yes }}" type="checkbox" name="registrationConsent" checked="{{ f.registrationConsent }}" onChange="{{ set.registrationConsent }}" style="width:20px;height:20px;min-height:20px;margin:2px 0 0;accent-color:#C8102E">
               <span style="font:400 12px/1.6 'Montserrat',sans-serif;color:#D7D9DC"><strong style="color:#C8102E">Required.</strong> I have read the Privacy &amp; POPIA Notice and consent to M2M and authorised event administrators accessing and processing my registration details in secure backend systems for event administration, contact, billing, dietary or accessibility arrangements, and account administration.</span>
             </label>
-            <label style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start;cursor:pointer">
-              <input required type="checkbox" name="playerDataConsent" checked="{{ f.playerDataConsent }}" onChange="{{ set.playerDataConsent }}" style="width:20px;height:20px;min-height:20px;margin:2px 0 0;accent-color:#C8102E">
+            <label data-consent-option="true" style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start;cursor:pointer">
+              <input required="{{ yes }}" type="checkbox" name="playerDataConsent" checked="{{ f.playerDataConsent }}" onChange="{{ set.playerDataConsent }}" style="width:20px;height:20px;min-height:20px;margin:2px 0 0;accent-color:#C8102E">
               <span style="font:400 12px/1.6 'Montserrat',sans-serif;color:#D7D9DC"><strong style="color:#C8102E">Required.</strong> I confirm that I am authorised to provide the listed players&rsquo; details and consent to M2M using any dietary or accessibility information supplied solely to arrange and administer the event.</span>
             </label>
-            <label style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start;cursor:pointer">
+            <label data-consent-option="true" style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start;cursor:pointer">
               <input type="checkbox" name="marketingConsent" checked="{{ f.marketingConsent }}" onChange="{{ set.marketingConsent }}" style="width:20px;height:20px;min-height:20px;margin:2px 0 0;accent-color:#C8102E">
               <span style="font:400 12px/1.6 'Montserrat',sans-serif;color:#D7D9DC"><strong style="color:#FFFDFC">Optional.</strong> I would like M2M to send me future event and marketing communications. I can opt out at any time.</span>
             </label>
@@ -490,14 +523,17 @@
           </fieldset>
 
           <!-- submit -->
-          <div style="display:flex;flex-direction:column;gap:16px">
+          <div data-submit-block="true" style="display:flex;flex-direction:column;gap:16px">
             <label aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden">Website<input type="text" name="website" value="" tabindex="-1" autocomplete="off"></label>
-            <button type="submit" data-brand-cta="true" style="position:relative;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;width:100%;padding:clamp(18px,2vw,24px) clamp(22px,2.4vw,32px);background:#C8102E;border:0;color:#FFFDFC;font:700 clamp(11px,.9vw,13px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);box-shadow:0 18px 50px -20px rgba(200,16,46,.9);transition:background .3s ease,transform .3s ease" style-hover="background:#A70B24;transform:translateY(-2px)">
+            <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+              <p role="status" aria-live="polite" style="margin:0;padding:13px 15px;border-left:2px solid #ED1C24;background:rgba(237,28,36,.1);font:500 12px/1.6 'Montserrat',sans-serif;color:#FFFDFC">You are offline. Your details remain on this page. Reconnect before sending your entry.</p>
+            </sc-if>
+            <button type="submit" data-brand-cta="true" disabled="{{ submitDisabled }}" aria-disabled="{{ submitDisabled }}" style="position:relative;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;width:100%;padding:clamp(18px,2vw,24px) clamp(22px,2.4vw,32px);background:#C8102E;border:0;color:#FFFDFC;font:700 clamp(11px,.9vw,13px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);box-shadow:0 18px 50px -20px rgba(200,16,46,.9);transition:background .3s ease,transform .3s ease" style-hover="background:#A70B24;transform:translateY(-2px)">
               <span>{{ submitLabel }}</span>
               <span style="font-size:1.2em;line-height:0">&#8594;</span>
             </button>
             <sc-if value="{{ error }}" hint-placeholder-val="{{ false }}">
-              <p role="alert" style="margin:0;padding:13px 15px;border-left:2px solid #C8102E;background:rgba(200,16,46,.1);font:500 12px/1.6 'Montserrat',sans-serif;color:#EEF0F1">{{ error }}</p>
+              <p data-form-error="true" role="alert" aria-live="assertive" tabindex="-1" style="margin:0;padding:13px 15px;border-left:2px solid #C8102E;background:rgba(200,16,46,.1);font:500 12px/1.6 'Montserrat',sans-serif;color:#EEF0F1">{{ error }}</p>
             </sc-if>
             <p style="margin:0;font:400 11px/1.7 'Montserrat',sans-serif;letter-spacing:.04em;color:#6a6f77">Submitting this form records your RSVP, selected sponsorship option and consent choices. The event team will follow up using the contact details above.</p>
           </div>
@@ -727,12 +763,27 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 
 class Component extends DCLogic {
   state = {
-    shot: 0, done: false, sending: false, error: false,
+    shot: 0, done: false, sending: false, error: false, online: navigator.onLine,
     f: { company: '', contact: '', phone: '', email: '', notes: '', dietary: '', dietaryOther: '', sponsorship: '', qty: 1, players: {}, registrationConsent: false, playerDataConsent: false, marketingConsent: false }
   };
 
   componentDidMount() {
     this._stage = null;
+    this._setNetworkState = () => this.setState({ online: navigator.onLine });
+    window.addEventListener('online', this._setNetworkState);
+    window.addEventListener('offline', this._setNetworkState);
+    this._smoothAnchor = e => {
+      const link = e.target.closest && e.target.closest('a[href^="#"]');
+      if (!link) return;
+      const id = link.getAttribute('href');
+      const target = id && id.length > 1 ? document.querySelector(id) : document.querySelector('#top');
+      if (!target) return;
+      e.preventDefault();
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      history.replaceState(null, '', id || '#top');
+    };
+    document.addEventListener('click', this._smoothAnchor);
     // the web component mounts asynchronously; grab it when it lands
     const find = () => {
       const el = document.querySelector('golf-stage');
@@ -772,7 +823,13 @@ class Component extends DCLogic {
       v.addEventListener('loadeddata', go, { once: true });
     }
   }
-  componentWillUnmount() { clearTimeout(this._t); if (this._io) this._io.disconnect(); }
+  componentWillUnmount() {
+    clearTimeout(this._t);
+    if (this._io) this._io.disconnect();
+    window.removeEventListener('online', this._setNetworkState);
+    window.removeEventListener('offline', this._setNetworkState);
+    document.removeEventListener('click', this._smoothAnchor);
+  }
 
   get price() { return Math.max(0, Number(this.props.pricePerFourBall ?? 15000)); }
   get maxQty() { return Math.max(1, Number(this.props.maxFourBalls ?? 6)); }
@@ -825,35 +882,55 @@ class Component extends DCLogic {
     }));
   }
 
+  showError(message, selector) {
+    this.setState({ error: message, sending: false });
+    setTimeout(() => {
+      const target = (selector && document.querySelector(selector)) || document.querySelector('[data-form-error]');
+      if (!target) return;
+      if (target.focus) target.focus({ preventScroll: true });
+      target.scrollIntoView({
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'center'
+      });
+    }, 40);
+  }
+
   submit = async e => {
     e.preventDefault();
     if (this.state.sending) return;
     const f = this.state.f;
     if (!f.company.trim() || !f.contact.trim() || !f.phone.trim() || !f.email.trim()) {
-      this.setState({ error: 'Complete the company, contact person, mobile and email fields.' });
+      const firstMissing = !f.company.trim() ? '[name="company"]'
+        : !f.contact.trim() ? '[name="contact"]'
+        : !f.phone.trim() ? '[name="phone"]' : '[name="email"]';
+      this.showError('Complete the company, contact person, mobile and email fields.', firstMissing);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
-      this.setState({ error: 'Enter a valid email address.' });
+      this.showError('Enter a valid email address.', '[name="email"]');
       return;
     }
     if (!/^[+()\d\s.-]{7,30}$/.test(f.phone.trim())) {
-      this.setState({ error: 'Enter a valid mobile number.' });
+      this.showError('Enter a valid mobile number.', '[name="phone"]');
       return;
     }
     const dietary = f.dietary === 'Other'
       ? `${f.dietaryOther.trim() ? `Other (${f.dietaryOther.trim()})` : 'Other'}`
       : f.dietary;
     if (f.dietary === 'Other' && !f.dietaryOther.trim()) {
-      this.setState({ error: 'Please specify your dietary requirement.' });
+      this.showError('Please specify your dietary requirement.', '[name="dietaryOther"]');
       return;
     }
     if (!f.registrationConsent) {
-      this.setState({ error: 'Please read and accept the Privacy & POPIA Notice to register.' });
+      this.showError('Please read and accept the Privacy & POPIA Notice to register.', '[name="registrationConsent"]');
       return;
     }
     if (!f.playerDataConsent) {
-      this.setState({ error: "Please confirm that you may provide the listed players' details." });
+      this.showError("Please confirm that you may provide the listed players' details.", '[name="playerDataConsent"]');
+      return;
+    }
+    if (!this.state.online) {
+      this.showError('You are offline. Reconnect, then send your entry again.', '[data-submit-block]');
       return;
     }
     const players = [];
@@ -863,10 +940,15 @@ class Component extends DCLogic {
     }
 
     this.setState({ sending: true, error: '' });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
     try {
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        cache: 'no-store',
+        signal: controller.signal,
         body: JSON.stringify({
           company: f.company,
           contactName: f.contact,
@@ -889,13 +971,15 @@ class Component extends DCLogic {
         throw new Error(result.message || 'We could not save your entry. Please try again.');
       }
     } catch (error) {
-      this.setState({
-        sending: false,
-        error: error && error.message
+      const message = error && error.name === 'AbortError'
+        ? 'The connection took too long. Your details are still here. Please try again.'
+        : error && error.message
           ? error.message
-          : 'We could not save your entry. Please try again.'
-      });
+          : 'We could not save your entry. Please try again.';
+      this.showError(message, '[data-submit-block]');
       return;
+    } finally {
+      clearTimeout(timeout);
     }
     this.setState({ done: true, sending: false, shot: 1 });
     const st = this._stage || document.querySelector('golf-stage');
@@ -939,9 +1023,26 @@ class Component extends DCLogic {
     }
 
     const named = Object.values(f.players).filter(p => p && p.name && p.name.trim()).length;
+    const essentialChecks = [
+      !!f.company.trim(),
+      !!f.contact.trim(),
+      /^[+()\d\s.-]{7,30}$/.test(f.phone.trim()),
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()),
+      f.registrationConsent,
+      f.playerDataConsent
+    ];
+    if (f.dietary === 'Other') essentialChecks.push(!!f.dietaryOther.trim());
+    const essentials = essentialChecks.filter(Boolean).length;
+    const essentialTotal = essentialChecks.length;
+    const progressValue = Math.round((essentials / essentialTotal) * 100);
 
     return {
-      f, groups, done: this.state.done, error: this.state.error,
+      f, groups, done: this.state.done, sending: this.state.sending, error: this.state.error,
+      offline: !this.state.online,
+      submitDisabled: this.state.sending || this.state.done || !this.state.online,
+      progressValue,
+      progressWidth: `${progressValue}%`,
+      progressLabel: progressValue === 100 ? 'Ready to send' : `${essentials} of ${essentialTotal} essentials`,
       dateShort, dateLong,
       priceLabel: this.money(this.price),
       totalLabel: this.money(total),

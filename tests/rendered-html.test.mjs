@@ -48,6 +48,12 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.doesNotMatch(html, /6500|6,500|Better-Ball|Entries close|Excl\. VAT|Section 18A|Paul McGinley/);
   assert.doesNotMatch(html, /entry\.\d+|docs\.google\.com\/forms|formResponse/);
   assert.match(html, /data-registration-grid/);
+  assert.match(html, /data-form-progress/);
+  assert.match(html, /Registration progress/);
+  assert.match(html, /data-consent-option/);
+  assert.match(html, /enterkeyhint="next"/);
+  assert.match(html, /font-size:16px!important/);
+  assert.match(html, /env\(safe-area-inset-bottom\)/);
   assert.match(html, /@media \(max-width:560px\)/);
   assert.match(html, /family=Montserrat/);
   assert.match(html, /font-family:(?:'Aquire','Montserrat',sans-serif|var\(--heading-font\))/);
@@ -62,6 +68,10 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(html, /index-logic\.js/);
   assert.match(hole, /hole-2-logic\.js/);
   assert.match(indexLogic, /__dcLogicFactories\["index"\]/);
+  assert.match(indexLogic, /AbortController/);
+  assert.match(indexLogic, /credentials: 'same-origin'/);
+  assert.match(indexLogic, /progressLabel/);
+  assert.match(indexLogic, /addEventListener\('offline'/);
   assert.match(holeLogic, /__dcLogicFactories\["hole-2"\]/);
   assert.doesNotMatch(support, /new Function|unpkg\.com|BABEL_URL|ensureBabel/);
   assert.match(golfStage, /if \(!this\._camPos \|\| !this\._camTgt \|\| !this\._cam\) return/);

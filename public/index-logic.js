@@ -4,12 +4,27 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
   
   class Component extends DCLogic {
     state = {
-      shot: 0, done: false, sending: false, error: false,
+      shot: 0, done: false, sending: false, error: false, online: navigator.onLine,
       f: { company: '', contact: '', phone: '', email: '', notes: '', dietary: '', dietaryOther: '', sponsorship: '', qty: 1, players: {}, registrationConsent: false, playerDataConsent: false, marketingConsent: false }
     };
   
     componentDidMount() {
       this._stage = null;
+      this._setNetworkState = () => this.setState({ online: navigator.onLine });
+      window.addEventListener('online', this._setNetworkState);
+      window.addEventListener('offline', this._setNetworkState);
+      this._smoothAnchor = e => {
+        const link = e.target.closest && e.target.closest('a[href^="#"]');
+        if (!link) return;
+        const id = link.getAttribute('href');
+        const target = id && id.length > 1 ? document.querySelector(id) : document.querySelector('#top');
+        if (!target) return;
+        e.preventDefault();
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+        history.replaceState(null, '', id || '#top');
+      };
+      document.addEventListener('click', this._smoothAnchor);
       // the web component mounts asynchronously; grab it when it lands
       const find = () => {
         const el = document.querySelector('golf-stage');
@@ -52,7 +67,13 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
         v.addEventListener('loadeddata', go, { once: true });
       }
     }
-    componentWillUnmount() { clearTimeout(this._t); if (this._io) this._io.disconnect(); }
+    componentWillUnmount() {
+      clearTimeout(this._t);
+      if (this._io) this._io.disconnect();
+      window.removeEventListener('online', this._setNetworkState);
+      window.removeEventListener('offline', this._setNetworkState);
+      document.removeEventListener('click', this._smoothAnchor);
+    }
   
     get price() { return Math.max(0, Number(this.props.pricePerFourBall ?? 15000)); }
     get maxQty() { return Math.max(1, Number(this.props.maxFourBalls ?? 6)); }
@@ -104,33 +125,53 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
         f: Object.assign({}, s.f, { qty: Math.min(this.maxQty, Math.max(1, s.f.qty + d)) })
       }));
     }
+
+    showError(message, selector) {
+      this.setState({ error: message, sending: false });
+      setTimeout(() => {
+        const target = (selector && document.querySelector(selector)) || document.querySelector('[data-form-error]');
+        if (!target) return;
+        if (target.focus) target.focus({ preventScroll: true });
+        target.scrollIntoView({
+          behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+          block: 'center'
+        });
+      }, 40);
+    }
   
     submit = async e => {
       e.preventDefault();
       if (this.state.sending) return;
       const f = this.state.f;
       if (!f.company.trim() || !f.contact.trim() || !f.phone.trim() || !f.email.trim()) {
-        this.setState({ error: 'Complete the company, contact person, mobile and email fields.' });
+        const firstMissing = !f.company.trim() ? '[name="company"]'
+          : !f.contact.trim() ? '[name="contact"]'
+          : !f.phone.trim() ? '[name="phone"]' : '[name="email"]';
+        this.showError('Complete the company, contact person, mobile and email fields.', firstMissing);
         return;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
-        this.setState({ error: 'Enter a valid email address.' });
+        this.showError('Enter a valid email address.', '[name="email"]');
         return;
       }
       if (!/^[+()\d\s.-]{7,30}$/.test(f.phone.trim())) {
-        this.setState({ error: 'Enter a valid mobile number.' });
+        this.showError('Enter a valid mobile number.', '[name="phone"]');
         return;
       }
       if (f.dietary === 'Other' && !f.dietaryOther.trim()) {
-        this.setState({ error: 'Please specify your dietary requirement.' });
+        this.showError('Please specify your dietary requirement.', '[name="dietaryOther"]');
         return;
       }
       if (!f.registrationConsent) {
-        this.setState({ error: 'Please read and accept the Privacy & POPIA Notice to register.' });
+        this.showError('Please read and accept the Privacy & POPIA Notice to register.', '[name="registrationConsent"]');
         return;
       }
       if (!f.playerDataConsent) {
-        this.setState({ error: "Please confirm that you may provide the listed players' details." });
+        this.showError("Please confirm that you may provide the listed players' details.", '[name="playerDataConsent"]');
+        return;
+      }
+      if (!this.state.online) {
+        this.showError('You are offline. Reconnect, then send your entry again.', '[data-submit-block]');
         return;
       }
       const players = [];
@@ -140,10 +181,15 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
       }
   
       this.setState({ sending: true, error: '' });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25000);
       try {
         const response = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          cache: 'no-store',
+          signal: controller.signal,
           body: JSON.stringify({
             company: f.company,
             contactName: f.contact,
@@ -166,13 +212,15 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
           throw new Error(result.message || 'We could not save your entry. Please try again.');
         }
       } catch (error) {
-        this.setState({
-          sending: false,
-          error: error && error.message
+        const message = error && error.name === 'AbortError'
+          ? 'The connection took too long. Your details are still here. Please try again.'
+          : error && error.message
             ? error.message
-            : 'We could not save your entry. Please try again.'
-        });
+            : 'We could not save your entry. Please try again.';
+        this.showError(message, '[data-submit-block]');
         return;
+      } finally {
+        clearTimeout(timeout);
       }
       this.setState({ done: true, sending: false, shot: 1 });
       const st = this._stage || document.querySelector('golf-stage');
@@ -216,9 +264,26 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
       }
   
       const named = Object.values(f.players).filter(p => p && p.name && p.name.trim()).length;
+      const essentialChecks = [
+        !!f.company.trim(),
+        !!f.contact.trim(),
+        /^[+()\d\s.-]{7,30}$/.test(f.phone.trim()),
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()),
+        f.registrationConsent,
+        f.playerDataConsent
+      ];
+      if (f.dietary === 'Other') essentialChecks.push(!!f.dietaryOther.trim());
+      const essentials = essentialChecks.filter(Boolean).length;
+      const essentialTotal = essentialChecks.length;
+      const progressValue = Math.round((essentials / essentialTotal) * 100);
   
       return {
-        f, groups, done: this.state.done, error: this.state.error,
+        f, groups, done: this.state.done, sending: this.state.sending, error: this.state.error,
+        offline: !this.state.online,
+        submitDisabled: this.state.sending || this.state.done || !this.state.online,
+        progressValue,
+        progressWidth: `${progressValue}%`,
+        progressLabel: progressValue === 100 ? 'Ready to send' : `${essentials} of ${essentialTotal} essentials`,
         dateShort, dateLong,
         priceLabel: this.money(this.price),
         totalLabel: this.money(total),
