@@ -502,9 +502,13 @@
               <select name="sponsorship" value="{{ f.sponsorship }}" onChange="{{ set.sponsorship }}" style="width:100%;padding:14px 42px 14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;cursor:pointer" style-focus="border-color:#C8102E">
                 <option value="">No hole sponsorship</option>
                 <option value="without-alcohol">Hole sponsorship without alcohol, R12 500</option>
-                <option value="with-alcohol" disabled style="text-decoration:line-through">Hole sponsorship with alcohol, R17 000 (SOLD OUT)</option>
               </select>
-              <span style="display:block;margin-top:10px;font-size:12px;line-height:1.55;color:#7c828a">The best hole wins an award and prize.</span>
+              <span style="display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:10px;font-size:12px;line-height:1.55;color:#7c828a">
+                <span style="text-decoration:line-through;text-decoration-color:#ED1C24;text-decoration-thickness:2px">Hole sponsorship with alcohol, R17 000</span>
+                <strong style="color:#ED1C24;letter-spacing:.08em">SOLD OUT</strong>
+                <span aria-hidden="true">&middot;</span>
+                <span>The best hole wins an award and prize.</span>
+              </span>
             </label>
           </fieldset>
 
@@ -969,13 +973,11 @@ class Component extends DCLogic {
   money(n) { return this.cur + n.toLocaleString('en-ZA'); }
 
   sponsorPrice(kind) {
-    if (kind === 'with-alcohol') return 17000;
     if (kind === 'without-alcohol') return 12500;
     return 0;
   }
 
   sponsorLabel(kind) {
-    if (kind === 'with-alcohol') return 'Hole sponsorship with alcohol (SOLD OUT)';
     if (kind === 'without-alcohol') return 'Hole sponsorship without alcohol';
     return '';
   }
@@ -1043,6 +1045,13 @@ class Component extends DCLogic {
     }
     if (!/^[+()\d\s.-]{7,30}$/.test(f.phone.trim())) {
       this.showError('Enter a valid mobile number.', '[name="phone"]');
+      return;
+    }
+    if (f.sponsorship === 'with-alcohol') {
+      this.setState(s => ({
+        f: Object.assign({}, s.f, { sponsorship: '' })
+      }));
+      this.showError('Hole sponsorship with alcohol is sold out. Please select another option.', '[name="sponsorship"]');
       return;
     }
     const dietary = f.dietary === 'Other'
@@ -1210,7 +1219,12 @@ class Component extends DCLogic {
           }));
         },
         dietaryOther: this.field('dietaryOther'),
-        sponsorship: this.field('sponsorship'),
+        sponsorship: e => {
+          const v = e.target.value === 'without-alcohol' ? 'without-alcohol' : '';
+          this.setState(s => ({
+            f: Object.assign({}, s.f, { sponsorship: v })
+          }));
+        },
         registrationConsent: this.field('registrationConsent'),
         playerDataConsent: this.field('playerDataConsent'),
         marketingConsent: this.field('marketingConsent')
