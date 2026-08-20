@@ -75,7 +75,9 @@
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   [style*="color:#C8102E"]{color:var(--m2m-red)!important}
   .m2m-red-text{color:var(--m2m-red)!important}
+  .m2m-blue-text{color:var(--m2m-navy-soft)!important}
   [data-course-story-title]>span{white-space:nowrap}
+  [data-fly-title]>span{display:block;white-space:nowrap}
   [style*="color:#7c828a"],[style*="color:#7c828a!important"],[style*="color:#8f959d"],[style*="color:#8f959d!important"],[style*="color:#9aa0a8"],[style*="color:#9aa0a8!important"],[style*="color:#5f656d"],[style*="color:#6a6f77"],[style*="color:#4d525a"]{color:var(--m2m-navy-soft)!important}
   @keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
   @keyframes wipe{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -117,6 +119,9 @@
     [data-course-grid],[data-contact-grid]{grid-template-columns:minmax(0,1fr)!important}
     [data-course-story]{max-width:100%!important;padding-right:0!important}
     [data-course-story-title]{font-size:clamp(38px,8.8vw,64px)!important;gap:clamp(10px,1.8vh,16px)!important}
+    [data-fly-grid]{gap:clamp(42px,7vh,68px)!important}
+    [data-fly-title]{font-size:clamp(36px,7.8vw,56px)!important;gap:10px!important}
+    [data-hole-stats]{max-width:100%!important}
     [data-course-grid] > *[style*="order"]{width:100%}
     [data-qty-stepper]{width:100%!important}
     [data-qty-stepper] > div{min-width:0!important;flex:1 1 auto!important}
@@ -151,6 +156,10 @@
     [data-course-story-title]{font-size:clamp(28px,9vw,42px)!important;line-height:.98!important;letter-spacing:-.025em!important;gap:12px!important}
     [data-course-story-meta]{align-items:flex-start!important;margin-top:28px!important}
     [data-course-story-meta]>span:last-child{white-space:normal!important;max-width:30ch}
+    [data-fly-section]{padding-top:58px!important;padding-bottom:74px!important}
+    [data-fly-title]{font-size:clamp(30px,9vw,40px)!important;line-height:.96!important;gap:9px!important;margin-bottom:30px!important}
+    [data-fly-description]{font-size:14px!important;line-height:1.8!important;padding-left:16px!important;margin-bottom:36px!important}
+    [data-hole-stat-row]{padding:17px 16px!important}
     [data-footer-inner]>div:last-child{font-size:9px!important;letter-spacing:.12em!important}
   }
   @media (max-width:360px){
@@ -508,47 +517,55 @@
     </div>
 
     <!-- the 2nd -->
-    <div style="max-width:1680px;margin:0 auto;padding:clamp(56px,7.6vh,104px) clamp(20px,5vw,82px) clamp(64px,9.5vh,118px)">
-      <div data-course-grid="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:clamp(30px,4vw,64px);align-items:center">
+    <div data-fly-section="true" style="position:relative;max-width:1680px;margin:0 auto;padding:clamp(64px,8.8vh,118px) clamp(20px,5vw,82px) clamp(76px,10.5vh,136px);background:radial-gradient(circle at 82% 34%,rgba(36,55,82,.38),transparent 42%),linear-gradient(135deg,rgba(36,55,82,.12),transparent 48%);overflow:hidden">
+      <div aria-hidden="true" style="position:absolute;left:0;top:clamp(54px,8vh,110px);width:3px;height:clamp(90px,12vw,180px);background:linear-gradient(180deg,#C8102E,#243752)"></div>
+      <div data-course-grid="true" data-fly-grid="true" style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:clamp(48px,6vw,96px);align-items:center">
 
-        <div>
-          <h2 style="margin:0 0 clamp(24px,3.4vh,36px);font-family:var(--heading-font);font-weight:600;font-size:clamp(30px,4.6vw,74px);line-height:.86;letter-spacing:-.034em;text-transform:uppercase;color:#FFFDFC;text-wrap:balance">
-            Fly the <em style="font-family:'Montserrat',sans-serif;font-style:italic;font-variation-settings:normal;font-weight:400;text-transform:none;letter-spacing:-.015em;color:#C8102E">2nd</em> before you play it
+        <div data-fly-copy="true">
+          <div style="display:flex;align-items:center;gap:13px;margin-bottom:clamp(22px,3vh,32px)">
+            <span style="width:34px;height:2px;background:#C8102E"></span>
+            <span class="m2m-blue-text" style="font:600 9.5px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase">Glendower &middot; Hole 02</span>
+          </div>
+          <h2 data-fly-title="true" style="margin:0 0 clamp(36px,4.6vh,52px);display:flex;flex-direction:column;gap:clamp(8px,1.2vh,14px);font-family:var(--heading-font);font-weight:600;font-size:clamp(38px,3.9vw,62px);line-height:.94;letter-spacing:-.028em;text-transform:uppercase;color:#FFFDFC">
+            <span>Fly the <em class="m2m-red-text" style="font-family:'Montserrat',sans-serif;font-style:italic;font-variation-settings:normal;font-weight:500;text-transform:none;letter-spacing:-.015em">2nd</em></span>
+            <span class="m2m-blue-text">Before you</span>
+            <span>Play it<span class="m2m-red-text">.</span></span>
           </h2>
-          <p style="margin:0 0 clamp(32px,4.5vh,48px);max-width:47ch;font-size:clamp(14px,1.15vw,17px);line-height:1.72;color:#8f959d;text-wrap:pretty">
-            We built Glendower&rsquo;s second hole as a live 3D model you can walk the camera through, from tee to green and tree line to bunkering. Open it, fly it, and know the hole before your fourball arrives.
+          <p data-fly-description="true" style="margin:0 0 clamp(38px,5.2vh,58px);max-width:52ch;padding-left:clamp(18px,2vw,28px);border-left:2px solid #243752;font-size:clamp(14px,1.05vw,16.5px);line-height:1.85;color:#D7D9DC;text-wrap:pretty">
+            We built Glendower&rsquo;s second hole as a <span class="m2m-blue-text" style="font-weight:600">live 3D model</span> you can walk the camera through, from tee to green and tree line to bunkering. <span class="m2m-red-text" style="font-weight:600">Open it, fly it</span>, and know the hole before your fourball arrives.
           </p>
 
-          <div style="display:flex;flex-direction:column;gap:1px;background:rgba(215,217,220,.14);border:1px solid rgba(215,217,220,.14);max-width:38ch">
-            <div style="background:#191B1F;padding:clamp(15px,1.8vw,21px) clamp(16px,2vw,22px);display:flex;align-items:baseline;justify-content:space-between;gap:16px">
-              <span style="font:400 9px/1 'Montserrat',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#7c828a">Hole</span>
-              <span style="font-family:var(--heading-font);font-weight:600;font-size:clamp(20px,2.2vw,30px);line-height:1;letter-spacing:-.035em;color:#C8102E;font-variant-numeric:tabular-nums">02</span>
+          <div data-hole-stats="true" style="display:flex;flex-direction:column;gap:1px;background:rgba(142,166,202,.22);border:1px solid rgba(142,166,202,.34);border-left:3px solid #C8102E;max-width:44ch;box-shadow:0 30px 70px -52px rgba(36,55,82,.95)">
+            <div data-hole-stat-row="true" style="background:linear-gradient(90deg,rgba(200,16,46,.12),rgba(20,25,34,.94));padding:clamp(17px,1.9vw,23px) clamp(18px,2.2vw,26px);display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+              <span class="m2m-blue-text" style="font:500 9px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase">Hole</span>
+              <span class="m2m-red-text" style="font-family:var(--heading-font);font-weight:600;font-size:clamp(22px,2.2vw,32px);line-height:1;letter-spacing:-.035em;font-variant-numeric:tabular-nums">02</span>
             </div>
-            <div style="background:#191B1F;padding:clamp(15px,1.8vw,21px) clamp(16px,2vw,22px);display:flex;align-items:baseline;justify-content:space-between;gap:16px">
-              <span style="font:400 9px/1 'Montserrat',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#7c828a">Course</span>
+            <div data-hole-stat-row="true" style="background:linear-gradient(90deg,rgba(36,55,82,.72),rgba(20,25,34,.94));padding:clamp(17px,1.9vw,23px) clamp(18px,2.2vw,26px);display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+              <span class="m2m-blue-text" style="font:500 9px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase">Course</span>
               <span style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:clamp(14px,1.4vw,19px);line-height:1;letter-spacing:-.02em;text-transform:uppercase;color:#EEF0F1">Parkland</span>
             </div>
-            <div style="background:#191B1F;padding:clamp(15px,1.8vw,21px) clamp(16px,2vw,22px);display:flex;align-items:baseline;justify-content:space-between;gap:16px">
-              <span style="font:400 9px/1 'Montserrat',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#7c828a">Flythrough</span>
-              <span style="font-family:'Montserrat',sans-serif;font-weight:500;font-size:clamp(13px,1.3vw,17px);line-height:1;letter-spacing:.02em;color:#EEF0F1;font-variant-numeric:tabular-nums">Tee &rarr; green</span>
+            <div data-hole-stat-row="true" style="background:linear-gradient(90deg,rgba(36,55,82,.44),rgba(20,25,34,.94));padding:clamp(17px,1.9vw,23px) clamp(18px,2.2vw,26px);display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+              <span class="m2m-blue-text" style="font:500 9px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase">Flythrough</span>
+              <span class="m2m-red-text" style="font-family:'Montserrat',sans-serif;font-weight:600;font-size:clamp(13px,1.3vw,17px);line-height:1;letter-spacing:.02em;font-variant-numeric:tabular-nums">Tee &rarr; green</span>
             </div>
           </div>
         </div>
 
         <!-- open the flythrough -->
-        <a data-course-card="true" href="/hole-2.html" style="display:block;position:relative;aspect-ratio:16/11;overflow:hidden;border:1px solid rgba(215,217,220,.16);background:#22252A;transition:border-color .4s ease" style-hover="border-color:#C8102E;color:#FFFDFC">
+        <a data-course-card="true" href="/hole-2.html" style="display:block;position:relative;aspect-ratio:16/11;overflow:hidden;border:1px solid rgba(142,166,202,.48);background:#243752;box-shadow:0 42px 100px -64px rgba(36,55,82,.95);transition:border-color .4s ease,transform .4s ease" style-hover="border-color:#C8102E;color:#FFFDFC;transform:translateY(-4px)">
           <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:400 10px/1.6 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#4d525a;text-align:center;padding:20px">Glendower Golf Club</div>
           <img src="https://glendower.co.za/resources/GLENDOWER/www/wp-content/uploads/2022/04/20180503_071555_0484-HDR-605x605.jpg" alt="Glendower Golf Club at first light" onError="{{ imgFail }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.86) contrast(1.06) brightness(.62)">
           <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(14,17,22,.6) 0%,rgba(14,17,22,.24) 42%,rgba(14,17,22,.92) 100%)"></div>
+          <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(145deg,rgba(36,55,82,.48),transparent 48%,rgba(36,55,82,.18))"></div>
           <div aria-hidden="true" style="position:absolute;top:-18%;right:-8%;width:44%;aspect-ratio:1/1.08;opacity:.3;background:linear-gradient(155deg,#C8102E,rgba(167,11,36,0));clip-path:polygon(0 0,18% 0,58% 50%,18% 100%,0 100%,40% 50%)"></div>
 
           <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(18px,2.4vw,30px)">
             <div style="display:flex;align-items:center;gap:12px">
               <span style="width:7px;height:7px;background:#C8102E;border-radius:50%;animation:pulse 2.6s ease-in-out infinite"></span>
-              <span style="font:500 9.5px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#EEF0F1">Live 3D</span>
+              <span class="m2m-blue-text" style="font:600 9.5px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase">Live 3D</span>
             </div>
             <div>
-              <div style="font-family:var(--heading-font);font-weight:600;font-size:clamp(26px,3.4vw,50px);line-height:.88;letter-spacing:-.035em;text-transform:uppercase;color:#FFFDFC;margin-bottom:14px">The 2nd</div>
+              <div style="font-family:var(--heading-font);font-weight:600;font-size:clamp(26px,3.4vw,50px);line-height:.88;letter-spacing:-.035em;text-transform:uppercase;color:#FFFDFC;margin-bottom:18px">The <span class="m2m-red-text">2nd</span></div>
               <span style="display:inline-flex;align-items:center;gap:14px;padding:clamp(13px,1.4vw,17px) clamp(18px,2vw,26px);background:#C8102E;color:#FFFDFC;font:700 clamp(9.5px,.8vw,12px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);box-shadow:0 16px 40px -18px rgba(200,16,46,.9)">
                 Open the flythrough
                 <span style="font-size:1.15em;line-height:0">&#8594;</span>
