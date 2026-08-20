@@ -82,8 +82,17 @@
     color:#5e6670!important;
   }
   [data-entry-form] select option {
-    background:#FFFFFF;
-    color:#111418;
+    background:#FFFFFF!important;
+    color:#111418!important;
+    -webkit-text-fill-color:#111418!important;
+    opacity:1;
+  }
+  [data-entry-form] select option:disabled {
+    background:#EEF0F2!important;
+    color:#7A8089!important;
+    -webkit-text-fill-color:#7A8089!important;
+    font-style:italic;
+    opacity:1;
   }
   [data-form-progress]{border:1px solid rgba(220,221,222,.2);background:rgba(12,23,53,.92);box-shadow:0 16px 42px -30px rgba(0,0,0,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
   [data-progress-track]{overflow:hidden;background:rgba(220,221,222,.14)}
@@ -515,10 +524,10 @@
               <select name="sponsorship" value="{{ f.sponsorship }}" onChange="{{ set.sponsorship }}" style="width:100%;padding:14px 42px 14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;cursor:pointer" style-focus="border-color:#C8102E">
                 <option value="">No hole sponsorship</option>
                 <option value="without-alcohol">Hole sponsorship without alcohol, R12 500</option>
+                <option value="with-alcohol" disabled="{{ yes }}">Hole sponsorship with alcohol, R17 000 - SOLD OUT</option>
               </select>
               <span style="display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:10px;font-size:12px;line-height:1.55;color:#7c828a">
-                <span style="text-decoration:line-through;text-decoration-color:#ED1C24;text-decoration-thickness:2px">Hole sponsorship with alcohol, R17 000</span>
-                <strong style="color:#ED1C24;letter-spacing:.08em">SOLD OUT</strong>
+                <strong style="color:#ED1C24;letter-spacing:.08em">ALCOHOL SPONSORSHIP SOLD OUT</strong>
                 <span aria-hidden="true">&middot;</span>
                 <span>The best hole wins an award and prize.</span>
               </span>
