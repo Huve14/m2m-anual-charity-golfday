@@ -26,6 +26,10 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(html, /apple-touch-icon\.png\?v=2/);
   assert.match(html, /site\.webmanifest/);
   assert.match(html, /m2m-golf-plate\.png/);
+  assert.match(html, /mobile-3d/);
+  assert.match(html, /navigator\.deviceMemory/);
+  assert.match(html, /connection\.saveData/);
+  assert.match(html, /golfstageerror/);
   assert.match(html, /A Hole A Day Keeps the Boredom Away/);
   assert.match(html, /Enter your/);
   assert.match(html, /Contact person/);
@@ -88,7 +92,10 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(holeLogic, /__dcLogicFactories\["hole-2"\]/);
   assert.doesNotMatch(support, /new Function|unpkg\.com|BABEL_URL|ensureBabel/);
   assert.match(golfStage, /if \(!this\._camPos \|\| !this\._camTgt \|\| !this\._cam\) return/);
-  assert.match(golfStage, /constrained \? 1\.3 : 2/);
+  assert.match(golfStage, /get isLite\(\)/);
+  assert.match(golfStage, /lite \? 1 : constrained \? 1\.3 : 2/);
+  assert.match(golfStage, /const NR = lite \? 900 : 3000/);
+  assert.match(golfStage, /const NT = lite \? 260 : 620/);
   assert.match(privacy, /Privacy &amp; POPIA Notice/);
   assert.match(privacy, /Version POPIA-2026-08-20/);
   assert.match(privacy, /Backend access and sharing/);

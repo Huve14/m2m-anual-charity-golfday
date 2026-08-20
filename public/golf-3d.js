@@ -265,8 +265,8 @@ function ballColorMap(THREE) {
 }
 
 /* dawn sky, equirect — drives every reflection in the scene */
-function skyCanvas() {
-  const W = 2048, H = 1024, c = document.createElement('canvas');
+function skyCanvas(lite = false) {
+  const W = lite ? 1024 : 2048, H = lite ? 512 : 1024, c = document.createElement('canvas');
   c.width = W; c.height = H;
   const x = c.getContext('2d');
   const g = x.createLinearGradient(0, 0, 0, H);
@@ -288,7 +288,7 @@ function skyCanvas() {
   x.fillStyle = sun; x.fillRect(0, 0, W, H);
   const n = makeNoise(77);
   x.globalAlpha = 0.20;
-  for (let i = 0; i < 190; i++) {
+  for (let i = 0; i < (lite ? 90 : 190); i++) {
     const px = Math.random() * W, py = H * (0.10 + Math.random() * 0.31);
     const w = 90 + Math.random() * 420, hh = 8 + Math.random() * 30;
     const v = n(px * 0.01, py * 0.02, 3);
@@ -304,15 +304,16 @@ const TEX = { minX: -100, maxX: 100, minZ: -405, maxZ: 55, W: 1024, H: 2048 };
 const TW = TEX.maxX - TEX.minX, TL = TEX.maxZ - TEX.minZ;
 const toPx = (X, Z) => [(X - TEX.minX) / TW * TEX.W, (Z - TEX.minZ) / TL * TEX.H];
 
-function courseMap(THREE) {
-  const { W, H } = TEX;
+function courseMap(THREE, lite = false) {
+  const W = lite ? 512 : TEX.W, H = lite ? 1024 : TEX.H;
+  const toPx = (X, Z) => [(X - TEX.minX) / TW * W, (Z - TEX.minZ) / TL * H];
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d');
   const nR = makeNoise(4242), nF = makeNoise(909);
   const PPM = W / TW;                                            // px per metre
 
   // base rough, generated coarse and scaled up (parkland rough is soft anyway)
-  const BW = 256, BH = 512;
+  const BW = lite ? 128 : 256, BH = lite ? 256 : 512;
   const bc = document.createElement('canvas'); bc.width = BW; bc.height = BH;
   const bx = bc.getContext('2d');
   const id = bx.createImageData(BW, BH);
@@ -333,7 +334,7 @@ function courseMap(THREE) {
 
   // rough mottle
   x.globalAlpha = 0.3;
-  for (let i = 0; i < 14000; i++) {
+  for (let i = 0; i < (lite ? 4500 : 14000); i++) {
     const px = Math.random() * W, py = Math.random() * H;
     const v = nF(px * 0.05, py * 0.05, 2);
     x.fillStyle = v > 0.5 ? 'rgba(104,136,68,0.45)' : 'rgba(34,52,26,0.5)';
@@ -379,7 +380,7 @@ function courseMap(THREE) {
     x.fillRect(ax, 0, bx2 - ax, H);
   }
   x.globalAlpha = 0.26;
-  for (let i = 0; i < 9000; i++) {
+  for (let i = 0; i < (lite ? 3000 : 9000); i++) {
     const px = Math.random() * W, py = Math.random() * H;
     const v = nF(px * 0.04 + 11, py * 0.04, 2);
     x.fillStyle = v > 0.5 ? 'rgba(134,168,90,0.5)' : 'rgba(62,88,42,0.5)';
@@ -400,7 +401,7 @@ function courseMap(THREE) {
     x.fillRect(gpx - grp, gpy + i * 1.1 * PPM, grp * 2, 1.1 * PPM);
   }
   x.globalAlpha = 0.22;
-  for (let i = 0; i < 2600; i++) {
+  for (let i = 0; i < (lite ? 900 : 2600); i++) {
     const a = Math.random() * 6.283, r = Math.sqrt(Math.random());
     x.fillStyle = Math.random() > 0.5 ? 'rgba(160,196,112,0.6)' : 'rgba(96,128,64,0.5)';
     x.fillRect(gpx + Math.cos(a) * r * grp, gpy + Math.sin(a) * r * grp * 0.9, 2, 2);
@@ -422,7 +423,7 @@ function courseMap(THREE) {
     sg.addColorStop(0, 'rgba(255,248,228,0.42)'); sg.addColorStop(1, 'rgba(150,128,92,0.5)');
     x.fillStyle = sg; x.fillRect(0, 0, W, H);
     x.globalAlpha = 0.4;
-    for (let i = 0; i < 1400; i++) {
+    for (let i = 0; i < (lite ? 450 : 1400); i++) {
       const a = Math.random() * 6.283, r = Math.sqrt(Math.random());
       x.fillStyle = Math.random() > 0.5 ? 'rgba(255,252,240,0.6)' : 'rgba(176,154,116,0.5)';
       x.fillRect(bx2 + Math.cos(a) * r * b.rx * PPM, by2 + Math.sin(a) * r * b.rz * PPM, 3, 2);
@@ -477,7 +478,7 @@ function courseMap(THREE) {
 
   const map = new THREE.CanvasTexture(c);
   map.colorSpace = THREE.SRGBColorSpace;
-  map.anisotropy = 16;
+  map.anisotropy = lite ? 4 : 16;
   return map;
 }
 
@@ -530,8 +531,8 @@ function teePatchMaps(THREE) {
 }
 
 /* seamless-ish rough tile for the land beyond the mapped hole */
-function roughTile(THREE) {
-  const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+function roughTile(THREE, lite = false) {
+  const S = lite ? 128 : 256, c = document.createElement('canvas'); c.width = c.height = S;
   const x = c.getContext('2d');
   const n = makeNoise(6161);
   const d = x.createImageData(S, S);
@@ -548,7 +549,7 @@ function roughTile(THREE) {
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.MirroredRepeatWrapping;
   t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
+  t.anisotropy = lite ? 2 : 8;
   return t;
 }
 
@@ -569,8 +570,8 @@ function grooveNormal(THREE) {
 }
 
 /* tiling ripple normal for the dam */
-function rippleNormal(THREE) {
-  const S = 512, c = document.createElement('canvas'); c.width = c.height = S;
+function rippleNormal(THREE, lite = false) {
+  const S = lite ? 256 : 512, c = document.createElement('canvas'); c.width = c.height = S;
   const x = c.getContext('2d');
   const n = makeNoise(5150);
   const h = new Float32Array(S * S);
@@ -594,7 +595,7 @@ function rippleNormal(THREE) {
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(5, 3);
-  t.anisotropy = 8;
+  t.anisotropy = lite ? 2 : 8;
   return t;
 }
 
@@ -658,6 +659,9 @@ class GolfStage extends HTMLElement {
 
   /* ---- explore mode: free orbit + hole flythrough ---- */
   get isExplore() { return this.getAttribute('mode') === 'explore'; }
+  get isLite() {
+    return this.getAttribute('quality') === 'lite' || matchMedia('(max-width: 1100px)').matches;
+  }
 
   startFlythrough() {
     if (!this._cam) return;
@@ -728,14 +732,23 @@ class GolfStage extends HTMLElement {
     });
     this.appendChild(cv);
     this._cv = cv;
-    this._boot().catch(e => { console.error('[golf-stage]', e); this.setAttribute('data-failed', ''); });
+    cv.addEventListener('webglcontextlost', e => {
+      e.preventDefault();
+      this._visible = false;
+      this.dispatchEvent(new CustomEvent('golfstageerror', { bubbles: true, detail: { reason: 'context-lost' } }));
+    }, { once: true });
+    this._boot().catch(e => {
+      console.error('[golf-stage]', e);
+      this.setAttribute('data-failed', '');
+      this.dispatchEvent(new CustomEvent('golfstageerror', { bubbles: true, detail: { reason: 'boot-failed' } }));
+    });
   }
 
   disconnectedCallback() { this._stop = true; this.stopCycle(); if (this._ro) this._ro.disconnect(); }
 
   /* ---- auto-cycling the cameras ---- */
   startCycle() {
-    if (this.isExplore || this._userLocked) return;
+    if (this.isExplore || this.isLite || this._userLocked) return;
     this.stopCycle();
     const dwell = [7000, 15000];
     const step = () => {
@@ -758,7 +771,7 @@ class GolfStage extends HTMLElement {
     i = clamp(i | 0, 0, SHOTS.length - 1);
     if (i === this._shot) return;
     this._shot = i;
-    this._showMacro(i < 2);
+    this._showMacro(i === 0);
     this._from = { pos: this._camPos.clone(), tgt: this._camTgt.clone(), fov: this._cam.fov };
     this._t0 = performance.now();
     this.dispatchEvent(new CustomEvent('shotchange', { detail: { shot: i, key: SHOTS[i].key } }));
@@ -768,14 +781,16 @@ class GolfStage extends HTMLElement {
     const THREE = await import(THREE_URL);
     this._THREE = THREE;
     const cv = this._cv;
+    const lite = this.isLite;
+    this.toggleAttribute('data-lite', lite);
 
     const renderer = new THREE.WebGLRenderer({
-      canvas: cv, antialias: true, powerPreference: 'high-performance',
-      logarithmicDepthBuffer: true                       // 4 mm dimples and a 400 m hole in one scene
+      canvas: cv, antialias: !lite, powerPreference: lite ? 'low-power' : 'high-performance',
+      logarithmicDepthBuffer: !lite                      // only the macro camera needs millimetre-to-hole depth
     });
-    const constrained = matchMedia('(max-width: 820px)').matches ||
+    const constrained = lite || matchMedia('(max-width: 820px)').matches ||
       (Number(navigator.deviceMemory || 8) <= 4);
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, constrained ? 1.3 : 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, lite ? 1 : constrained ? 1.3 : 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.06;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -787,27 +802,30 @@ class GolfStage extends HTMLElement {
     scene.fog = new THREE.FogExp2(0x4b4247, 0.0125);
     this._scene = scene;
 
-    const cam = new THREE.PerspectiveCamera(33, 16 / 9, 0.004, 1600);
+    const cam = new THREE.PerspectiveCamera(33, 16 / 9, lite ? 0.08 : 0.004, 1600);
     this._cam = cam;
     this._camPos = new THREE.Vector3().fromArray(SHOTS[0].pos);
     this._camTgt = new THREE.Vector3().fromArray(SHOTS[0].tgt);
 
     /* environment */
-    const skyTex = new THREE.CanvasTexture(skyCanvas());
+    const skyTex = new THREE.CanvasTexture(skyCanvas(lite));
     skyTex.mapping = THREE.EquirectangularReflectionMapping;
     skyTex.colorSpace = THREE.SRGBColorSpace;
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const env = pmrem.fromEquirectangular(skyTex).texture;
-    scene.environment = env;
+    if (lite) {
+      scene.environment = skyTex;
+    } else {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromEquirectangular(skyTex).texture;
+      pmrem.dispose();
+    }
     scene.background = skyTex;
     scene.backgroundIntensity = 0.9;
     scene.environmentIntensity = 0.95;
-    pmrem.dispose();
 
     /* light: low morning sun from beyond the green, left */
     const sun = new THREE.DirectionalLight(0xffd9ad, 3.5);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(lite ? 1024 : 2048, lite ? 1024 : 2048);
     sun.shadow.bias = -0.00015;
     scene.add(sun, sun.target);
     this._sun = sun;
@@ -824,7 +842,7 @@ class GolfStage extends HTMLElement {
     await frame();
 
     /* ---- ground: 200 × 460 m of the hole ---- */
-    const gGeo = new THREE.PlaneGeometry(TW, TL, 184, 400);
+    const gGeo = new THREE.PlaneGeometry(TW, TL, lite ? 92 : 184, lite ? 200 : 400);
     gGeo.rotateX(-Math.PI / 2);
     const gp = gGeo.attributes.position;
     const zOff = (TEX.minZ + TEX.maxZ) / 2;
@@ -834,7 +852,7 @@ class GolfStage extends HTMLElement {
       gp.setY(i, terrainY(X, Z));
     }
     gGeo.computeVertexNormals();
-    const cmap = courseMap(THREE);
+    const cmap = courseMap(THREE, lite);
     const ground = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({
       map: cmap, roughness: 0.93, metalness: 0, dithering: true
     }));
@@ -845,7 +863,7 @@ class GolfStage extends HTMLElement {
     await frame();
 
     /* ---- the dam ---- */
-    const ripple = rippleNormal(THREE);
+    const ripple = rippleNormal(THREE, lite);
     this._ripple = ripple;
     const waterMat = new THREE.MeshPhysicalMaterial({
       color: 0x1a3844, roughness: 0.09, metalness: 0,
@@ -856,7 +874,7 @@ class GolfStage extends HTMLElement {
     const WB = { x0: -98, x1: 40, z0: -116, z1: -38 };
     const mw = WB.x1 - WB.x0, ml = WB.z1 - WB.z0;
     {
-      const AW = 512, AH = 290;
+      const AW = lite ? 256 : 512, AH = lite ? 145 : 290;
       const ac = document.createElement('canvas'); ac.width = AW; ac.height = AH;
       const actx = ac.getContext('2d');
       const ad = actx.createImageData(AW, AH);
@@ -948,7 +966,7 @@ class GolfStage extends HTMLElement {
       tuft.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
       tuft.setIndex(I);
       tuft.computeVertexNormals();
-      const NR = 3000;
+      const NR = lite ? 900 : 3000;
       const reeds = new THREE.InstancedMesh(tuft, new THREE.MeshStandardMaterial({
         color: 0xffffff, roughness: 0.9, metalness: 0, side: THREE.DoubleSide
       }), NR);
@@ -986,7 +1004,7 @@ class GolfStage extends HTMLElement {
 
     /* ---- outer land: a wooded ridge that hides the plane's edges ---- */
     {
-      const rings = [0, 40, 110, 250], K = 320;
+      const rings = [0, 40, 110, 250], K = lite ? 160 : 320;
       const perim = (W, ZA, ZB, f) => {
         const w = 2 * W, h = ZA - ZB, L = 2 * w + 2 * h;
         let d = f * L;
@@ -1020,7 +1038,7 @@ class GolfStage extends HTMLElement {
       const nrm = g.attributes.normal;                       // face the sky whichever way it wound
       for (let i = 0; i < nrm.count; i++) if (nrm.getY(i) < 0) nrm.setXYZ(i, -nrm.getX(i), -nrm.getY(i), -nrm.getZ(i));
       const outer = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
-        map: roughTile(THREE), vertexColors: true, roughness: 0.95, metalness: 0, dithering: true
+        map: roughTile(THREE, lite), vertexColors: true, roughness: 0.95, metalness: 0, dithering: true
       }));
       outer.receiveShadow = true;
       outer.name = 'outerLand';
@@ -1029,11 +1047,11 @@ class GolfStage extends HTMLElement {
 
     /* ---- parkland trees: the reason Glendower looks like Glendower ---- */
     {
-      const trunkG = new THREE.CylinderGeometry(0.26, 0.52, 4.4, 7);
-      const canopyG = new THREE.IcosahedronGeometry(1, 1);
+      const trunkG = new THREE.CylinderGeometry(0.26, 0.52, 4.4, lite ? 5 : 7);
+      const canopyG = new THREE.IcosahedronGeometry(1, lite ? 0 : 1);
       const trunkM = new THREE.MeshStandardMaterial({ color: 0x2c2219, roughness: 0.95 });
       const canopyM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true });
-      const NT = 620, NC = NT * 3;
+      const NT = lite ? 260 : 620, canopyLayers = lite ? 2 : 3, NC = NT * canopyLayers;
       const trunks = new THREE.InstancedMesh(trunkG, trunkM, NT);
       const canopies = new THREE.InstancedMesh(canopyG, canopyM, NC);
       const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), col = new THREE.Color();
@@ -1067,7 +1085,7 @@ class GolfStage extends HTMLElement {
         trunks.setMatrixAt(n, m4);
         const hue = wet ? 0.235 + rt() * 0.03 : 0.255 + rt() * 0.045;
         const lum = 0.115 + rt() * 0.095;
-        for (let b = 0; b < 3; b++) {
+        for (let b = 0; b < canopyLayers; b++) {
           const cs = s * (2.5 + rt() * 1.5), spread = s * 1.5;
           m4.compose(
             new THREE.Vector3(X + (rt() - 0.5) * spread, Y + s * (4.6 + b * 1.5) + (rt() - 0.5) * s, Z + (rt() - 0.5) * spread),
@@ -1095,7 +1113,7 @@ class GolfStage extends HTMLElement {
 
     /* ---- tee markers, one pair per tee, in the book's colours ---- */
     {
-      const mg = new THREE.SphereGeometry(0.26, 16, 10);
+      const mg = new THREE.SphereGeometry(0.26, lite ? 10 : 16, lite ? 7 : 10);
       for (const t of TEES) {
         const mat = new THREE.MeshPhysicalMaterial({ color: t.col, roughness: 0.35, metalness: 0.05, clearcoat: 0.6 });
         for (const s of [-1, 1]) {
@@ -1122,7 +1140,7 @@ class GolfStage extends HTMLElement {
 
     await frame();
 
-    if (!this.isExplore) {
+    if (!this.isExplore && !lite) {
     /* high-detail turf right at the back tee — only the macro shots use it */
     const tp = teePatchMaps(THREE);
     const patch = new THREE.Mesh(
@@ -1236,7 +1254,7 @@ class GolfStage extends HTMLElement {
       const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.108, 0.1, 0.24, 20),
         new THREE.MeshStandardMaterial({ color: 0x14170f, roughness: 1 }));
       cup.position.y = -0.11;
-      const cloth = new THREE.PlaneGeometry(0.56, 0.36, 12, 4);
+      const cloth = new THREE.PlaneGeometry(0.56, 0.36, lite ? 6 : 12, lite ? 2 : 4);
       const p = cloth.attributes.position;
       for (let i = 0; i < p.count; i++) {
         const t = (p.getX(i) + 0.28) / 0.56;
@@ -1256,9 +1274,10 @@ class GolfStage extends HTMLElement {
 
     /* ---- runtime ---- */
     this._grade = MACRO;
-    const startShot = clamp(parseInt(this.getAttribute('start-shot') || this.getAttribute('startshot') || '0', 10) || 0, 0, SHOTS.length - 1);
+    const requestedShot = parseInt(this.getAttribute('start-shot') || this.getAttribute('startshot') || '0', 10) || 0;
+    const startShot = lite && !this.isExplore ? 1 : clamp(requestedShot, 0, SHOTS.length - 1);
     this._shot = startShot;
-    this._showMacro(!this.isExplore && startShot < 2);
+    this._showMacro(!this.isExplore && startShot === 0);
     this._applyShadow(SHOTS[startShot].shadow);
     this._applyGrade(SHOTS[startShot].grade);
     cam.fov = SHOTS[startShot].fov;
@@ -1285,6 +1304,7 @@ class GolfStage extends HTMLElement {
     new IntersectionObserver(es => { this._visible = es[0].isIntersecting; }, { threshold: 0.01 }).observe(this);
 
     this._reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this._lastFrame = 0;
     this._t0 = -1e9;
     this._start = performance.now();
     if (this.isExplore) {
@@ -1337,6 +1357,8 @@ class GolfStage extends HTMLElement {
     if (!this._visible) return;
     if (!this._camPos || !this._camTgt || !this._cam) return;
     const now = performance.now();
+    if (this.isLite && now - this._lastFrame < 32) return;
+    this._lastFrame = now;
     const T = (now - this._start) / 1000;
 
     if (!this._reduced) {
