@@ -10,7 +10,44 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
   
     componentDidMount() {
       this._stage = null;
-      this._staticBackdrop = matchMedia('(max-width: 1100px), (hover: none) and (pointer: coarse)').matches;
+      const backdrop = document.querySelector('[data-shared-backdrop]');
+      const mobileViewport = matchMedia('(max-width: 1100px)').matches;
+      const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+      const memory = Number(navigator.deviceMemory);
+      const cores = Number(navigator.hardwareConcurrency);
+      const lowMemory = Number.isFinite(memory) && memory > 0 && memory <= 3;
+      const lowCpu = Number.isFinite(cores) && cores > 0 && cores <= 2;
+      const slowConnection = ['slow-2g', '2g'].includes(connection.effectiveType);
+      let webglReady = true;
+      if (mobileViewport) {
+        try {
+          const probe = document.createElement('canvas');
+          const gl = probe.getContext('webgl2', { failIfMajorPerformanceCaveat: true })
+            || probe.getContext('webgl', { failIfMajorPerformanceCaveat: true });
+          webglReady = !!gl;
+          if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
+        } catch (_) { webglReady = false; }
+      }
+      this._mobile3d = mobileViewport && webglReady && !reducedMotion
+        && !connection.saveData && !slowConnection && !lowMemory && !lowCpu;
+      this._staticBackdrop = mobileViewport && !this._mobile3d;
+      if (backdrop) backdrop.dataset.renderMode = this._mobile3d
+        ? 'mobile-3d' : this._staticBackdrop ? 'static' : 'desktop-3d';
+      this._fallbackToPoster = () => {
+        if (!this._mobile3d) return;
+        this._mobile3d = false;
+        this._staticBackdrop = true;
+        if (backdrop) backdrop.dataset.renderMode = 'static';
+        const mounted = backdrop && backdrop.querySelector('x-import, .sc-host-x');
+        const stage = mounted && mounted.querySelector('golf-stage');
+        if (stage) {
+          stage._visible = false;
+          if (stage.stopCycle) stage.stopCycle();
+        }
+        if (mounted) mounted.remove();
+      };
+      document.addEventListener('golfstageerror', this._fallbackToPoster);
       this._setNetworkState = () => this.setState({ online: navigator.onLine });
       window.addEventListener('online', this._setNetworkState);
       window.addEventListener('offline', this._setNetworkState);
@@ -26,10 +63,9 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
         history.replaceState(null, '', id || '#top');
       };
       document.addEventListener('click', this._smoothAnchor);
-      // Fixed WebGL under a long page flickers as mobile Safari resizes its visual
-      // viewport. Mobile/tablet uses the composed poster instead, and does not pay
-      // the GPU/memory cost of booting the desktop scene in the background.
-      const backdropImport = document.querySelector('[data-shared-backdrop] x-import, [data-shared-backdrop] .sc-host-x');
+      // The mobile scene is absolute and hero-sized, not fixed under the long page.
+      // Devices that fail the capability check keep only the composed poster.
+      const backdropImport = backdrop && backdrop.querySelector('x-import, .sc-host-x');
       if (this._staticBackdrop && backdropImport) {
         const mobileStage = backdropImport.querySelector('golf-stage');
         if (mobileStage) {
@@ -39,25 +75,28 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
         backdropImport.remove();
       }
 
-      // the desktop web component mounts asynchronously; grab it when it lands
+      // The web component mounts asynchronously; grab it when it lands.
       const find = () => {
         const el = document.querySelector('golf-stage');
         if (el && el.setShot) {
           this._stage = el;
-          // the mount lowercases and collapses hyphenated attrs, so start-shot never
-          // arrives, so drive the opening camera from our own state instead
-          if (el.shot !== this.state.shot) el.setShot(this.state.shot);
-          // keep the chip in step with the stage while it cycles on its own
+          const openingShot = this._mobile3d ? 1 : this.state.shot;
+          if (el.shot !== openingShot) el.setShot(openingShot);
           el.addEventListener('shotchange', e => this.setState({ shot: e.detail.shot }));
-          el.startCycle();
+          if (this._mobile3d) {
+            if (el.lockCamera) el.lockCamera();
+          } else {
+            el.startCycle();
+          }
           return;
         }
         this._t = setTimeout(find, 220);
       };
       if (!this._staticBackdrop) find();
-      // the backdrop is fixed, so it never stops "intersecting". Gate it on the two
-      // sections that actually show it, or we burn GPU behind opaque content
-      const windows = ['#top', '#register'].map(s => document.querySelector(s)).filter(Boolean);
+      // Mobile renders only while the hero is visible. Desktop keeps the shared
+      // background alive through the entry section, then pauses behind the rest.
+      const visibleSections = this._mobile3d ? ['#top'] : ['#top', '#register'];
+      const windows = visibleSections.map(s => document.querySelector(s)).filter(Boolean);
       if (!this._staticBackdrop && windows.length) {
         const seen = new Set();
         this._io = new IntersectionObserver(es => {
@@ -84,6 +123,7 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
     componentWillUnmount() {
       clearTimeout(this._t);
       if (this._io) this._io.disconnect();
+      document.removeEventListener('golfstageerror', this._fallbackToPoster);
       window.removeEventListener('online', this._setNetworkState);
       window.removeEventListener('offline', this._setNetworkState);
       document.removeEventListener('click', this._smoothAnchor);
