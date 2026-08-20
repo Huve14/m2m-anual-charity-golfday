@@ -40,6 +40,14 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(html, /Complete the company, contact person, mobile and email fields/);
   assert.match(html, /dietaryOther: f\.dietaryOther/);
   assert.match(html, /Privacy &amp; POPIA Notice/);
+  assert.match(
+    html,
+    /Availability is limited, and submitting this form is an enquiry, not a confirmed reservation\. Our team will contact you within one business day\./,
+  );
+  assert.match(html, /data-availability-notice="true"/);
+  assert.match(indexLogic, /Sending enquiry/);
+  assert.match(indexLogic, /Enquiry submitted/);
+  assert.match(indexLogic, /submitted an M2M Invitational enquiry/);
   assert.match(html, /name="registrationConsent"/);
   assert.match(html, /name="playerDataConsent"/);
   assert.match(html, /name="marketingConsent"/);

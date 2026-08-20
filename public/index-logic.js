@@ -310,8 +310,8 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
           : `That is ${qty * 4} players. Add another fourball if your company is registering another team.`,
         summaryTitle: `${qty} × Fourball`,
         summarySub: `${qty * 4} players at the M2M Invitational on ${dateLong}, shotgun start at 10:00.`,
-        submitLabel: this.state.sending ? 'Sending entry' : this.state.done ? 'Entry submitted' : `Enter ${qty === 1 ? 'this fourball' : `these ${qty} fourballs`}`,
-        doneMsg: `Thank you, ${f.company || 'your company'} has submitted an M2M Invitational registration for ${qty * 4} players. The event team will follow up at ${f.email || 'the email provided'}.`,
+        submitLabel: this.state.sending ? 'Sending enquiry' : this.state.done ? 'Enquiry submitted' : `Send ${qty === 1 ? 'this enquiry' : `these ${qty} enquiries`}`,
+        doneMsg: `Thank you, ${f.company || 'your company'} has submitted an M2M Invitational enquiry for ${qty * 4} players. The event team will follow up at ${f.email || 'the email provided'}.`,
         yes: true,
         // a blocked club asset should reveal the labelled plate behind it, not a broken icon
         imgFail: e => { e.target.style.opacity = '0'; },
