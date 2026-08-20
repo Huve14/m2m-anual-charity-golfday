@@ -10,6 +10,7 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
   
     componentDidMount() {
       this._stage = null;
+      this._staticBackdrop = matchMedia('(max-width: 1100px), (hover: none) and (pointer: coarse)').matches;
       this._setNetworkState = () => this.setState({ online: navigator.onLine });
       window.addEventListener('online', this._setNetworkState);
       window.addEventListener('offline', this._setNetworkState);
@@ -25,7 +26,20 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
         history.replaceState(null, '', id || '#top');
       };
       document.addEventListener('click', this._smoothAnchor);
-      // the web component mounts asynchronously; grab it when it lands
+      // Fixed WebGL under a long page flickers as mobile Safari resizes its visual
+      // viewport. Mobile/tablet uses the composed poster instead, and does not pay
+      // the GPU/memory cost of booting the desktop scene in the background.
+      const backdropImport = document.querySelector('[data-shared-backdrop] x-import, [data-shared-backdrop] .sc-host-x');
+      if (this._staticBackdrop && backdropImport) {
+        const mobileStage = backdropImport.querySelector('golf-stage');
+        if (mobileStage) {
+          mobileStage._visible = false;
+          if (mobileStage.stopCycle) mobileStage.stopCycle();
+        }
+        backdropImport.remove();
+      }
+
+      // the desktop web component mounts asynchronously; grab it when it lands
       const find = () => {
         const el = document.querySelector('golf-stage');
         if (el && el.setShot) {
@@ -40,11 +54,11 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
         }
         this._t = setTimeout(find, 220);
       };
-      find();
+      if (!this._staticBackdrop) find();
       // the backdrop is fixed, so it never stops "intersecting". Gate it on the two
       // sections that actually show it, or we burn GPU behind opaque content
       const windows = ['#top', '#register'].map(s => document.querySelector(s)).filter(Boolean);
-      if (windows.length) {
+      if (!this._staticBackdrop && windows.length) {
         const seen = new Set();
         this._io = new IntersectionObserver(es => {
           for (const e of es) {
