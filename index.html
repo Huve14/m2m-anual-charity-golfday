@@ -129,6 +129,19 @@
   .m2m-pattern-summary{top:-20%;right:-14%;width:58%;aspect-ratio:360/260;opacity:.17;transform:rotate(180deg)}
   .m2m-pattern-contact{right:-8%;bottom:-18%;width:clamp(260px,34vw,560px);aspect-ratio:360/260;opacity:.09;transform:rotate(90deg)}
   .m2m-pattern-footer{right:-3%;top:-80%;width:clamp(220px,26vw,420px);aspect-ratio:360/260;opacity:.08}
+  @media (min-width:1101px){
+    /* Keep the hero chevrons as a deliberate desktop accent. The compact,
+       centred treatment leaves the camera controls and course unobstructed. */
+    .m2m-pattern-hero{
+      right:clamp(54px,6vw,118px);
+      top:50%;
+      width:clamp(260px,25vw,430px);
+      opacity:.115;
+      transform:translateY(-42%);
+      -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16%,#000 84%,transparent 100%);
+      mask-image:linear-gradient(to bottom,transparent 0,#000 16%,#000 84%,transparent 100%);
+    }
+  }
   .m2m-brand-signature{display:inline-flex;align-items:center;gap:11px;width:max-content;margin-top:clamp(18px,2.8vh,30px);padding:10px 14px 10px 12px;border-left:3px solid var(--m2m-red);background:rgba(12,23,53,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font:600 9px/1 'Montserrat',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--m2m-silver)!important}
   [data-hero-kicker]{margin-bottom:clamp(28px,4vh,46px)!important}
   [data-hero-title]{font-size:clamp(44px,5.7vw,96px)!important;line-height:1!important;gap:0!important;max-width:15ch}
@@ -340,7 +353,7 @@
       <a href="#contact" style="color:#D7D9DC;white-space:nowrap" style-hover="color:#FFFDFC">Contact</a>
     </nav>
     <a href="#register" data-hdr-cta="true" data-brand-cta="true" style="flex:0 0 auto;position:relative;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;padding:clamp(9px,1.1vw,13px) clamp(14px,1.7vw,24px);background:#C8102E;color:#FFFDFC;font:700 clamp(9px,.74vw,11px)/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);transition:background .3s ease,transform .3s ease" style-hover="background:#A70B24;transform:translateY(-1px);color:#FFFDFC">
-      Buy a fourball
+      Register your fourball
     </a>
   </header>
 
@@ -378,7 +391,7 @@
 
       <div data-hero-actions="true" style="display:flex;flex-wrap:wrap;gap:clamp(10px,1.2vw,16px);margin-top:clamp(28px,4vh,46px);animation:rise 1s cubic-bezier(.16,1,.3,1) .52s both">
         <a href="#register" data-brand-cta="true" style="position:relative;display:inline-flex;align-items:center;gap:clamp(14px,1.6vw,26px);padding:clamp(15px,1.55vw,21px) clamp(22px,2.4vw,34px);background:#C8102E;color:#FFFDFC;font:700 clamp(10px,.86vw,13px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);box-shadow:0 18px 50px -18px rgba(200,16,46,.85);transition:background .3s ease,transform .3s ease,box-shadow .3s ease" style-hover="background:#A70B24;transform:translateY(-2px);box-shadow:0 26px 62px -18px rgba(200,16,46,.95);color:#FFFDFC">
-          Buy your fourball
+          Register your fourball
           <span style="font-size:1.15em;line-height:0">&#8594;</span>
         </a>
         <a href="#register" style="display:inline-flex;align-items:center;gap:12px;padding:clamp(15px,1.55vw,21px) clamp(20px,2.2vw,30px);border:1px solid rgba(215,217,220,.24);color:#D7D9DC;font:500 clamp(10px,.86vw,13px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;transition:border-color .3s ease,color .3s ease,background .3s ease" style-hover="border-color:#D7D9DC;color:#FFFDFC;background:rgba(215,217,220,.06)">
@@ -479,8 +492,8 @@
               <span style="display:block;font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#8f959d;margin-bottom:9px">Hole sponsorship</span>
               <select name="sponsorship" value="{{ f.sponsorship }}" onChange="{{ set.sponsorship }}" style="width:100%;padding:14px 42px 14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;cursor:pointer" style-focus="border-color:#C8102E">
                 <option value="">No hole sponsorship</option>
-                <option value="with-alcohol">Hole sponsorship with alcohol, R17,000</option>
-                <option value="without-alcohol">Hole sponsorship without alcohol, R12,500</option>
+                <option value="without-alcohol">Hole sponsorship without alcohol, R12 500</option>
+                <option value="with-alcohol">Hole sponsorship with alcohol, R17 000</option>
               </select>
               <span style="display:block;margin-top:10px;font-size:12px;line-height:1.55;color:#7c828a">The best hole wins an award and prize.</span>
             </label>
@@ -748,7 +761,7 @@
             Join us at <em style="font-family:'Montserrat',sans-serif;font-style:italic;font-variation-settings:normal;font-weight:400;text-transform:none;color:#C8102E">Glendower</em>
           </h2>
           <p style="margin:0 0 clamp(26px,4vh,40px);max-width:42ch;font-size:clamp(14px,1.15vw,17px);line-height:1.6;color:#8f959d;text-wrap:pretty">
-            Buy your fourball or sponsor a hole through the RSVP form. The best hole wins an award and prize, followed by Sel&rsquo;s 50th Birthday Celebration after the game.
+            Register your fourball or sponsor a hole through the enquiry form. The best hole wins an award and prize, followed by Sel&rsquo;s 50th Birthday Celebration after the game.
           </p>
 
           <div style="border:1px solid rgba(215,217,220,.14);background:#151A1F;padding:clamp(20px,2.4vw,28px);max-width:44ch">
@@ -777,7 +790,10 @@
           <a href="#register" style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:clamp(18px,2.2vw,26px) 0;border-top:1px solid rgba(215,217,220,.14);transition:padding-left .3s ease" style-hover="padding-left:14px;color:#FFFDFC">
             <span style="display:flex;flex-direction:column;gap:8px">
               <span style="font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#7c828a">Hole sponsorship</span>
-              <span style="font-family:'Montserrat',sans-serif;font-weight:500;font-size:clamp(15px,1.5vw,22px);letter-spacing:.02em;color:#EEF0F1">R12,500 or R17,000</span>
+              <span style="display:flex;flex-direction:column;gap:7px;font-family:'Montserrat',sans-serif;font-weight:500;font-size:clamp(14px,1.3vw,19px);letter-spacing:.01em;color:#EEF0F1">
+                <span>Without alcohol <strong class="m2m-red-text" style="font-weight:700">R12 500</strong></span>
+                <span>With alcohol <strong class="m2m-red-text" style="font-weight:700">R17 000</strong></span>
+              </span>
             </span>
             <span style="color:#C8102E;font-size:1.3em;line-height:0">&#8594;</span>
           </a>
