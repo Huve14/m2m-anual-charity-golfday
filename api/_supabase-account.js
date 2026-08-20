@@ -16,7 +16,7 @@ const SUPABASE_SERVER_KEY =
 
 const SPONSORSHIP_LABELS = Object.freeze({
   "": "No hole sponsorship",
-  "with-alcohol": "Hole sponsorship with alcohol",
+  "with-alcohol": "Hole sponsorship with alcohol (SOLD OUT)",
   "without-alcohol": "Hole sponsorship without alcohol",
 });
 

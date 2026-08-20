@@ -23,7 +23,7 @@ test("buildRegistration supports legacy index.html form fields", () => {
     notes: "",
     dietary: "Other",
     dietaryOther: "No nuts",
-    sponsorship: "with-alcohol",
+    sponsorship: "without-alcohol",
     qty: 2,
     players: [{ name: "Alex Morgan", handicap: "12" }],
     ...requiredConsents,
@@ -35,7 +35,7 @@ test("buildRegistration supports legacy index.html form fields", () => {
   assert.equal(registration.account.dietary, "Other (No nuts)");
   assert.equal(registration.row[6], 2);
   assert.equal(registration.account.players.length, 1);
-  assert.equal(registration.supabaseRecord.sponsorship_option, "with-alcohol");
+  assert.equal(registration.supabaseRecord.sponsorship_option, "without-alcohol");
   assert.equal(registration.supabaseRecord.registration_consent, true);
   assert.equal(registration.supabaseRecord.marketing_consent, false);
   assert.equal(registration.supabaseRecord.privacy_notice_version, PRIVACY_NOTICE_VERSION);
@@ -97,5 +97,21 @@ test("buildRegistration records optional marketing consent separately", () => {
   assert.equal(
     registration.account.consentTextSnapshot.version,
     PRIVACY_NOTICE_VERSION,
+  );
+});
+
+test("buildRegistration rejects the sold-out alcohol sponsorship", () => {
+  assert.throws(
+    () =>
+      buildRegistration({
+        company: "Acme Events",
+        contact: "Alex Morgan",
+        phone: "+27 11 555 9999",
+        email: "alex@example.com",
+        fourballs: 1,
+        sponsorship: "with-alcohol",
+        ...requiredConsents,
+      }),
+    /Hole sponsorship with alcohol is sold out/,
   );
 });

@@ -502,7 +502,7 @@
               <select name="sponsorship" value="{{ f.sponsorship }}" onChange="{{ set.sponsorship }}" style="width:100%;padding:14px 42px 14px 14px;background:#22252A;border:1px solid rgba(215,217,220,.18);color:#FFFDFC;font-size:14px;line-height:1.4;cursor:pointer" style-focus="border-color:#C8102E">
                 <option value="">No hole sponsorship</option>
                 <option value="without-alcohol">Hole sponsorship without alcohol, R12 500</option>
-                <option value="with-alcohol">Hole sponsorship with alcohol, R17 000</option>
+                <option value="with-alcohol" disabled style="text-decoration:line-through">Hole sponsorship with alcohol, R17 000 (SOLD OUT)</option>
               </select>
               <span style="display:block;margin-top:10px;font-size:12px;line-height:1.55;color:#7c828a">The best hole wins an award and prize.</span>
             </label>
@@ -619,7 +619,7 @@
               <div style="font:500 9.5px/1 'Montserrat',sans-serif;letter-spacing:.26em;text-transform:uppercase;color:#C8102E;margin-bottom:12px">Enquiry received</div>
               <div style="font-size:14px;line-height:1.65;color:#EEF0F1;margin-bottom:clamp(18px,2.4vh,24px)">{{ doneMsg }}</div>
               <div style="margin:-6px 0 clamp(18px,2.4vh,24px);padding:12px 14px;border-left:3px solid #ED1C24;background:rgba(11,31,68,.68);font:600 11px/1.65 'Montserrat',sans-serif;color:#FFFDFC">Availability is limited, and submitting this form is an enquiry, not a confirmed reservation. Our team will contact you within one business day.</div>
-              <a href="/hole-2.html" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:clamp(15px,1.7vw,20px) clamp(16px,1.9vw,22px);background:#FFFDFC;color:#191B1F;font:700 clamp(9.5px,.8vw,11.5px)/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px);transition:background .3s ease,transform .3s ease" style-hover="background:#EEF0F1;color:#191B1F;transform:translateY(-2px)">
+              <a href="/hole-2.html" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:clamp(15px,1.7vw,20px) clamp(16px,1.9vw,22px);background:#FFFDFC;color:#C8102E;font:700 clamp(9.5px,.8vw,11.5px)/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px);transition:background .3s ease,transform .3s ease" style-hover="background:#EEF0F1;color:#C8102E;transform:translateY(-2px)">
                 View the iconic hole 2
                 <span style="color:#C8102E;font-size:1.25em;line-height:0">&#8594;</span>
               </a>
@@ -801,7 +801,7 @@
               <span style="font:400 9.5px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#7c828a">Hole sponsorship</span>
               <span style="display:flex;flex-direction:column;gap:7px;font-family:'Montserrat',sans-serif;font-weight:500;font-size:clamp(14px,1.3vw,19px);letter-spacing:.01em;color:#EEF0F1">
                 <span>Without alcohol <strong class="m2m-red-text" style="font-weight:700">R12 500</strong></span>
-                <span>With alcohol <strong class="m2m-red-text" style="font-weight:700">R17 000</strong></span>
+                <span><span style="text-decoration:line-through;text-decoration-color:#ED1C24;text-decoration-thickness:2px;opacity:.72">With alcohol R17 000</span> <strong class="m2m-red-text" style="font-weight:800;letter-spacing:.08em">SOLD OUT</strong></span>
               </span>
             </span>
             <span style="color:#C8102E;font-size:1.3em;line-height:0">&#8594;</span>
@@ -975,7 +975,7 @@ class Component extends DCLogic {
   }
 
   sponsorLabel(kind) {
-    if (kind === 'with-alcohol') return 'Hole sponsorship with alcohol';
+    if (kind === 'with-alcohol') return 'Hole sponsorship with alcohol (SOLD OUT)';
     if (kind === 'without-alcohol') return 'Hole sponsorship without alcohol';
     return '';
   }

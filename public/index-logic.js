@@ -142,7 +142,7 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
     }
   
     sponsorLabel(kind) {
-      if (kind === 'with-alcohol') return 'Hole sponsorship with alcohol';
+      if (kind === 'with-alcohol') return 'Hole sponsorship with alcohol (SOLD OUT)';
       if (kind === 'without-alcohol') return 'Hole sponsorship without alcohol';
       return '';
     }
