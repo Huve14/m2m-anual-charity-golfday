@@ -2,6 +2,15 @@ import { randomUUID } from "node:crypto";
 
 export const FOURBALL_PRICE = 15000;
 export const MAX_FOURBALLS = 6;
+export const PRIVACY_NOTICE_VERSION = "POPIA-2026-08-20";
+export const CONSENT_TEXT_SNAPSHOT = Object.freeze({
+  registration:
+    "I have read the Privacy & POPIA Notice and consent to M2M and authorised event administrators accessing and processing my registration details in secure backend systems for event administration, contact, billing, dietary or accessibility arrangements, and account administration.",
+  playerData:
+    "I confirm that I am authorised to provide the listed players' details and consent to M2M using any dietary or accessibility information supplied solely to arrange and administer the event.",
+  marketing:
+    "I would like M2M to send me future event and marketing communications. I can opt out at any time.",
+});
 export const SPONSORSHIP_PRICES = Object.freeze({
   "": 0,
   "with-alcohol": 17000,
@@ -99,6 +108,30 @@ export function buildRegistration(body, options = {}) {
   const packageChoice = text(body.packageChoice || body.package, "Package", {
     max: 120,
   }) || DEFAULT_PACKAGE_LABEL;
+  const privacyNoticeVersion = text(
+    body.privacyNoticeVersion,
+    "Privacy notice version",
+    { required: true, max: 40 },
+  );
+  const registrationConsent = body.registrationConsent === true;
+  const playerDataConsent = body.playerDataConsent === true;
+  const marketingConsent = body.marketingConsent === true;
+
+  if (privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
+    throw new RegistrationInputError(
+      "Please review and accept the current Privacy & POPIA Notice.",
+    );
+  }
+  if (!registrationConsent) {
+    throw new RegistrationInputError(
+      "Consent to process your registration details is required.",
+    );
+  }
+  if (!playerDataConsent) {
+    throw new RegistrationInputError(
+      "Please confirm that you may provide the listed players' details.",
+    );
+  }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new RegistrationInputError("Enter a valid email address.");
@@ -163,6 +196,18 @@ export function buildRegistration(body, options = {}) {
     options.registrationId ??
     `M2M-${randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`;
   const submittedAt = (options.now ?? new Date()).toISOString();
+  const consentTags = [
+    "privacy_notice_acknowledged",
+    "registration_processing",
+    "m2m_authorised_backend_access",
+    "third_party_player_data_authority",
+    "special_information_processing",
+    ...(marketingConsent ? ["direct_marketing"] : []),
+  ];
+  const consentTextSnapshot = {
+    version: PRIVACY_NOTICE_VERSION,
+    ...CONSENT_TEXT_SNAPSHOT,
+  };
   return {
     registrationId,
     submittedAt,
@@ -185,6 +230,13 @@ export function buildRegistration(body, options = {}) {
       sponsorshipAmount,
       totalAmount: fourballAmount + sponsorshipAmount,
       notes,
+      privacyNoticeVersion,
+      registrationConsent,
+      playerDataConsent,
+      marketingConsent,
+      consentedAt: submittedAt,
+      consentTags,
+      consentTextSnapshot,
       status: "New",
       statusSource: "website",
       players,
@@ -210,6 +262,14 @@ export function buildRegistration(body, options = {}) {
       sponsorship_amount: sponsorshipAmount,
       fourball_amount: fourballAmount,
       total_amount: fourballAmount + sponsorshipAmount,
+      privacy_notice_version: privacyNoticeVersion,
+      registration_consent: registrationConsent,
+      player_data_consent: playerDataConsent,
+      marketing_consent: marketingConsent,
+      consented_at: submittedAt,
+      consent_source: "website",
+      consent_tags: consentTags,
+      consent_text_snapshot: consentTextSnapshot,
       source: "website",
       status: "New",
     },

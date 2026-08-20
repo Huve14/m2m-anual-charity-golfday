@@ -2,15 +2,17 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  PRIVACY_NOTICE_VERSION,
   RegistrationInputError,
   buildRegistration,
 } from "../api/_registration.js";
 
 test("builds the confirmed M2M Invitational experience for Vercel", async () => {
-  const [html, hole, golfStage] = await Promise.all([
+  const [html, hole, golfStage, privacy] = await Promise.all([
     readFile(new URL("../dist/index.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/hole-2.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/golf-3d.js", import.meta.url), "utf8"),
+    readFile(new URL("../dist/privacy.html", import.meta.url), "utf8"),
   ]);
 
   assert.match(html, /M2M Invitational \| Fourball Registration/);
@@ -34,6 +36,12 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(html, /\/api\/register/);
   assert.match(html, /Complete the company, contact person, mobile and email fields/);
   assert.match(html, /dietaryOther: f\.dietaryOther/);
+  assert.match(html, /Privacy &amp; POPIA Notice/);
+  assert.match(html, /name="registrationConsent"/);
+  assert.match(html, /name="playerDataConsent"/);
+  assert.match(html, /name="marketingConsent"/);
+  assert.match(html, /privacyNoticeVersion: 'POPIA-2026-08-20'/);
+  assert.match(html, /m2m_authorised_backend_access|authorised event administrators/);
   assert.doesNotMatch(html, /6500|6,500|Better-Ball|Entries close|Excl\. VAT|Section 18A|Paul McGinley/);
   assert.doesNotMatch(html, /entry\.\d+|docs\.google\.com\/forms|formResponse/);
   assert.match(html, /data-registration-grid/);
@@ -48,6 +56,10 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(golfStage, /Montserrat, Arial, sans-serif/);
   assert.match(golfStage, /if \(!this\._camPos \|\| !this\._camTgt \|\| !this\._cam\) return/);
   assert.match(golfStage, /constrained \? 1\.3 : 2/);
+  assert.match(privacy, /Privacy &amp; POPIA Notice/);
+  assert.match(privacy, /Version POPIA-2026-08-20/);
+  assert.match(privacy, /Backend access and sharing/);
+  assert.match(privacy, /Information Regulator South Africa/);
 });
 
 test("builds a validated Excel row using server-side event pricing", () => {
@@ -62,6 +74,10 @@ test("builds a validated Excel row using server-side event pricing", () => {
       notes: "Vegetarian meal",
       players: [{ name: "Alex Smith", handicap: "12" }],
       totalAmount: 1,
+      privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
+      registrationConsent: true,
+      playerDataConsent: true,
+      marketingConsent: false,
     },
     {
       now: new Date("2026-08-19T08:00:00.000Z"),
@@ -88,6 +104,10 @@ test("rejects invalid registration data before storage", () => {
         cellPhone: "0820000000",
         fourballs: 1,
         sponsorship: "",
+        privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
+        registrationConsent: true,
+        playerDataConsent: true,
+        marketingConsent: false,
       }),
     RegistrationInputError,
   );

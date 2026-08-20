@@ -388,6 +388,25 @@
             </label>
           </fieldset>
 
+          <!-- privacy and consent -->
+          <fieldset data-consent-section="true" style="border:1px solid rgba(215,217,220,.18);margin:0;padding:clamp(18px,2.2vw,26px);display:flex;flex-direction:column;gap:16px;background:rgba(14,17,22,.72)">
+            <legend style="padding:0 10px;font:600 10px/1 'Montserrat',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#C8102E">Privacy &amp; consent</legend>
+            <p style="margin:0;font:400 12px/1.65 'Montserrat',sans-serif;color:#D7D9DC">M2M uses these details to manage your entry and creates a secure backend record that authorised M2M and event administrators can access. Read the <a href="/privacy.html" target="_blank" rel="noopener" style="color:#FFFDFC;text-decoration:underline;text-decoration-color:#C8102E;text-underline-offset:3px">Privacy &amp; POPIA Notice</a>.</p>
+            <label style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start;cursor:pointer">
+              <input required type="checkbox" name="registrationConsent" checked="{{ f.registrationConsent }}" onChange="{{ set.registrationConsent }}" style="width:20px;height:20px;min-height:20px;margin:2px 0 0;accent-color:#C8102E">
+              <span style="font:400 12px/1.6 'Montserrat',sans-serif;color:#D7D9DC"><strong style="color:#C8102E">Required.</strong> I have read the Privacy &amp; POPIA Notice and consent to M2M and authorised event administrators accessing and processing my registration details in secure backend systems for event administration, contact, billing, dietary or accessibility arrangements, and account administration.</span>
+            </label>
+            <label style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start;cursor:pointer">
+              <input required type="checkbox" name="playerDataConsent" checked="{{ f.playerDataConsent }}" onChange="{{ set.playerDataConsent }}" style="width:20px;height:20px;min-height:20px;margin:2px 0 0;accent-color:#C8102E">
+              <span style="font:400 12px/1.6 'Montserrat',sans-serif;color:#D7D9DC"><strong style="color:#C8102E">Required.</strong> I confirm that I am authorised to provide the listed players&rsquo; details and consent to M2M using any dietary or accessibility information supplied solely to arrange and administer the event.</span>
+            </label>
+            <label style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start;cursor:pointer">
+              <input type="checkbox" name="marketingConsent" checked="{{ f.marketingConsent }}" onChange="{{ set.marketingConsent }}" style="width:20px;height:20px;min-height:20px;margin:2px 0 0;accent-color:#C8102E">
+              <span style="font:400 12px/1.6 'Montserrat',sans-serif;color:#D7D9DC"><strong style="color:#FFFDFC">Optional.</strong> I would like M2M to send me future event and marketing communications. I can opt out at any time.</span>
+            </label>
+            <p style="margin:0;padding-top:2px;font:400 10.5px/1.6 'Montserrat',sans-serif;color:#8ea6ca">Privacy notice version POPIA-2026-08-20. You may withdraw optional consent or exercise your privacy rights by contacting <a href="mailto:info@marketing2themax.co.za" style="color:#FFFDFC;text-decoration:underline;text-underline-offset:3px">info@marketing2themax.co.za</a>.</p>
+          </fieldset>
+
           <!-- submit -->
           <div style="display:flex;flex-direction:column;gap:16px">
             <label aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden">Website<input type="text" name="website" value="" tabindex="-1" autocomplete="off"></label>
@@ -398,7 +417,7 @@
             <sc-if value="{{ error }}" hint-placeholder-val="{{ false }}">
               <p role="alert" style="margin:0;padding:13px 15px;border-left:2px solid #C8102E;background:rgba(200,16,46,.1);font:500 12px/1.6 'Montserrat',sans-serif;color:#EEF0F1">{{ error }}</p>
             </sc-if>
-            <p style="margin:0;font:400 11px/1.7 'Montserrat',sans-serif;letter-spacing:.04em;color:#6a6f77">Submitting this form records your RSVP and selected sponsorship option. The event team will follow up using the contact details above.</p>
+            <p style="margin:0;font:400 11px/1.7 'Montserrat',sans-serif;letter-spacing:.04em;color:#6a6f77">Submitting this form records your RSVP, selected sponsorship option and consent choices. The event team will follow up using the contact details above.</p>
           </div>
         </form>
 
@@ -599,7 +618,10 @@
         <span aria-hidden="true" style="width:1px;height:24px;background:rgba(215,217,220,.18)"></span>
         <img src="https://glendower.co.za/resources/GLENDOWER/www/wp-content/uploads/glendower-logo.png" alt="Glendower Golf Club" onError="{{ imgFail }}" style="height:26px;width:auto;display:block;filter:brightness(0) invert(1) opacity(.5)">
       </div>
-      <div style="font:400 10px/1.6 'Montserrat',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#5f656d">M2M Invitational &middot; {{ dateShort }} 2026 &middot; Glendower Golf Club</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:7px;font:400 10px/1.6 'Montserrat',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#5f656d">
+        <span>M2M Invitational &middot; {{ dateShort }} 2026 &middot; Glendower Golf Club</span>
+        <a href="/privacy.html" style="color:#8ea6ca;text-decoration:underline;text-underline-offset:3px">Privacy &amp; POPIA Notice</a>
+      </div>
     </div>
   </footer>
 </div>
@@ -611,7 +633,7 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 class Component extends DCLogic {
   state = {
     shot: 0, done: false, sending: false, error: false,
-    f: { company: '', contact: '', phone: '', email: '', notes: '', dietary: '', dietaryOther: '', sponsorship: '', qty: 1, players: {} }
+    f: { company: '', contact: '', phone: '', email: '', notes: '', dietary: '', dietaryOther: '', sponsorship: '', qty: 1, players: {}, registrationConsent: false, playerDataConsent: false, marketingConsent: false }
   };
 
   componentDidMount() {
@@ -731,6 +753,14 @@ class Component extends DCLogic {
       this.setState({ error: 'Please specify your dietary requirement.' });
       return;
     }
+    if (!f.registrationConsent) {
+      this.setState({ error: 'Please read and accept the Privacy & POPIA Notice to register.' });
+      return;
+    }
+    if (!f.playerDataConsent) {
+      this.setState({ error: "Please confirm that you may provide the listed players' details." });
+      return;
+    }
     const players = [];
     for (let i = 0; i < f.qty * 4; i++) {
       const p = f.players[i] || {};
@@ -753,7 +783,10 @@ class Component extends DCLogic {
           sponsorship: f.sponsorship,
           fourballs: f.qty,
           players,
-          consent: true
+          privacyNoticeVersion: 'POPIA-2026-08-20',
+          registrationConsent: f.registrationConsent,
+          playerDataConsent: f.playerDataConsent,
+          marketingConsent: f.marketingConsent
         })
       });
       const result = await response.json().catch(() => ({}));
@@ -850,7 +883,10 @@ class Component extends DCLogic {
           }));
         },
         dietaryOther: this.field('dietaryOther'),
-        sponsorship: this.field('sponsorship')
+        sponsorship: this.field('sponsorship'),
+        registrationConsent: this.field('registrationConsent'),
+        playerDataConsent: this.field('playerDataConsent'),
+        marketingConsent: this.field('marketingConsent')
       },
       showDietaryOther: f.dietary === 'Other',
       onSubmit: this.submit

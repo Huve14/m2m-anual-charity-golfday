@@ -31,6 +31,14 @@ create table if not exists public.m2m_registrations (
   dietary_requirements text,
   dietary_other text,
   notes text,
+  privacy_notice_version text,
+  registration_consent boolean not null default false,
+  player_data_consent boolean not null default false,
+  marketing_consent boolean not null default false,
+  consented_at timestamptz,
+  consent_source text not null default 'website',
+  consent_tags jsonb not null default '[]'::jsonb,
+  consent_text_snapshot jsonb not null default '{}'::jsonb,
   total_amount integer not null default 0,
   raw_registration jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
@@ -48,7 +56,29 @@ create table if not exists public.m2m_registrations (
   constraint m2m_registrations_players_array_check
     check (jsonb_typeof(players) = 'array'),
   constraint m2m_registrations_raw_object_check
-    check (jsonb_typeof(raw_registration) = 'object')
+    check (jsonb_typeof(raw_registration) = 'object'),
+  constraint m2m_registrations_consent_tags_array_check
+    check (jsonb_typeof(consent_tags) = 'array'),
+  constraint m2m_registrations_consent_snapshot_object_check
+    check (jsonb_typeof(consent_text_snapshot) = 'object'),
+  constraint m2m_registrations_consent_state_check
+    check (
+      (
+        registration_consent
+        and player_data_consent
+        and privacy_notice_version is not null
+        and consented_at is not null
+      )
+      or (
+        not registration_consent
+        and not player_data_consent
+        and not marketing_consent
+        and privacy_notice_version is null
+        and consented_at is null
+      )
+    ),
+  constraint m2m_registrations_marketing_consent_check
+    check (not marketing_consent or registration_consent)
 );
 
 -- Repair columns when an older or partial table already exists.
@@ -77,10 +107,75 @@ alter table public.m2m_registrations
   add column if not exists dietary_requirements text,
   add column if not exists dietary_other text,
   add column if not exists notes text,
+  add column if not exists privacy_notice_version text,
+  add column if not exists registration_consent boolean not null default false,
+  add column if not exists player_data_consent boolean not null default false,
+  add column if not exists marketing_consent boolean not null default false,
+  add column if not exists consented_at timestamptz,
+  add column if not exists consent_source text not null default 'website',
+  add column if not exists consent_tags jsonb not null default '[]'::jsonb,
+  add column if not exists consent_text_snapshot jsonb not null default '{}'::jsonb,
   add column if not exists total_amount integer not null default 0,
   add column if not exists raw_registration jsonb not null default '{}'::jsonb,
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'm2m_registrations_consent_tags_array_check'
+      and conrelid = 'public.m2m_registrations'::regclass
+  ) then
+    alter table public.m2m_registrations
+      add constraint m2m_registrations_consent_tags_array_check
+      check (jsonb_typeof(consent_tags) = 'array');
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'm2m_registrations_consent_snapshot_object_check'
+      and conrelid = 'public.m2m_registrations'::regclass
+  ) then
+    alter table public.m2m_registrations
+      add constraint m2m_registrations_consent_snapshot_object_check
+      check (jsonb_typeof(consent_text_snapshot) = 'object');
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'm2m_registrations_consent_state_check'
+      and conrelid = 'public.m2m_registrations'::regclass
+  ) then
+    alter table public.m2m_registrations
+      add constraint m2m_registrations_consent_state_check
+      check (
+        (
+          registration_consent
+          and player_data_consent
+          and privacy_notice_version is not null
+          and consented_at is not null
+        )
+        or (
+          not registration_consent
+          and not player_data_consent
+          and not marketing_consent
+          and privacy_notice_version is null
+          and consented_at is null
+        )
+      );
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'm2m_registrations_marketing_consent_check'
+      and conrelid = 'public.m2m_registrations'::regclass
+  ) then
+    alter table public.m2m_registrations
+      add constraint m2m_registrations_marketing_consent_check
+      check (not marketing_consent or registration_consent);
+  end if;
+end $$;
 
 create index if not exists m2m_registrations_email_idx
   on public.m2m_registrations (lower(email));

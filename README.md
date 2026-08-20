@@ -110,6 +110,8 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 ### Create the Supabase registration table
 
 - The registration table is defined in `supabase/m2m-registrations-table.sql`.
+- New registrations require acceptance of privacy notice `POPIA-2026-08-20` and record registration consent, player-data authority, optional marketing consent, consent tags, the server timestamp and the exact notice-text snapshot.
+- Existing registrations are intentionally left with `registration_consent = false` and no consent timestamp. Do not backfill consent that was not actually collected.
 - If you have a PostgreSQL connection URL (for example `postgres://...`), run:
 
 ```bash
