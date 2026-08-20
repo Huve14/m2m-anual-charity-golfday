@@ -20,6 +20,9 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   ]);
 
   assert.match(html, /M2M Invitational \| Fourball Registration/);
+  assert.match(html, /m2m-favicon-32\.png\?v=2/);
+  assert.match(html, /apple-touch-icon\.png\?v=2/);
+  assert.match(html, /site\.webmanifest/);
   assert.match(html, /m2m-golf-plate\.png/);
   assert.match(html, /A Hole A Day Keeps the Boredom Away/);
   assert.match(html, /Enter your/);
