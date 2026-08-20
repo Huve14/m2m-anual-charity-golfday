@@ -9,7 +9,7 @@
    mode="explore" gives free orbit + a tee-to-green flythrough.
    Turf, water, sand, sky and ball dimples are all generated procedurally on canvas. */
 
-const THREE_URL = 'https://unpkg.com/three@0.184.0/build/three.module.js';
+const THREE_URL = '/vendor/three.module.js';
 
 /* ---------- small maths helpers ---------- */
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;

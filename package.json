@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "start": "vite preview",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && node --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "supabase:create-table": "node ./scripts/create-m2m-reg-table.mjs"
@@ -18,7 +18,8 @@
     "@composio/core": "^0.17.0",
     "drizzle-orm": "0.45.2",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "three": "0.184.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
@@ -44,6 +45,9 @@
     "vinext": "1.0.0-beta.2",
     "vite": "8.0.13",
     "wrangler": "4.92.0"
+  },
+  "overrides": {
+    "ws": "8.21.0"
   },
   "type": "module"
 }

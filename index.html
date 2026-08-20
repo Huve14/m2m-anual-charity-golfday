@@ -12,15 +12,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>M2M Invitational | Fourball Registration</title>
 <meta name="description" content="RSVP for the M2M Invitational at Glendower Golf Club on Tuesday 22 September 2026. Shotgun start at 10:00.">
-<meta name="theme-color" content="#191B1F">
+<meta name="theme-color" content="#0C1735">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
   <style>
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth;background:#191B1F;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  html{scroll-behavior:smooth;background:#0C1735;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   *{color:#ffffff!important}
-  [data-hero-title] span:nth-of-type(3){color:#C8102E!important}
+  [data-hero-title] span:nth-of-type(3){color:#ED1C24!important}
   @font-face {
     font-family: 'Aquire';
     src: url('/assets/fonts/Aquire-SemiBold.woff2') format('woff2'),
@@ -31,20 +31,24 @@
   }
   :root{
     --heading-font:'Aquire', 'Montserrat', sans-serif;
-    --m2m-red:#C8102E;
-    --m2m-navy:#243752;
-    --m2m-navy-soft:#8ea6ca;
+    --m2m-red:#ED1C24;
+    --m2m-red-deep:#BC1118;
+    --m2m-navy:#0C1735;
+    --m2m-navy-raised:#142347;
+    --m2m-navy-soft:#DCDDDE;
+    --m2m-silver:#DCDDDE;
+    --m2m-silver-muted:#A9AFB8;
   }
-  body{margin:0;background:#191B1F;color:#D7D9DC;font-family:'Montserrat','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-wrap:break-word;overflow-x:hidden}
+  body{margin:0;background:#0C1735;color:#DCDDDE;font-family:'Montserrat','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-wrap:break-word;overflow-x:hidden}
   img,video,canvas{max-width:100%}
   section[id]{scroll-margin-top:84px}
   a{color:#EEF0F1;text-decoration:none}
-  a:hover{color:#C8102E}
-  ::selection{background:#C8102E;color:#FFFDFC}
+  a:hover{color:#ED1C24}
+  ::selection{background:#ED1C24;color:#FFFDFC}
   input,select,textarea,button{font-family:inherit;font-size:inherit;color:inherit}
   input,select,textarea,button,a{touch-action:manipulation}
   input,select,textarea,button{min-height:44px}
-  input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:1px solid #C8102E;outline-offset:2px}
+  input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:1px solid #ED1C24;outline-offset:2px}
   [data-entry-form] input[type="text"],
   [data-entry-form] input[type="email"],
   [data-entry-form] input[type="tel"],
@@ -74,8 +78,49 @@
   input::placeholder,textarea::placeholder{color:#c5ccd5}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   [style*="color:#C8102E"]{color:var(--m2m-red)!important}
+  [style*="background:#C8102E"]{background:var(--m2m-red)!important}
+  [style*="border-color:#C8102E"]{border-color:var(--m2m-red)!important}
+  [style*="border-left:2px solid #C8102E"]{border-left-color:var(--m2m-red)!important}
+  [style*="border-left:3px solid #C8102E"]{border-left-color:var(--m2m-red)!important}
+  [style*="accent-color:#C8102E"]{accent-color:var(--m2m-red)!important}
   .m2m-red-text{color:var(--m2m-red)!important}
   .m2m-blue-text{color:var(--m2m-navy-soft)!important}
+  [data-brand-root]{background:linear-gradient(145deg,#0C1735 0%,#101D3D 46%,#0C1735 100%)!important}
+  [data-site-header]{background:linear-gradient(180deg,rgba(12,23,53,.98),rgba(12,23,53,.9) 68%,rgba(12,23,53,.28))!important;border-bottom-color:rgba(220,221,222,.18)!important}
+  [data-site-header] [data-lockup] img:first-child{filter:none!important;opacity:1!important}
+  [data-brand-cta]{background:var(--m2m-red)!important;color:#FFFDFC!important}
+  [data-brand-red-surface]{background-color:var(--m2m-red)!important}
+  [data-entry-form] input[type="checkbox"]{accent-color:var(--m2m-red)!important}
+  [data-entry-form] label>span>span{color:var(--m2m-red)!important}
+  #register{background:linear-gradient(180deg,rgba(12,23,53,.98),rgba(12,23,53,.9) 34%,rgba(16,29,61,.92) 100%)!important;border-top-color:rgba(220,221,222,.16)!important}
+  #course{background:#0C1735!important;border-top-color:rgba(220,221,222,.18)!important}
+  #contact{background:linear-gradient(145deg,#0C1735,#111F42)!important;border-top-color:rgba(220,221,222,.16)!important;overflow:hidden}
+  [data-site-footer]{background:#080F25!important;border-top-color:rgba(220,221,222,.15)!important;overflow:hidden}
+  [data-entry-summary]{background:linear-gradient(160deg,#142347,#0C1735 72%)!important;border-color:rgba(220,221,222,.28)!important;box-shadow:0 40px 90px -50px rgba(1,7,23,.95),inset 0 1px rgba(255,255,255,.04)!important}
+  [data-consent-section]{background:rgba(12,23,53,.84)!important;border-color:rgba(220,221,222,.24)!important}
+  [data-hole-stats]{border-color:rgba(220,221,222,.36)!important;background:rgba(220,221,222,.24)!important}
+  [data-hole-stat-row]{background:linear-gradient(90deg,rgba(20,35,71,.98),rgba(12,23,53,.98))!important}
+  [data-hole-stat-row]:first-child{background:linear-gradient(90deg,rgba(237,28,36,.18),rgba(12,23,53,.98))!important}
+  [data-course-card]{border-color:rgba(220,221,222,.48)!important;background:#0C1735!important}
+  [data-footer-inner] img:first-child{filter:none!important;opacity:1!important}
+  .m2m-growth-pattern{position:absolute;z-index:1;pointer-events:none;background:url('/assets/m2m-growth-pattern.svg') center/contain no-repeat;filter:drop-shadow(0 16px 38px rgba(0,0,0,.24))}
+  .m2m-pattern-hero{right:-2%;top:15%;width:clamp(280px,38vw,640px);aspect-ratio:360/260;opacity:.18}
+  .m2m-pattern-register{right:-6%;top:clamp(92px,14vh,180px);width:clamp(260px,34vw,540px);aspect-ratio:360/260;opacity:.1;transform:rotate(90deg)}
+  .m2m-pattern-course{right:-4%;top:10%;width:clamp(260px,32vw,520px);aspect-ratio:360/260;opacity:.18;transform:rotate(180deg)}
+  .m2m-pattern-fly{right:-10%;bottom:-6%;width:clamp(240px,30vw,480px);aspect-ratio:360/260;opacity:.09}
+  .m2m-pattern-card{top:-10%;right:-18%;width:62%;aspect-ratio:360/260;opacity:.25}
+  .m2m-pattern-summary{top:-20%;right:-14%;width:58%;aspect-ratio:360/260;opacity:.17;transform:rotate(180deg)}
+  .m2m-pattern-contact{right:-8%;bottom:-18%;width:clamp(260px,34vw,560px);aspect-ratio:360/260;opacity:.09;transform:rotate(90deg)}
+  .m2m-pattern-footer{right:-3%;top:-80%;width:clamp(220px,26vw,420px);aspect-ratio:360/260;opacity:.08}
+  .m2m-brand-signature{display:inline-flex;align-items:center;gap:11px;width:max-content;margin-top:clamp(18px,2.8vh,30px);padding:10px 14px 10px 12px;border-left:3px solid var(--m2m-red);background:rgba(12,23,53,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font:600 9px/1 'Montserrat',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--m2m-silver)!important}
+  [data-hero-kicker]{margin-bottom:clamp(28px,4vh,46px)!important}
+  [data-hero-title]{font-size:clamp(44px,5.7vw,96px)!important;line-height:1!important;gap:0!important;max-width:15ch}
+  [data-hero-title]>span{line-height:1.04!important}
+  [data-hero-title]>span+span{margin-top:clamp(10px,1.5vh,18px)}
+  [data-hero-title]>span:nth-of-type(3){font-size:.78em!important;line-height:1.08!important;letter-spacing:-.02em!important;margin-top:clamp(24px,3.8vh,44px)}
+  [data-hero-intro]{margin-top:clamp(36px,5.5vh,62px)!important;max-width:54ch!important;line-height:1.82!important}
+  [data-hero-intro]>strong{display:block;margin-bottom:clamp(10px,1.4vh,16px);line-height:1.35!important}
+  .m2m-brand-signature::before{content:'';width:32px;height:23px;background:url('/assets/m2m-growth-pattern.svg') center/contain no-repeat;flex:0 0 auto}
   [data-course-story-title]>span{white-space:nowrap}
   [data-fly-title]>span{display:block;white-space:nowrap}
   [style*="color:#7c828a"],[style*="color:#7c828a!important"],[style*="color:#8f959d"],[style*="color:#8f959d!important"],[style*="color:#9aa0a8"],[style*="color:#9aa0a8!important"],[style*="color:#5f656d"],[style*="color:#6a6f77"],[style*="color:#4d525a"]{color:var(--m2m-navy-soft)!important}
@@ -97,8 +142,9 @@
   }
   @media (max-width: 1024px){
     [data-hero-copy]{padding-top:clamp(92px,12vh,128px)!important;padding-inline:max(16px,env(safe-area-inset-left),env(safe-area-inset-right))!important;max-width:100%!important}
-    [data-hero-title]{font-size:clamp(52px,8.2vw,86px)!important;line-height:.9!important}
-    [data-hero-intro]{max-width:52ch!important}
+    [data-hero-title]{font-size:clamp(48px,7.8vw,78px)!important;line-height:1!important}
+    [data-hero-title]>span:nth-of-type(3){margin-top:clamp(20px,3vh,34px)}
+    [data-hero-intro]{max-width:52ch!important;margin-top:clamp(30px,4.5vh,48px)!important}
     [data-meta-grid]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
     [data-meta-grid]>div{padding-left:clamp(14px,2.4vw,20px)!important;padding-right:clamp(14px,2.4vw,20px)!important}
     [data-course-grid], [data-contact-grid]{grid-template-columns:minmax(0,1fr)!important}
@@ -110,7 +156,9 @@
     [data-hero-copy]{padding-top:clamp(102px,14vh,130px)!important;padding-bottom:26px!important;max-width:100%!important;min-width:0!important}
     [data-hero-kicker]{max-width:100%!important;flex-wrap:wrap!important;gap:10px 12px!important}
     [data-hero-kicker]>span:last-child{flex-basis:100%;padding-left:calc(clamp(26px,4vw,62px) + 12px)}
-    [data-hero-title]{font-size:clamp(46px,11.4vw,92px)!important;line-height:.86!important;max-width:100%!important}
+    [data-hero-title]{font-size:clamp(44px,10.4vw,72px)!important;line-height:1!important;max-width:100%!important}
+    [data-hero-title]>span+span{margin-top:clamp(8px,1.3vh,14px)}
+    [data-hero-title]>span:nth-of-type(3){margin-top:clamp(20px,3.2vh,30px)}
     [data-hero-intro]{max-width:38ch!important}
     [data-camera-selector]{display:none!important}
     [data-meta-grid]{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;max-width:100%!important;min-width:0!important}
@@ -128,6 +176,10 @@
     [data-qty-stepper] button{width:52px!important}
     [data-entry-summary]{box-shadow:0 26px 60px -46px rgba(0,0,0,.9)!important}
     [data-footer-inner]{align-items:flex-start!important;flex-direction:column!important}
+    .m2m-pattern-hero{right:-20%;top:18%;width:66vw;opacity:.13}
+    .m2m-pattern-register{right:-24%;top:120px;width:60vw;opacity:.07}
+    .m2m-pattern-course{right:-24%;top:12%;width:62vw;opacity:.13}
+    .m2m-pattern-fly{right:-24%;bottom:0;width:58vw;opacity:.07}
   }
   @media (max-width:560px){
     section[id]{scroll-margin-top:68px}
@@ -136,10 +188,13 @@
     [data-lockup] img:last-of-type,[data-lockup] span{display:none!important}
     [data-hdr-cta]{padding:11px 13px!important;letter-spacing:.09em!important;font-size:8.5px!important}
     [data-hero-copy]{justify-content:flex-end!important;padding:98px 16px 26px!important;min-height:calc(100svh - 176px);width:100%!important}
-    [data-hero-kicker]{margin-bottom:18px!important;max-width:100%}
+    [data-hero-kicker]{margin-bottom:26px!important;max-width:100%}
     [data-hero-kicker]>span:last-child{padding-left:0}
-    [data-hero-title]{font-size:clamp(40px,11.6vw,64px)!important;letter-spacing:-.045em!important}
-    [data-hero-intro]{font-size:14.5px!important;line-height:1.5!important;margin-top:20px!important}
+    [data-hero-title]{font-size:clamp(38px,10.8vw,56px)!important;letter-spacing:-.04em!important}
+    [data-hero-title]>span+span{margin-top:8px}
+    [data-hero-title]>span:nth-of-type(3){font-size:.8em!important;margin-top:20px}
+    [data-hero-intro]{font-size:14.5px!important;line-height:1.75!important;margin-top:30px!important}
+    [data-hero-intro]>strong{margin-bottom:10px}
     [data-hero-actions]{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%;max-width:100%;min-width:0;margin-top:24px!important}
     [data-hero-actions] a{width:100%;max-width:100%;min-width:0;justify-content:space-between;text-align:left}
     [data-meta-grid]>div{padding:15px 16px!important;min-width:0;border-right:1px solid rgba(215,217,220,.1)!important}
@@ -161,6 +216,13 @@
     [data-fly-description]{font-size:14px!important;line-height:1.8!important;padding-left:16px!important;margin-bottom:36px!important}
     [data-hole-stat-row]{padding:17px 16px!important}
     [data-footer-inner]>div:last-child{font-size:9px!important;letter-spacing:.12em!important}
+    .m2m-pattern-hero{right:-34%;top:23%;width:88vw;opacity:.1}
+    .m2m-pattern-register{display:none}
+    .m2m-pattern-course{right:-42%;top:14%;width:86vw;opacity:.1}
+    .m2m-pattern-fly{display:none}
+    .m2m-pattern-contact{right:-44%;bottom:-8%;width:90vw;opacity:.06}
+    .m2m-pattern-footer{display:none}
+    .m2m-brand-signature{font-size:8px!important;letter-spacing:.17em!important}
   }
   @media (max-width:360px){
     [data-hdr-cta]{max-width:136px;white-space:normal!important;text-align:center;line-height:1.25!important}
@@ -181,13 +243,13 @@
 </style>
 </helmet>
 
-<div style="position:relative;background:#191B1F;overflow-x:clip">
+<div data-brand-root="true" style="position:relative;background:#0C1735;overflow-x:clip">
 
   <!-- ══ grain + vignette over the whole page ══ -->
   <div aria-hidden="true" style="position:fixed;inset:0;z-index:60;pointer-events:none;mix-blend-mode:overlay;opacity:.22;background-image:url('/assets/grain.svg')"></div>
 
   <!-- ══ shared 3D backdrop: sits under the hero and the entry form ══ -->
-  <div aria-hidden="true" style="position:fixed;inset:0;z-index:0;background:#0E1116 url('assets/m2m-golf-plate.png') center right/cover no-repeat">
+  <div aria-hidden="true" style="position:fixed;inset:0;z-index:0;background:#0C1735 url('assets/m2m-golf-plate.png') center right/cover no-repeat">
     <x-import component-from-global-scope="golf-stage" from="./golf-3d.js" start-shot="0" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%"></x-import>
   </div>
 
@@ -207,7 +269,7 @@
       <a href="#course" style="color:#D7D9DC;white-space:nowrap" style-hover="color:#FFFDFC">Hole 2</a>
       <a href="#contact" style="color:#D7D9DC;white-space:nowrap" style-hover="color:#FFFDFC">Contact</a>
     </nav>
-    <a href="#register" data-hdr-cta="true" style="flex:0 0 auto;position:relative;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;padding:clamp(9px,1.1vw,13px) clamp(14px,1.7vw,24px);background:#C8102E;color:#FFFDFC;font:700 clamp(9px,.74vw,11px)/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);transition:background .3s ease,transform .3s ease" style-hover="background:#A70B24;transform:translateY(-1px);color:#FFFDFC">
+    <a href="#register" data-hdr-cta="true" data-brand-cta="true" style="flex:0 0 auto;position:relative;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;padding:clamp(9px,1.1vw,13px) clamp(14px,1.7vw,24px);background:#C8102E;color:#FFFDFC;font:700 clamp(9px,.74vw,11px)/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);transition:background .3s ease,transform .3s ease" style-hover="background:#A70B24;transform:translateY(-1px);color:#FFFDFC">
       Buy a fourball
     </a>
   </header>
@@ -217,33 +279,35 @@
 
 
     <!-- legibility scrim: dark from the left, floor shadow at the base -->
-    <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(100deg,rgba(14,17,22,.97) 0%,rgba(14,17,22,.9) 26%,rgba(14,17,22,.6) 48%,rgba(14,17,22,.12) 68%,rgba(36,55,82,.42) 100%)"></div>
-    <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(0deg,rgba(14,17,22,.92) 0%,rgba(14,17,22,.35) 18%,rgba(36,55,82,.18) 100%)"></div>
+    <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(100deg,rgba(12,23,53,.98) 0%,rgba(12,23,53,.92) 28%,rgba(12,23,53,.64) 50%,rgba(12,23,53,.14) 70%,rgba(12,23,53,.48) 100%)"></div>
+    <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(0deg,rgba(12,23,53,.94) 0%,rgba(12,23,53,.34) 20%,rgba(12,23,53,.08) 100%)"></div>
 
-    <!-- M2M chevron, held back to a watermark bleeding off the left edge -->
-    <div aria-hidden="true" style="position:absolute;z-index:1;pointer-events:none;top:50%;left:-6%;transform:translateY(-50%);width:clamp(150px,20vw,300px);aspect-ratio:1/1.08;opacity:.22;background:linear-gradient(155deg,#C8102E,rgba(167,11,36,0) 88%);clip-path:polygon(0 0,17% 0,57% 50%,17% 100%,0 100%,40% 50%)"></div>
+    <!-- Official silver M2M growth pattern from the CI system -->
+    <div aria-hidden="true" class="m2m-growth-pattern m2m-pattern-hero"></div>
 
     <!-- hero copy -->
     <div data-hero-copy="true" style="position:relative;z-index:2;display:flex;flex-direction:column;justify-content:center;padding:clamp(96px,13vh,150px) clamp(18px,4.4vw,72px) clamp(20px,3vh,34px);max-width:1680px;margin:0 auto;width:100%">
 
       <div data-hero-kicker="true" style="display:flex;align-items:center;gap:16px;margin-bottom:clamp(18px,2.6vh,30px);animation:rise .9s cubic-bezier(.16,1,.3,1) both">
-        <span style="width:clamp(26px,4vw,62px);height:1px;background:#C8102E;transform-origin:left;animation:wipe 1s cubic-bezier(.16,1,.3,1) .1s both"></span>
-        <span style="font:500 clamp(9px,.78vw,11.5px)/1 'Montserrat',sans-serif;letter-spacing:.30em;text-transform:uppercase;color:#C8102E">M2M Invitational</span>
+        <span data-brand-red-surface="true" style="width:clamp(26px,4vw,62px);height:1px;background:#C8102E;transform-origin:left;animation:wipe 1s cubic-bezier(.16,1,.3,1) .1s both"></span>
+        <span class="m2m-red-text" style="font:500 clamp(9px,.78vw,11.5px)/1 'Montserrat',sans-serif;letter-spacing:.30em;text-transform:uppercase;color:#C8102E">M2M Invitational</span>
         <span style="font:400 clamp(9px,.78vw,11.5px)/1 'Montserrat',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#7c828a">Glendower Golf Club &middot; Edenvale, Gauteng</span>
       </div>
 
       <h1 data-hero-title="true" style="margin:0;font-family:var(--heading-font);font-weight:600;font-size:clamp(38px,6.6vw,112px);line-height:1;letter-spacing:-.035em;text-transform:uppercase;color:#FFFDFC!important;text-wrap:balance;display:flex;flex-direction:column;gap:clamp(10px,1.2vw,20px)">
         <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .12s both;color:#FFFDFC!important">An Iconic</span>
         <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .22s both;color:#FFFDFC!important">Course.</span>
-        <span style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .32s both;color:#C8102E!important">A Greater Cause.</span>
+        <span class="m2m-red-text" style="display:block;animation:rise 1s cubic-bezier(.16,1,.3,1) .32s both">A Greater Cause.</span>
       </h1>
 
       <p data-hero-intro="true" style="margin:clamp(22px,3.4vh,40px) 0 0;max-width:46ch;font-size:clamp(15px,1.28vw,20px);line-height:1.55;color:#aeb4bc;font-weight:400;text-wrap:pretty;animation:rise 1s cubic-bezier(.16,1,.3,1) .42s both">
-        <strong style="color:#EEF0F1;font-family:var(--heading-font);font-weight:600">Bring the boardroom outside.</strong> Join us for an unforgettable day of golf and connection in support of the BYE Foundation&rsquo;s charity auction, followed by Sel&rsquo;s 50th Birthday celebration. <em style="font-family:'Montserrat',sans-serif;font-style:italic;font-size:1.08em;color:#EEF0F1">Supporting mental health and wellness in partnership with the BYE Foundation.</em>
+        <strong style="color:#EEF0F1;font-family:var(--heading-font);font-weight:600">A Hole A Day Keeps the Boredom Away.</strong> Join us for an unforgettable day of golf and connection in support of the BYE Foundation&rsquo;s charity auction, followed by Sel&rsquo;s 50th Birthday celebration. <em style="font-family:'Montserrat',sans-serif;font-style:italic;font-size:1.08em;color:#EEF0F1">Supporting mental health and wellness in partnership with the BYE Foundation.</em>
       </p>
 
+      <div class="m2m-brand-signature">Inspired execution</div>
+
       <div data-hero-actions="true" style="display:flex;flex-wrap:wrap;gap:clamp(10px,1.2vw,16px);margin-top:clamp(28px,4vh,46px);animation:rise 1s cubic-bezier(.16,1,.3,1) .52s both">
-        <a href="#register" style="position:relative;display:inline-flex;align-items:center;gap:clamp(14px,1.6vw,26px);padding:clamp(15px,1.55vw,21px) clamp(22px,2.4vw,34px);background:#C8102E;color:#FFFDFC;font:700 clamp(10px,.86vw,13px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);box-shadow:0 18px 50px -18px rgba(200,16,46,.85);transition:background .3s ease,transform .3s ease,box-shadow .3s ease" style-hover="background:#A70B24;transform:translateY(-2px);box-shadow:0 26px 62px -18px rgba(200,16,46,.95);color:#FFFDFC">
+        <a href="#register" data-brand-cta="true" style="position:relative;display:inline-flex;align-items:center;gap:clamp(14px,1.6vw,26px);padding:clamp(15px,1.55vw,21px) clamp(22px,2.4vw,34px);background:#C8102E;color:#FFFDFC;font:700 clamp(10px,.86vw,13px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);box-shadow:0 18px 50px -18px rgba(200,16,46,.85);transition:background .3s ease,transform .3s ease,box-shadow .3s ease" style-hover="background:#A70B24;transform:translateY(-2px);box-shadow:0 26px 62px -18px rgba(200,16,46,.95);color:#FFFDFC">
           Buy your fourball
           <span style="font-size:1.15em;line-height:0">&#8594;</span>
         </a>
@@ -291,8 +355,9 @@
   <section id="register" data-screen-label="Registration" style="position:relative;z-index:1;padding:clamp(64px,11vh,132px) clamp(18px,4.4vw,72px) clamp(56px,9vh,110px);background:linear-gradient(180deg,rgba(14,17,22,.94) 0%,rgba(20,23,27,.72) 26%,rgba(20,23,27,.64) 62%,rgba(20,23,27,.7) 100%);border-top:1px solid rgba(215,217,220,.1)">
 
     <div aria-hidden="true" style="position:absolute;top:0;left:0;width:clamp(120px,18vw,300px);height:2px;background:linear-gradient(90deg,var(--m2m-red),rgba(36,55,82,.22))"></div>
+    <div aria-hidden="true" class="m2m-growth-pattern m2m-pattern-register"></div>
 
-    <div style="max-width:1680px;margin:0 auto">
+    <div data-register-inner="true" style="position:relative;z-index:2;max-width:1680px;margin:0 auto">
 
       <div style="display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;margin-bottom:clamp(30px,4.4vh,54px)">
         <span style="font:500 clamp(9px,.74vw,11px)/1 'Montserrat',sans-serif;letter-spacing:.26em;text-transform:uppercase;color:#C8102E">01 &middot; Entry form</span>
@@ -301,7 +366,7 @@
       </div>
 
       <h2 style="margin:0 0 clamp(34px,5vh,60px);max-width:22ch;font-family:var(--heading-font);font-weight:600;font-size:clamp(32px,5.4vw,88px);line-height:.88;letter-spacing:-.032em;text-transform:uppercase;color:#FFFDFC;text-wrap:balance;text-shadow:0 4px 30px rgba(14,17,22,.85)">
-        <span style="color:#FFFDFC!important">Enter your</span> <em style="font-family:'Montserrat',sans-serif;font-style:italic;font-variation-settings:normal;font-weight:400;text-transform:none;letter-spacing:-.01em;color:#C8102E">fourball</em>
+        <span class="m2m-red-text">Enter your</span> <em style="font-family:'Montserrat',sans-serif;font-style:italic;font-variation-settings:normal;font-weight:400;text-transform:none;letter-spacing:-.01em;color:#FFFDFC!important">fourball</em>
       </h2>
 
       <div data-registration-grid="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:clamp(24px,3.4vw,58px);align-items:start">
@@ -420,13 +485,13 @@
               <input type="checkbox" name="marketingConsent" checked="{{ f.marketingConsent }}" onChange="{{ set.marketingConsent }}" style="width:20px;height:20px;min-height:20px;margin:2px 0 0;accent-color:#C8102E">
               <span style="font:400 12px/1.6 'Montserrat',sans-serif;color:#D7D9DC"><strong style="color:#FFFDFC">Optional.</strong> I would like M2M to send me future event and marketing communications. I can opt out at any time.</span>
             </label>
-            <p style="margin:0;padding-top:2px;font:400 10.5px/1.6 'Montserrat',sans-serif;color:#8ea6ca">Privacy notice version POPIA-2026-08-20. You may withdraw optional consent or exercise your privacy rights by contacting <a href="mailto:info@marketing2themax.co.za" style="color:#FFFDFC;text-decoration:underline;text-underline-offset:3px">info@marketing2themax.co.za</a>.</p>
+            <p style="margin:0;padding-top:2px;font:400 10.5px/1.6 'Montserrat',sans-serif;color:#8ea6ca">Privacy notice version POPIA-2026-08-20. You may withdraw optional consent or exercise your privacy rights by contacting <a href="mailto:support@marketing2themax.co.za" style="color:#FFFDFC;text-decoration:underline;text-underline-offset:3px">support@marketing2themax.co.za</a>.</p>
           </fieldset>
 
           <!-- submit -->
           <div style="display:flex;flex-direction:column;gap:16px">
             <label aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden">Website<input type="text" name="website" value="" tabindex="-1" autocomplete="off"></label>
-            <button type="submit" style="position:relative;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;width:100%;padding:clamp(18px,2vw,24px) clamp(22px,2.4vw,32px);background:#C8102E;border:0;color:#FFFDFC;font:700 clamp(11px,.9vw,13px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);box-shadow:0 18px 50px -20px rgba(200,16,46,.9);transition:background .3s ease,transform .3s ease" style-hover="background:#A70B24;transform:translateY(-2px)">
+            <button type="submit" data-brand-cta="true" style="position:relative;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;width:100%;padding:clamp(18px,2vw,24px) clamp(22px,2.4vw,32px);background:#C8102E;border:0;color:#FFFDFC;font:700 clamp(11px,.9vw,13px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);box-shadow:0 18px 50px -20px rgba(200,16,46,.9);transition:background .3s ease,transform .3s ease" style-hover="background:#A70B24;transform:translateY(-2px)">
               <span>{{ submitLabel }}</span>
               <span style="font-size:1.2em;line-height:0">&#8594;</span>
             </button>
@@ -451,7 +516,7 @@
             </div>
           </sc-if>
           <div style="position:relative;padding:clamp(22px,2.6vw,32px);border-bottom:1px solid rgba(215,217,220,.12);overflow:hidden">
-            <div aria-hidden="true" style="position:absolute;top:-30%;right:-14%;width:60%;aspect-ratio:1/1.08;opacity:.22;background:linear-gradient(155deg,#C8102E,rgba(167,11,36,0));clip-path:polygon(0 0,18% 0,58% 50%,18% 100%,0 100%,40% 50%)"></div>
+            <div aria-hidden="true" class="m2m-growth-pattern m2m-pattern-summary"></div>
             <div style="position:relative;font:500 9.5px/1 'Montserrat',sans-serif;letter-spacing:.26em;text-transform:uppercase;color:#C8102E;margin-bottom:14px">Your entry</div>
       <div style="position:relative;font-family:var(--heading-font);font-weight:600;font-size:clamp(24px,2.5vw,36px);line-height:.94;letter-spacing:-.03em;text-transform:uppercase;color:#FFFDFC">{{ summaryTitle }}</div>
             <div style="position:relative;margin-top:10px;font-size:13.5px;line-height:1.6;color:#8f959d">{{ summarySub }}</div>
@@ -475,7 +540,7 @@
             <div style="height:1px;background:rgba(215,217,220,.14);margin:4px 0"></div>
             <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px">
               <span style="font:500 10px/1 'Montserrat',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#7c828a!important">Total</span>
-          <span style="font-family:var(--heading-font);font-weight:600;font-size:clamp(28px,3vw,44px);line-height:.9;letter-spacing:-.035em;color:#C8102E!important;font-variant-numeric:tabular-nums">{{ totalLabel }}</span>
+          <span class="m2m-red-text" style="font-family:var(--heading-font);font-weight:600;font-size:clamp(28px,3vw,44px);line-height:.9;letter-spacing:-.035em;font-variant-numeric:tabular-nums">{{ totalLabel }}</span>
             </div>
             <p style="margin:4px 0 0;font:400 10.5px/1.65 'Montserrat',sans-serif;color:#6a6f77">Shotgun start at 10:00. Sel&rsquo;s 50th Birthday Celebration follows the game.</p>
           </div>
@@ -495,6 +560,7 @@
       </video>
       <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(14,17,22,.86) 0%,rgba(14,17,22,.32) 34%,rgba(14,17,22,.55) 66%,rgba(14,17,22,.96) 100%)"></div>
       <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;background:linear-gradient(92deg,rgba(14,17,22,.8) 0%,rgba(14,17,22,.2) 46%,transparent 72%)"></div>
+      <div aria-hidden="true" class="m2m-growth-pattern m2m-pattern-course"></div>
 
       <div style="position:relative;z-index:2;width:100%;max-width:1680px;margin:0 auto;padding:clamp(64px,10vh,126px) clamp(20px,5vw,82px) clamp(40px,5.5vh,68px)">
         <div style="display:flex;align-items:baseline;gap:24px;flex-wrap:wrap;margin-bottom:clamp(32px,5vh,52px)">
@@ -519,6 +585,7 @@
     <!-- the 2nd -->
     <div data-fly-section="true" style="position:relative;max-width:1680px;margin:0 auto;padding:clamp(64px,8.8vh,118px) clamp(20px,5vw,82px) clamp(76px,10.5vh,136px);background:radial-gradient(circle at 82% 34%,rgba(36,55,82,.38),transparent 42%),linear-gradient(135deg,rgba(36,55,82,.12),transparent 48%);overflow:hidden">
       <div aria-hidden="true" style="position:absolute;left:0;top:clamp(54px,8vh,110px);width:3px;height:clamp(90px,12vw,180px);background:linear-gradient(180deg,#C8102E,#243752)"></div>
+      <div aria-hidden="true" class="m2m-growth-pattern m2m-pattern-fly"></div>
       <div data-course-grid="true" data-fly-grid="true" style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:clamp(48px,6vw,96px);align-items:center">
 
         <div data-fly-copy="true">
@@ -557,7 +624,7 @@
           <img src="https://glendower.co.za/resources/GLENDOWER/www/wp-content/uploads/2022/04/20180503_071555_0484-HDR-605x605.jpg" alt="Glendower Golf Club at first light" onError="{{ imgFail }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.86) contrast(1.06) brightness(.62)">
           <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(14,17,22,.6) 0%,rgba(14,17,22,.24) 42%,rgba(14,17,22,.92) 100%)"></div>
           <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(145deg,rgba(36,55,82,.48),transparent 48%,rgba(36,55,82,.18))"></div>
-          <div aria-hidden="true" style="position:absolute;top:-18%;right:-8%;width:44%;aspect-ratio:1/1.08;opacity:.3;background:linear-gradient(155deg,#C8102E,rgba(167,11,36,0));clip-path:polygon(0 0,18% 0,58% 50%,18% 100%,0 100%,40% 50%)"></div>
+          <div aria-hidden="true" class="m2m-growth-pattern m2m-pattern-card"></div>
 
           <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(18px,2.4vw,30px)">
             <div style="display:flex;align-items:center;gap:12px">
@@ -566,7 +633,7 @@
             </div>
             <div>
               <div style="font-family:var(--heading-font);font-weight:600;font-size:clamp(26px,3.4vw,50px);line-height:.88;letter-spacing:-.035em;text-transform:uppercase;color:#FFFDFC;margin-bottom:18px">The <span class="m2m-red-text">2nd</span></div>
-              <span style="display:inline-flex;align-items:center;gap:14px;padding:clamp(13px,1.4vw,17px) clamp(18px,2vw,26px);background:#C8102E;color:#FFFDFC;font:700 clamp(9.5px,.8vw,12px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);box-shadow:0 16px 40px -18px rgba(200,16,46,.9)">
+              <span data-brand-cta="true" style="display:inline-flex;align-items:center;gap:14px;padding:clamp(13px,1.4vw,17px) clamp(18px,2vw,26px);background:#C8102E;color:#FFFDFC;font:700 clamp(9.5px,.8vw,12px)/1 'Montserrat',sans-serif;letter-spacing:.2em;text-transform:uppercase;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);box-shadow:0 16px 40px -18px rgba(200,16,46,.9)">
                 Open the flythrough
                 <span style="font-size:1.15em;line-height:0">&#8594;</span>
               </span>
@@ -579,7 +646,8 @@
 
   <!-- ══ CONTACT ══ -->
   <section id="contact" data-screen-label="Contact" style="position:relative;z-index:1;padding:clamp(56px,9vh,110px) clamp(18px,4.4vw,72px) clamp(40px,6vh,70px);background:#0E1116;border-top:1px solid rgba(215,217,220,.1)">
-    <div style="max-width:1680px;margin:0 auto">
+    <div aria-hidden="true" class="m2m-growth-pattern m2m-pattern-contact"></div>
+    <div style="position:relative;z-index:2;max-width:1680px;margin:0 auto">
       <div style="display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;margin-bottom:clamp(26px,4vh,46px)">
         <span style="font:500 clamp(9px,.74vw,11px)/1 'Montserrat',sans-serif;letter-spacing:.26em;text-transform:uppercase;color:#C8102E">03 &middot; Contact</span>
         <span style="flex:1;min-width:40px;height:1px;background:rgba(215,217,220,.14)"></span>
@@ -636,8 +704,9 @@
   </section>
 
   <!-- ══ footer ══ -->
-  <footer style="position:relative;z-index:1;padding:clamp(26px,4vh,42px) clamp(18px,4.4vw,72px);background:#0E1116;border-top:1px solid rgba(215,217,220,.08)">
-    <div data-footer-inner="true" style="max-width:1680px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px">
+  <footer data-site-footer="true" style="position:relative;z-index:1;padding:clamp(26px,4vh,42px) clamp(18px,4.4vw,72px);background:#0E1116;border-top:1px solid rgba(215,217,220,.08)">
+    <div aria-hidden="true" class="m2m-growth-pattern m2m-pattern-footer"></div>
+    <div data-footer-inner="true" style="position:relative;z-index:2;max-width:1680px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px">
       <div style="display:flex;align-items:center;gap:clamp(12px,1.6vw,20px)">
         <img src="assets/m2m-logo.png" alt="Marketing 2 The Max" style="height:19px;width:auto;display:block;opacity:.6;filter:brightness(1.5)">
         <span aria-hidden="true" style="width:1px;height:24px;background:rgba(215,217,220,.18)"></span>

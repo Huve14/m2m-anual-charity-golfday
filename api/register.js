@@ -3,14 +3,16 @@ import {
   RegistrationInputError,
   buildRegistration,
 } from "./_registration.js";
-import { createOrUpdateRegistrationAccount } from "./_supabase-account.js";
+import { storeRegistrationSecurely } from "./_supabase-account.js";
 
 const USER_ID = "m2m-charity-golf-admin";
+const MAX_BODY_BYTES = 32_000;
 
 function send(res, status, payload) {
   res.status(status);
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
   res.end(JSON.stringify(payload));
 }
 
@@ -29,10 +31,6 @@ function isConfigured(value) {
   return typeof value === "string" ? value.trim().length > 0 : Boolean(value);
 }
 
-function registrationResultState(result) {
-  return typeof result === "object" && result !== null ? result.status : "error";
-}
-
 function excelConfigured() {
   return (
     isConfigured(process.env.M2M_EXCEL_WORKBOOK_ID) &&
@@ -43,10 +41,7 @@ function excelConfigured() {
 
 async function writeToExcel(workbookId, tableId, registration) {
   if (!excelConfigured()) {
-    return {
-      status: "skipped",
-      reason: "Excel sync is not configured.",
-    };
+    return "skipped";
   }
 
   try {
@@ -62,27 +57,9 @@ async function writeToExcel(workbookId, tableId, registration) {
       table_id: tableId,
       values: [registration.row],
     });
-
-    if (result.error || !result.logId) {
-      const reason = result.error || "storage provider did not return a log id.";
-      return {
-        status: "error",
-        reason: `Registration storage rejected the row: ${JSON.stringify(reason)}`,
-      };
-    }
-
-    return {
-      status: "inserted",
-      logId: result.logId,
-    };
-  } catch (error) {
-    return {
-      status: "error",
-      reason:
-        error instanceof Error
-          ? error.message
-          : "Unexpected error while saving to Excel.",
-    };
+    return !result.error && result.logId ? "inserted" : "error";
+  } catch {
+    return "error";
   }
 }
 
@@ -93,98 +70,66 @@ export default async function handler(req, res) {
     return;
   }
 
+  const contentType = String(req.headers["content-type"] || "").toLowerCase();
+  if (!contentType.startsWith("application/json")) {
+    send(res, 415, { ok: false, message: "JSON content is required." });
+    return;
+  }
+
   const contentLength = Number(req.headers["content-length"] ?? 0);
-  if (Number.isFinite(contentLength) && contentLength > 32_000) {
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
     send(res, 413, { ok: false, message: "The registration is too large." });
     return;
   }
 
   try {
     const body = parseBody(req);
+    const measuredLength = Buffer.byteLength(JSON.stringify(body ?? null), "utf8");
+    if (measuredLength > MAX_BODY_BYTES) {
+      send(res, 413, { ok: false, message: "The registration is too large." });
+      return;
+    }
+
     if (body?.website) {
-      send(res, 201, { ok: true });
+      send(res, 201, { ok: true, message: "Registration received." });
       return;
     }
 
     const registration = buildRegistration(body);
-    const workbookId = process.env.M2M_EXCEL_WORKBOOK_ID;
-    const tableId = process.env.M2M_EXCEL_TABLE_ID;
-    const excel = await writeToExcel(workbookId, tableId, registration);
-    let autoAccount = null;
+    await storeRegistrationSecurely(
+      registration.account,
+      registration.supabaseRecord,
+    );
 
-    try {
-      autoAccount = await createOrUpdateRegistrationAccount(
-        registration.account,
-        registration.supabaseRecord,
-      );
-    } catch (accountError) {
-      console.error("[M2M Invitational] account provisioning failed", accountError);
-      autoAccount = {
-        status: "error",
-        reason:
-          accountError instanceof Error
-            ? accountError.message
-            : "Unknown account provisioning failure",
-      };
-    }
-
-    const hasSavedRegistration =
-      registrationResultState(excel) === "inserted" ||
-      registrationResultState(autoAccount) === "created" ||
-      registrationResultState(autoAccount) === "updated" ||
-      autoAccount?.registrationStatus === "inserted" ||
-      autoAccount?.registrationStatus === "duplicate";
-
-    if (!hasSavedRegistration) {
-      const reasons = [
-        excel.reason || null,
-        autoAccount.reason || null,
-      ].filter(Boolean);
-      throw new Error(
-        `No registration sink accepted the submission: ${JSON.stringify(reasons)}`,
-      );
-    }
-
-    const warnings = [];
-    if (excel.status !== "inserted") {
-      warnings.push(`Excel status: ${excel.status}`);
-    }
-    if (autoAccount.status === "error") {
-      warnings.push("Supabase account creation failed.");
-    }
-    if (autoAccount.emailStatus && autoAccount.emailStatus.status !== "sent") {
-      warnings.push(`Email status: ${autoAccount.emailStatus.status}`);
-    }
-    if (autoAccount.emailStatus?.status === "error") {
-      const reason = autoAccount.emailStatus.reason
-        ? ` (${autoAccount.emailStatus.reason})`
-        : "";
-      warnings.push(`Failed to email credentials${reason}`);
+    const excelStatus = await writeToExcel(
+      process.env.M2M_EXCEL_WORKBOOK_ID,
+      process.env.M2M_EXCEL_TABLE_ID,
+      registration,
+    );
+    if (excelStatus === "error") {
+      console.warn("[M2M Invitational] optional Excel sync failed", {
+        registrationId: registration.registrationId,
+      });
     }
 
     send(res, 201, {
       ok: true,
       registrationId: registration.registrationId,
-      autoAccount,
-      excel,
-      warnings: warnings.length > 0 ? warnings : null,
+      message: "Registration received.",
     });
   } catch (error) {
     if (error instanceof RegistrationInputError) {
       send(res, error.statusCode, { ok: false, message: error.message });
       return;
     }
-    const reason = error instanceof Error ? error.message : "Unknown registration failure.";
-    console.error("[M2M Invitational] registration storage failed", {
-      error: reason,
+
+    console.error("[M2M Invitational] registration request failed", {
+      code: error?.code || "registration_failed",
+      status: Number.isInteger(error?.status) ? error.status : null,
     });
-    const friendlyMessage =
-      "We could not save your entry right now. Please try again shortly.";
     send(res, 503, {
       ok: false,
-      message: friendlyMessage,
-      reason,
-      friendlyMessage,
+      message: "We could not save your entry right now. Please try again shortly.",
     });
   }
 }

@@ -5,6 +5,7 @@ import {
   PRIVACY_NOTICE_VERSION,
   RegistrationInputError,
   buildRegistration,
+  excelSafeCell,
 } from "../api/_registration.js";
 
 test("builds the confirmed M2M Invitational experience for Vercel", async () => {
@@ -17,8 +18,7 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
 
   assert.match(html, /M2M Invitational \| Fourball Registration/);
   assert.match(html, /m2m-golf-plate\.png/);
-  assert.match(html, /Bring the/);
-  assert.match(html, /boardroom/);
+  assert.match(html, /A Hole A Day Keeps the Boredom Away/);
   assert.match(html, /Enter your/);
   assert.match(html, /Contact person/);
   assert.match(html, /How many fourballs/);
@@ -54,12 +54,39 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(hole, /family=Montserrat/);
   assert.doesNotMatch(hole, /Archivo|Instrument Serif|JetBrains Mono|Aquire/);
   assert.match(golfStage, /Montserrat, Arial, sans-serif/);
+  assert.match(golfStage, /\/vendor\/three\.module\.js/);
+  assert.doesNotMatch(golfStage, /unpkg\.com\/three/);
   assert.match(golfStage, /if \(!this\._camPos \|\| !this\._camTgt \|\| !this\._cam\) return/);
   assert.match(golfStage, /constrained \? 1\.3 : 2/);
   assert.match(privacy, /Privacy &amp; POPIA Notice/);
   assert.match(privacy, /Version POPIA-2026-08-20/);
   assert.match(privacy, /Backend access and sharing/);
   assert.match(privacy, /Information Regulator South Africa/);
+});
+
+test("neutralises spreadsheet formulas in user-controlled values", () => {
+  assert.equal(excelSafeCell("=HYPERLINK(\"https://example.com\")"), "'=HYPERLINK(\"https://example.com\")");
+  assert.equal(excelSafeCell("  +SUM(1,2)"), "'  +SUM(1,2)");
+  assert.equal(excelSafeCell("Normal company"), "Normal company");
+  assert.equal(excelSafeCell(15000), 15000);
+});
+
+test("keeps secrets and provider diagnostics out of public registration responses", async () => {
+  const [accountSource, registerSource, healthSource, vercelConfig] =
+    await Promise.all([
+      readFile(new URL("../api/_supabase-account.js", import.meta.url), "utf8"),
+      readFile(new URL("../api/register.js", import.meta.url), "utf8"),
+      readFile(new URL("../api/registration-health.js", import.meta.url), "utf8"),
+      readFile(new URL("../vercel.json", import.meta.url), "utf8"),
+    ]);
+
+  assert.doesNotMatch(accountSource, /temporaryPassword|randomPassword|email_confirm|\/auth\/v1\/admin/);
+  assert.doesNotMatch(registerSource, /autoAccount|friendlyMessage|providerResponse/);
+  assert.doesNotMatch(healthSource, /serviceRoleConfigured|registrationTable|composioApiConfigured/);
+  assert.match(vercelConfig, /Content-Security-Policy/);
+  assert.match(vercelConfig, /frame-ancestors 'none'/);
+  assert.match(vercelConfig, /X-Content-Type-Options/);
+  assert.match(vercelConfig, /Permissions-Policy/);
 });
 
 test("builds a validated Excel row using server-side event pricing", () => {
