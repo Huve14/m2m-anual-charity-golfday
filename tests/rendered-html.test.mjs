@@ -20,6 +20,8 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   ]);
 
   assert.match(html, /M2M Invitational \| Fourball Registration/);
+  assert.match(html, /Register your fourball/);
+  assert.doesNotMatch(html, /Buy (?:your|a) fourball/i);
   assert.match(html, /m2m-favicon-32\.png\?v=2/);
   assert.match(html, /apple-touch-icon\.png\?v=2/);
   assert.match(html, /site\.webmanifest/);
@@ -29,8 +31,8 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(html, /Contact person/);
   assert.match(html, /How many fourballs/);
   assert.match(html, /default&quot;:15000/);
-  assert.match(html, /Hole sponsorship with alcohol, R17,000/);
-  assert.match(html, /Hole sponsorship without alcohol, R12,500/);
+  assert.match(html, /Hole sponsorship without alcohol, R12 500/);
+  assert.match(html, /Hole sponsorship with alcohol, R17 000/);
   assert.match(html, /Shotgun start/);
   assert.match(html, /10:00/);
   assert.match(html, /BYE Foundation/);
