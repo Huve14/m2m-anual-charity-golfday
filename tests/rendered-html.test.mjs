@@ -60,6 +60,11 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(indexLogic, /Sending enquiry/);
   assert.match(indexLogic, /Enquiry submitted/);
   assert.match(indexLogic, /submitted an M2M Invitational enquiry/);
+  assert.match(indexLogic, /Hole sponsorship with alcohol is sold out\. Please select another option\./);
+  assert.doesNotMatch(indexLogic, /if \(kind === 'with-alcohol'\) return 17000/);
+  assert.match(html, /data-post-enquiry-cta="true"/);
+  assert.match(html, /\[data-post-enquiry-cta\]:visited/);
+  assert.match(html, /\[data-post-enquiry-cta\] \*/);
   assert.match(html, /name="registrationConsent"/);
   assert.match(html, /name="playerDataConsent"/);
   assert.match(html, /name="marketingConsent"/);
