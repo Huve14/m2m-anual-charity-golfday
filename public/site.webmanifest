@@ -1,0 +1,23 @@
+{
+  "name": "M2M Invitational Golf Day",
+  "short_name": "M2M Golf Day",
+  "description": "M2M Invitational fourball and hole sponsorship enquiries.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0C1735",
+  "theme_color": "#0C1735",
+  "icons": [
+    {
+      "src": "/assets/m2m-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/m2m-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

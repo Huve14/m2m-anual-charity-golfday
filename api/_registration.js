@@ -36,6 +36,13 @@ function asString(value) {
   return typeof value === "string" ? value : value == null ? "" : String(value);
 }
 
+export function excelSafeCell(value) {
+  if (typeof value !== "string") return value;
+  return /^\s*[=+\-@]/.test(value) || /^[\t\r]/.test(value)
+    ? `'${value}`
+    : value;
+}
+
 function text(value, field, { required = false, max = 200 } = {}) {
   const result = asString(value).trim();
   if (required && !result) {
@@ -133,7 +140,16 @@ export function buildRegistration(body, options = {}) {
     );
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  const emailHasControlCharacter = Array.from(email).some((character) => {
+    const code = character.charCodeAt(0);
+    return code <= 31 || code === 127;
+  });
+  if (
+    emailHasControlCharacter ||
+    !/^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$/i.test(
+      email,
+    )
+  ) {
     throw new RegistrationInputError("Enter a valid email address.");
   }
   if (!/^[+()\d\s.-]{7,30}$/.test(cellPhone)) {
@@ -276,14 +292,14 @@ export function buildRegistration(body, options = {}) {
     row: [
       submittedAt,
       registrationId,
-      company,
-      contactName,
-      email,
-      cellPhone,
+      excelSafeCell(company),
+      excelSafeCell(contactName),
+      excelSafeCell(email),
+      excelSafeCell(cellPhone),
       fourballs,
       playerSlots,
-      rowPlayerNames,
-      notes,
+      excelSafeCell(rowPlayerNames),
+      excelSafeCell(notes),
       fourballAmount,
       SPONSORSHIP_LABELS[sponsorship],
       sponsorshipAmount,

@@ -840,14 +840,13 @@
     }
   };
   function evalDcLogic(src) {
-    //! nosemgrep: eval-and-function-constructor
-    const fn = new Function(
-      "DCLogic",
-      "StreamableLogic",
-      "React",
-      src + '\n;return (typeof Component!=="undefined"&&Component)||undefined;'
-    );
-    return fn(StreamableLogic, StreamableLogic, getReact());
+    const path = window.location.pathname.replace(/\/+$/, "");
+    const key = path === "/hole-2" || path === "/hole-2.html" ? "hole-2" : "index";
+    const factory = window.__dcLogicFactories && window.__dcLogicFactories[key];
+    if (typeof factory !== "function") {
+      throw new Error("Missing precompiled page logic for " + key);
+    }
+    return factory(StreamableLogic, getReact());
   }
 
   // src/component.ts
@@ -1140,12 +1139,10 @@
   }
 
   // src/cdn.ts
-  var REACT_URL = "https://unpkg.com/react@18.3.1/umd/react.production.min.js";
-  var REACT_SRI = "sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z";
-  var REACT_DOM_URL = "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js";
-  var REACT_DOM_SRI = "sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1";
-  var BABEL_URL = "https://unpkg.com/@babel/standalone@7.29.0/babel.min.js";
-  var BABEL_SRI = "sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y";
+  var REACT_URL = "/vendor/react.production.min.js";
+  var REACT_SRI = null;
+  var REACT_DOM_URL = "/vendor/react-dom.production.min.js";
+  var REACT_DOM_SRI = null;
   function cdnScriptFor(url, sri) {
     const res = window.__resources;
     const v = res ? res[url] : void 0;
@@ -1170,69 +1167,32 @@
   var GLOBAL_POLL_TIMEOUT_MS = 3e4;
   function createExternalModules(onResolved) {
     const cache = /* @__PURE__ */ new Map();
-    let babelLoading = null;
     const reportedMissing = /* @__PURE__ */ new Map();
     const polling = /* @__PURE__ */ new Set();
-    function ensureBabel() {
-      if (window.Babel) return Promise.resolve();
-      if (babelLoading) return babelLoading;
-      const babel = cdnScriptFor(BABEL_URL, BABEL_SRI);
-      babelLoading = new Promise((res, rej) => {
-        const s = document.createElement("script");
-        s.src = babel.src;
-        if (babel.integrity) {
-          s.integrity = babel.integrity;
-          s.crossOrigin = "anonymous";
-        }
-        s.onload = () => res();
-        s.onerror = rej;
-        document.head.appendChild(s);
-      });
-      return babelLoading;
-    }
     const pending = /* @__PURE__ */ new Map();
     function load(kind, url, after) {
       const existing = pending.get(url);
       if (existing) return existing;
       cache.set(url, null);
       console.info("[dc-runtime] x-import: loading", url, "(" + kind + ")");
-      const ready = Promise.all([
-        kind === "jsx" ? ensureBabel() : Promise.resolve(),
-        after ?? Promise.resolve()
-      ]);
-      const p = ready.then(() => {
-        const pre = bundledBlob(url);
-        if (pre) return pre.text();
-        return fetch(url).then((r) => {
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          return r.text();
-        });
-      }).then((src) => {
-        const code = kind === "jsx" ? window.Babel.transform(src, {
-          filename: url,
-          presets: ["react", "typescript"]
-        }).code : src;
-        const module = { exports: {} };
+      const p = Promise.resolve(after).then(async () => {
+        if (kind === "jsx") {
+          throw new Error("Runtime JSX imports are disabled by the production security policy");
+        }
         const before = new Set(Object.keys(window));
-        //! nosemgrep: eval-and-function-constructor
-        new Function("React", "module", "exports", "require", code)(
-          getReact(),
-          module,
-          module.exports,
-          () => ({})
-        );
+        const mod = await import(url);
         const globals = {};
         for (const k of Object.keys(window)) {
           if (!before.has(k) && typeof window[k] === "function") {
             globals[k] = window[k];
           }
         }
-        cache.set(url, { mod: module.exports, globals });
+        cache.set(url, { mod, globals });
         console.info(
           "[dc-runtime] x-import: loaded",
           url,
           "\u2014 exports:",
-          Object.keys(module.exports),
+          Object.keys(mod),
           "window globals:",
           Object.keys(globals)
         );
