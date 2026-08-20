@@ -99,6 +99,8 @@ test("keeps secrets and provider diagnostics out of public registration response
     ]);
 
   assert.doesNotMatch(accountSource, /temporaryPassword|randomPassword|email_confirm|\/auth\/v1\/admin/);
+  assert.match(accountSource, /process\.env\.SUPABASE_SECRET_KEY/);
+  assert.match(accountSource, /startsWith\("sb_secret_"\)/);
   assert.doesNotMatch(registerSource, /autoAccount|friendlyMessage|providerResponse/);
   assert.doesNotMatch(healthSource, /serviceRoleConfigured|registrationTable|composioApiConfigured/);
   assert.match(vercelConfig, /Content-Security-Policy/);

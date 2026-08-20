@@ -7,7 +7,8 @@ const SUPABASE_REGISTRATION_TABLE =
 const SUPABASE_URL = normaliseUrl(
   process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
 );
-const SUPABASE_SERVICE_ROLE_KEY =
+const SUPABASE_SERVER_KEY =
+  process.env.SUPABASE_SECRET_KEY ||
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   process.env.SUPABASE_SERVICE_ROLE ||
   process.env.service_role ||
@@ -24,17 +25,20 @@ function normaliseUrl(value) {
 }
 
 function storageConfigured() {
-  return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(SUPABASE_URL && SUPABASE_SERVER_KEY);
 }
 
 function restHeaders() {
-  return {
+  const headers = {
     "Content-Type": "application/json",
-    apikey: SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    apikey: SUPABASE_SERVER_KEY,
     Prefer: "resolution=ignore-duplicates,return=minimal",
     "Content-Profile": "public",
   };
+  if (!SUPABASE_SERVER_KEY.startsWith("sb_secret_")) {
+    headers.Authorization = `Bearer ${SUPABASE_SERVER_KEY}`;
+  }
+  return headers;
 }
 
 function makeStorageError(code, status, providerCode = null) {
