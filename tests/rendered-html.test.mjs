@@ -37,7 +37,9 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(html, /default&quot;:15000/);
   assert.match(html, /Hole sponsorship without alcohol, R12 500/);
   assert.match(html, /Hole sponsorship with alcohol, R17 000/);
-  assert.doesNotMatch(html, /<option[^>]*value="with-alcohol"/);
+  assert.match(html, /<option value="with-alcohol" disabled="\{\{ yes \}\}">/);
+  assert.match(html, /select option:disabled/);
+  assert.match(html, /-webkit-text-fill-color:#7A8089!important/);
   assert.match(html, /text-decoration:line-through/);
   assert.match(html, /Hole sponsorship with alcohol is sold out\. Please select another option\./);
   assert.match(html, /Shotgun start/);
