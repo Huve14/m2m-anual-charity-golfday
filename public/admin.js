@@ -9,6 +9,7 @@
     adminUsers: [],
     newCredentials: null,
     pendingDeleteUser: null,
+    pendingDeleteRegistration: null,
     generatedAt: null,
     refreshTimer: null,
   };
@@ -67,6 +68,12 @@
     deleteUserMessage: $("#delete-user-message"),
     cancelDeleteUser: $("#cancel-delete-user"),
     confirmDeleteUser: $("#confirm-delete-user"),
+    deleteRegistrationDialog: $("#delete-registration-dialog"),
+    deleteRegistrationClose: $("#delete-registration-close"),
+    deleteRegistrationSummary: $("#delete-registration-summary"),
+    deleteRegistrationMessage: $("#delete-registration-message"),
+    cancelDeleteRegistration: $("#cancel-delete-registration"),
+    confirmDeleteRegistration: $("#confirm-delete-registration"),
   };
 
   const currency = new Intl.NumberFormat("en-ZA", {
@@ -149,6 +156,7 @@
     state.adminUsers = [];
     state.newCredentials = null;
     state.pendingDeleteUser = null;
+    state.pendingDeleteRegistration = null;
     window.clearInterval(state.refreshTimer);
     els.dashboardView.hidden = true;
     els.loginView.hidden = false;
@@ -386,10 +394,27 @@
     return button;
   }
 
+  function deleteRegistrationButton(item, compact = false) {
+    const button = node(
+      "button",
+      `mini-action delete-registration-action${compact ? " compact" : ""}`,
+      "Delete",
+    );
+    button.type = "button";
+    button.setAttribute(
+      "aria-label",
+      `Delete registration ${text(item.registration_id)} for ${text(item.contact_name)}`,
+    );
+    button.addEventListener("click", () => openDeleteRegistration(item));
+    return button;
+  }
+
   function renderDesktopRow(item) {
     const row = document.createElement("tr");
-    const idCell = document.createElement("td");
-    idCell.append(detailButton(item));
+    const idCell = node("td", "entry-cell");
+    const entryActions = node("div", "entry-actions");
+    entryActions.append(detailButton(item), deleteRegistrationButton(item, true));
+    idCell.append(entryActions);
 
     const contactCell = node("td", "contact");
     contactCell.append(
@@ -424,7 +449,9 @@
       box.append(node("span", "", label), node("strong", "", value));
       meta.append(box);
     });
-    card.append(top, meta);
+    const actions = node("div", "mobile-card-actions");
+    actions.append(deleteRegistrationButton(item));
+    card.append(top, meta, actions);
     return card;
   }
 
@@ -499,8 +526,66 @@
       detailItem("Notes", item.notes || "No notes supplied", { wide: true, paragraph: true }),
       detailItem("Consent record", "", { wide: true, content: consentContent(item) }),
     );
+    const actions = node("div", "detail-actions");
+    actions.append(
+      deleteRegistrationButton(item),
+      node("span", "detail-action-note", "Permanently remove this fourball enquiry and its guest details."),
+    );
+    grid.append(actions);
     els.detailBody.replaceChildren(grid);
     els.dialog.showModal();
+  }
+
+  function openDeleteRegistration(item) {
+    state.pendingDeleteRegistration = item;
+    els.deleteRegistrationMessage.textContent = "";
+    const contact = text(item.contact_name, "This guest");
+    const company = text(item.company, "No company supplied");
+    els.deleteRegistrationSummary.textContent = `${contact} · ${company} · ${text(item.registration_id)}`;
+    if (els.dialog.open) els.dialog.close();
+    els.deleteRegistrationDialog.showModal();
+    window.setTimeout(() => els.cancelDeleteRegistration.focus(), 60);
+  }
+
+  function closeDeleteRegistration() {
+    state.pendingDeleteRegistration = null;
+    els.deleteRegistrationMessage.textContent = "";
+    els.confirmDeleteRegistration.disabled = false;
+    els.confirmDeleteRegistration.querySelector("span").textContent = "Delete registration";
+    if (els.deleteRegistrationDialog.open) els.deleteRegistrationDialog.close();
+  }
+
+  async function confirmDeleteRegistrationEntry() {
+    const item = state.pendingDeleteRegistration;
+    if (!item) return;
+    const registrationId = text(item.registration_id, "");
+    const deletedName = text(item.contact_name, registrationId);
+    els.confirmDeleteRegistration.disabled = true;
+    els.confirmDeleteRegistration.querySelector("span").textContent = "Deleting...";
+    els.deleteRegistrationMessage.textContent = "";
+    try {
+      await api(`/api/admin-registrations?id=${encodeURIComponent(registrationId)}`, {
+        method: "DELETE",
+      });
+      state.registrations = state.registrations.filter(
+        (registration) => registration.registration_id !== registrationId,
+      );
+      state.generatedAt = new Date().toISOString();
+      closeDeleteRegistration();
+      renderMetrics();
+      buildStatusOptions();
+      applyFilters();
+      showToast(`${deletedName}'s registration has been deleted.`);
+    } catch (error) {
+      els.deleteRegistrationMessage.textContent = error.message;
+      if (error.status === 401) {
+        closeDeleteRegistration();
+        showLogin();
+      } else {
+        els.confirmDeleteRegistration.disabled = false;
+        els.confirmDeleteRegistration.querySelector("span").textContent = "Delete registration";
+      }
+    }
   }
 
   async function loadRegistrations({ quiet = false } = {}) {
@@ -678,6 +763,15 @@
   els.userDialogClose.addEventListener("click", closeUserManagement);
   els.userDialog.addEventListener("click", (event) => {
     if (event.target === els.userDialog) closeUserManagement();
+  });
+  els.deleteRegistrationClose.addEventListener("click", closeDeleteRegistration);
+  els.cancelDeleteRegistration.addEventListener("click", closeDeleteRegistration);
+  els.confirmDeleteRegistration.addEventListener("click", confirmDeleteRegistrationEntry);
+  els.deleteRegistrationDialog.addEventListener("click", (event) => {
+    if (event.target === els.deleteRegistrationDialog) closeDeleteRegistration();
+  });
+  els.deleteRegistrationDialog.addEventListener("close", () => {
+    state.pendingDeleteRegistration = null;
   });
   els.search.addEventListener("input", applyFilters);
   els.status.addEventListener("change", applyFilters);
