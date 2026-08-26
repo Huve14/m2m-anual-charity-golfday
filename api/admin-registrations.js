@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     sendJson(res, 405, { ok: false, message: "Method not allowed." });
     return;
   }
-  const session = requireAdmin(req, res);
+  const session = await requireAdmin(req, res);
   if (!session) return;
   if (!configured()) {
     sendJson(res, 503, { ok: false, message: "Registration storage is unavailable." });

@@ -6,6 +6,7 @@ import {
   sendJson,
   verifyAdminCredentials,
 } from "./_admin-auth.js";
+import { recordAdminLogin } from "./_admin-store.js";
 
 const MAX_BODY_BYTES = 2_000;
 const MIN_FAILURE_DELAY_MS = 550;
@@ -57,11 +58,20 @@ export default async function handler(req, res) {
     }
     const email = typeof body.email === "string" ? body.email.slice(0, 254) : "";
     const password = typeof body.password === "string" ? body.password.slice(0, 256) : "";
-    if (!verifyAdminCredentials(email, password)) {
+    const admin = await verifyAdminCredentials(email, password);
+    if (!admin) {
       throw new Error("invalid_login");
     }
-    res.setHeader("Set-Cookie", adminCookie(createAdminSession(email)));
-    sendJson(res, 200, { ok: true, email: email.trim().toLowerCase() });
+    await recordAdminLogin(admin.id);
+    res.setHeader("Set-Cookie", adminCookie(createAdminSession(admin)));
+    sendJson(res, 200, {
+      ok: true,
+      admin: {
+        email: admin.email,
+        displayName: admin.display_name || "",
+        role: admin.role,
+      },
+    });
   } catch {
     const remaining = MIN_FAILURE_DELAY_MS - (Date.now() - startedAt);
     if (remaining > 0) await wait(remaining);

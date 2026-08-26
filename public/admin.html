@@ -44,8 +44,8 @@
       .login-card>p{margin-bottom:30px;color:var(--muted);font-size:14px;line-height:1.65}
       .field{display:block;margin-top:18px}
       .field span{display:block;margin-bottom:9px;color:var(--navy);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-      .field input,.toolbar input,.toolbar select{width:100%;min-height:52px;border:1px solid #cdd5df;background:#fff;color:var(--ink);padding:13px 15px;border-radius:0;outline:0;transition:border-color .2s,box-shadow .2s}
-      .field input:focus,.toolbar input:focus,.toolbar select:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(237,28,36,.1)}
+      .field input,.field select,.toolbar input,.toolbar select{width:100%;min-height:52px;border:1px solid #cdd5df;background:#fff;color:var(--ink);padding:13px 15px;border-radius:0;outline:0;transition:border-color .2s,box-shadow .2s}
+      .field input:focus,.field select:focus,.toolbar input:focus,.toolbar select:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(237,28,36,.1)}
       .password-wrap{position:relative}
       .password-wrap input{padding-right:80px}
       .password-toggle{position:absolute;right:8px;top:8px;min-height:36px;border:0;background:transparent;color:var(--red-dark);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
@@ -61,6 +61,8 @@
       .heading-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
       .action{min-height:43px;border:1px solid #cbd3de;background:#fff;color:var(--navy);padding:11px 15px;font-size:11px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;transition:.2s}
       .action:hover{border-color:var(--red);color:var(--red)}
+      .action.accent{border-color:var(--navy);background:var(--navy);color:#fff}
+      .action.accent:hover{border-color:var(--red);background:var(--red);color:#fff}
       .action.danger{border-color:rgba(237,28,36,.32);color:var(--red-dark)}
       .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:22px}
       .stat{position:relative;min-height:152px;padding:24px;background:#fff;border:1px solid var(--line);box-shadow:0 18px 36px -32px rgba(12,23,53,.45);overflow:hidden}
@@ -119,9 +121,33 @@
       .consents{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
       .consent{padding:7px 9px;background:#e8f7f1;color:#12674e;font-size:10px;font-weight:800;text-transform:uppercase}
       .consent.off{background:#f0f2f5;color:#7c8491}
+      .user-dialog{width:min(1100px,calc(100% - 28px))}
+      .user-body{display:grid;grid-template-columns:minmax(300px,.8fr) minmax(380px,1.2fr);gap:0;background:#e4e8ef}
+      .user-create,.user-existing{padding:clamp(22px,3vw,34px);background:#fff}
+      .user-existing{background:#f7f9fc;border-left:1px solid var(--line)}
+      .section-title{margin:0 0 8px;color:var(--navy);font:600 20px/1.1 Aquire,sans-serif;text-transform:uppercase}
+      .section-copy{margin:0 0 24px;color:var(--muted);font-size:12px;line-height:1.6}
+      .field-help{display:block;margin-top:7px;color:#798495;font-size:10px;line-height:1.5}
+      .password-tools{display:flex;gap:8px;margin-top:8px}
+      .mini-action{min-height:36px;border:1px solid #ccd4df;background:#fff;color:var(--navy);padding:8px 11px;font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+      .mini-action:hover{border-color:var(--red);color:var(--red)}
+      .user-submit{margin-top:22px}
+      .credential-card{margin-top:20px;padding:18px;border:1px solid rgba(21,128,95,.28);border-left:4px solid var(--success);background:#f0faf6}
+      .credential-card strong{display:block;color:#0d6249;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+      .credential-card p{margin:8px 0;color:#355f53;font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+      .credential-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+      .user-list{display:grid;gap:10px;max-height:520px;overflow:auto}
+      .user-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px;background:#fff;border:1px solid var(--line)}
+      .user-row strong{display:block;color:var(--navy);font-size:13px}
+      .user-row span{display:block;margin-top:4px;color:#6c788a;font-size:11px;overflow-wrap:anywhere}
+      .user-meta{text-align:right}
+      .role-pill{display:inline-block!important;margin:0!important;padding:6px 8px;background:#edf1f7;color:#42526b!important;font-size:9px!important;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+      .role-pill.super{background:#fff0f1;color:var(--red-dark)!important}
+      .user-last{margin-top:6px!important;font-size:9px!important}
+      .users-loading{padding:34px 12px;color:#697589;text-align:center;font-size:12px}
       .toast{position:fixed;z-index:50;right:22px;bottom:max(22px,env(safe-area-inset-bottom));max-width:min(430px,calc(100% - 32px));padding:15px 18px;background:var(--navy);color:#fff;border-left:4px solid var(--red);box-shadow:0 18px 50px rgba(0,0,0,.28);font-size:13px;line-height:1.55}
       @media (max-width:980px){.login-stage{grid-template-columns:1fr;max-width:760px}.login-intro h1{font-size:clamp(48px,11vw,80px)}.stats{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr 1fr}.search-wrap{grid-column:1/-1}.brand-copy{display:none}}
-      @media (max-width:720px){.topbar{padding-left:18px;padding-right:18px}.brand img{width:145px}.secure-tag{font-size:9px;letter-spacing:.1em}.login-stage{padding:34px 18px 52px;gap:34px}.login-intro h1{font-size:clamp(43px,15vw,66px);margin-top:20px}.login-intro p{font-size:15px}.dashboard{padding:24px 14px 50px}.dash-heading{align-items:flex-start;flex-direction:column}.heading-actions{width:100%;justify-content:flex-start}.action{flex:1}.stats{gap:10px}.stat{min-height:132px;padding:18px}.toolbar{grid-template-columns:1fr;padding:12px;border-bottom:1px solid var(--line)}.search-wrap{grid-column:auto}.table-wrap{display:none}.mobile-list{display:grid}.data-foot{flex-direction:column;gap:6px}.detail-body{padding:16px}.detail-head{padding:20px}.detail-grid{grid-template-columns:1fr}.detail-item.wide{grid-column:auto}.players{grid-template-columns:1fr}}
+      @media (max-width:720px){.topbar{padding-left:18px;padding-right:18px}.brand img{width:145px}.secure-tag{font-size:9px;letter-spacing:.1em}.login-stage{padding:34px 18px 52px;gap:34px}.login-intro h1{font-size:clamp(43px,15vw,66px);margin-top:20px}.login-intro p{font-size:15px}.dashboard{padding:24px 14px 50px}.dash-heading{align-items:flex-start;flex-direction:column}.heading-actions{width:100%;justify-content:flex-start}.action{flex:1}.stats{gap:10px}.stat{min-height:132px;padding:18px}.toolbar{grid-template-columns:1fr;padding:12px;border-bottom:1px solid var(--line)}.search-wrap{grid-column:auto}.table-wrap{display:none}.mobile-list{display:grid}.data-foot{flex-direction:column;gap:6px}.detail-body{padding:16px}.detail-head{padding:20px}.detail-grid{grid-template-columns:1fr}.detail-item.wide{grid-column:auto}.players{grid-template-columns:1fr}.user-body{grid-template-columns:1fr}.user-existing{border-left:0;border-top:1px solid var(--line)}.user-row{grid-template-columns:1fr}.user-meta{text-align:left}.user-list{max-height:none}}
       @media (max-width:430px){.stats{grid-template-columns:1fr 1fr}.stat{min-height:118px;padding:15px}.stat-value{font-size:27px}.stat-note{font-size:9px}.mobile-meta{grid-template-columns:1fr}.secure-tag span:last-child{display:none}.login-note{font-size:12px}}
       @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.spinner{animation:none}.primary,.action,tbody tr{transition:none}}
     </style>
@@ -176,6 +202,7 @@
               <p id="dashboard-subtitle">Loading the latest registrations...</p>
             </div>
             <div class="heading-actions">
+              <button id="manage-users-button" class="action accent" type="button">Manage users</button>
               <button id="refresh-button" class="action" type="button">Refresh data</button>
               <button id="export-button" class="action" type="button">Export CSV</button>
               <button id="logout-button" class="action danger" type="button">Sign out</button>
@@ -217,6 +244,49 @@
     <dialog id="detail-dialog" aria-labelledby="detail-title">
       <header class="detail-head"><div><small id="detail-id">Entry</small><h2 id="detail-title">Registration details</h2></div><button id="dialog-close" class="dialog-close" type="button" aria-label="Close details">×</button></header>
       <div id="detail-body" class="detail-body"></div>
+    </dialog>
+    <dialog id="user-dialog" class="user-dialog" aria-labelledby="user-dialog-title">
+      <header class="detail-head">
+        <div><small>Secure access</small><h2 id="user-dialog-title">Manage dashboard users</h2></div>
+        <button id="user-dialog-close" class="dialog-close" type="button" aria-label="Close user management">×</button>
+      </header>
+      <div class="user-body">
+        <section class="user-create" aria-labelledby="create-user-title">
+          <h3 id="create-user-title" class="section-title">Create a user</h3>
+          <p class="section-copy">Add an authorised person without sharing your own login. Passwords are securely hashed before storage.</p>
+          <form id="user-form" novalidate>
+            <label class="field"><span>Full name</span><input name="displayName" type="text" autocomplete="name" maxlength="120" required /></label>
+            <label class="field"><span>Email address</span><input name="email" type="email" autocomplete="off" inputmode="email" maxlength="254" required /></label>
+            <label class="field">
+              <span>Access level</span>
+              <select id="new-user-role" name="role">
+                <option value="admin">Administrator · view bookings and add users</option>
+                <option id="super-admin-option" value="super_admin">Super administrator · full user control</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Temporary password</span>
+              <span class="password-wrap"><input id="new-user-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required /><button id="new-user-password-toggle" class="password-toggle" type="button">Show</button></span>
+              <small class="field-help">At least 12 characters with uppercase, lowercase, a number and a symbol.</small>
+            </label>
+            <div class="password-tools"><button id="generate-password-button" class="mini-action" type="button">Generate secure password</button></div>
+            <label class="honeypot" aria-hidden="true">Website<input name="website" type="text" tabindex="-1" autocomplete="off" /></label>
+            <button id="create-user-button" class="primary user-submit" type="submit"><span>Create dashboard user</span></button>
+            <p id="user-form-message" class="form-message" role="alert" aria-live="polite"></p>
+          </form>
+          <div id="credential-card" class="credential-card" hidden>
+            <strong>User created successfully</strong>
+            <p id="credential-summary"></p>
+            <div class="credential-actions"><button id="copy-credentials-button" class="mini-action" type="button">Copy login details</button><button id="dismiss-credentials-button" class="mini-action" type="button">Done</button></div>
+          </div>
+        </section>
+        <section class="user-existing" aria-labelledby="existing-users-title">
+          <h3 id="existing-users-title" class="section-title">Authorised users</h3>
+          <p class="section-copy">Every person has their own login. Password hashes and private session details are never shown here.</p>
+          <div id="users-loading" class="users-loading">Loading authorised users...</div>
+          <div id="user-list" class="user-list" hidden></div>
+        </section>
+      </div>
     </dialog>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   </body>

@@ -1,8 +1,15 @@
 import {
   createHmac,
+  randomBytes,
   scryptSync,
   timingSafeEqual,
 } from "node:crypto";
+import {
+  adminStoreConfigured,
+  findAdminByEmail,
+  findAdminById,
+  normaliseAdminEmail,
+} from "./_admin-store.js";
 
 export const ADMIN_COOKIE_NAME = "m2m_golf_admin";
 export const ADMIN_SESSION_TTL_SECONDS = 8 * 60 * 60;
@@ -14,24 +21,14 @@ const DEFAULT_SCRYPT_OPTIONS = Object.freeze({
   p: 1,
   maxmem: 64 * 1024 * 1024,
 });
+let fallbackPasswordHash = "";
 
 function stringValue(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function adminEmails() {
-  return stringValue(process.env.M2M_ADMIN_EMAILS)
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-}
-
 function sessionSecret() {
   return stringValue(process.env.M2M_ADMIN_SESSION_SECRET);
-}
-
-function passwordHash() {
-  return stringValue(process.env.M2M_ADMIN_PASSWORD_HASH);
 }
 
 function base64url(value) {
@@ -67,11 +64,7 @@ function sign(encodedPayload) {
 }
 
 export function authConfigured() {
-  return (
-    adminEmails().length > 0 &&
-    sessionSecret().length >= 32 &&
-    passwordHash().startsWith("scrypt$")
-  );
+  return sessionSecret().length >= 32 && adminStoreConfigured();
 }
 
 export function makePasswordHash(password, salt) {
@@ -93,8 +86,12 @@ export function makePasswordHash(password, salt) {
   ].join("$");
 }
 
-function verifyPassword(password) {
-  const parts = passwordHash().split("$");
+export function makeRandomPasswordHash(password) {
+  return makePasswordHash(password, randomBytes(18).toString("base64url"));
+}
+
+export function verifyPasswordHash(password, storedHash) {
+  const parts = stringValue(storedHash).split("$");
   if (parts.length !== 6 || parts[0] !== "scrypt") return false;
   const [, rawN, rawR, rawP, encodedSalt, encodedHash] = parts;
   const N = Number(rawN);
@@ -117,22 +114,39 @@ function verifyPassword(password) {
   }
 }
 
-export function verifyAdminCredentials(email, password) {
-  if (!authConfigured()) return false;
-  const normalisedEmail = stringValue(email).toLowerCase();
+export async function verifyAdminCredentials(email, password) {
+  if (!authConfigured()) return null;
+  const normalisedEmail = normaliseAdminEmail(email);
   const suppliedPassword = typeof password === "string" ? password : "";
-  const allowedEmail = adminEmails().some((candidate) =>
-    constantTimeEqual(candidate, normalisedEmail),
+  if (!normalisedEmail || !suppliedPassword) return null;
+
+  const admin = await findAdminByEmail(normalisedEmail);
+  if (!fallbackPasswordHash) {
+    fallbackPasswordHash = makePasswordHash(
+      "not-a-valid-admin-password",
+      "m2m-admin-timing-fallback",
+    );
+  }
+  const validPassword = verifyPasswordHash(
+    suppliedPassword,
+    admin?.password_hash || fallbackPasswordHash,
   );
-  const allowedPassword = verifyPassword(suppliedPassword);
-  return allowedEmail && allowedPassword;
+  if (!admin || !admin.is_active || !validPassword) return null;
+  return admin;
 }
 
-export function createAdminSession(email, now = Date.now()) {
+export function createAdminSession(admin, now = Date.now()) {
   if (!authConfigured()) throw new Error("Admin authentication is unavailable.");
+  if (!admin || !Number.isSafeInteger(Number(admin.id))) {
+    throw new Error("A valid administrator is required.");
+  }
   const issuedAt = Math.floor(now / 1000);
   const payload = {
-    email: stringValue(email).toLowerCase(),
+    id: Number(admin.id),
+    email: normaliseAdminEmail(admin.email),
+    name: stringValue(admin.display_name),
+    role: admin.role === "super_admin" ? "super_admin" : "admin",
+    sv: Number(admin.session_version) || 1,
     iat: issuedAt,
     exp: issuedAt + ADMIN_SESSION_TTL_SECONDS,
   };
@@ -154,8 +168,13 @@ export function readAdminSession(req, now = Date.now()) {
       Buffer.from(encodedPayload, "base64url").toString("utf8"),
     );
     const currentTime = Math.floor(now / 1000);
-    const allowed = adminEmails().includes(String(payload.email || "").toLowerCase());
-    if (!allowed || payload.exp <= currentTime || payload.iat > currentTime + 30) {
+    if (
+      !Number.isSafeInteger(Number(payload.id)) ||
+      !normaliseAdminEmail(payload.email) ||
+      !["admin", "super_admin"].includes(payload.role) ||
+      payload.exp <= currentTime ||
+      payload.iat > currentTime + 30
+    ) {
       return null;
     }
     return payload;
@@ -201,13 +220,38 @@ export function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
-export function requireAdmin(req, res) {
+export async function requireAdmin(req, res) {
   const session = readAdminSession(req);
   if (!session) {
     sendJson(res, 401, { ok: false, message: "Admin sign-in required." });
     return null;
   }
-  return session;
+  try {
+    const admin = await findAdminById(session.id);
+    if (
+      !admin ||
+      !admin.is_active ||
+      normaliseAdminEmail(admin.email) !== normaliseAdminEmail(session.email) ||
+      admin.role !== session.role ||
+      Number(admin.session_version) !== Number(session.sv)
+    ) {
+      sendJson(res, 401, { ok: false, message: "Admin sign-in required." });
+      return null;
+    }
+    return {
+      id: Number(admin.id),
+      email: normaliseAdminEmail(admin.email),
+      displayName: stringValue(admin.display_name),
+      role: admin.role,
+      exp: session.exp,
+    };
+  } catch {
+    sendJson(res, 503, {
+      ok: false,
+      message: "Admin access could not be verified right now.",
+    });
+    return null;
+  }
 }
 
 export function isSameOrigin(req) {
