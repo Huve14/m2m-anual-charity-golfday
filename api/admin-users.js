@@ -6,6 +6,8 @@ import {
 } from "./_admin-auth.js";
 import {
   createAdminUser,
+  deleteAdminUser,
+  findAdminById,
   listAdminUsers,
   normaliseAdminEmail,
 } from "./_admin-store.js";
@@ -50,8 +52,13 @@ async function listUsers(req, res) {
     const users = await listAdminUsers();
     sendJson(res, 200, {
       ok: true,
-      users: users.map(publicUser),
+      users: users.map((user) => ({
+        ...publicUser(user),
+        canDelete:
+          admin.role === "super_admin" && Number(user.id) !== Number(admin.id),
+      })),
       canCreateSuperAdmins: admin.role === "super_admin",
+      canDeleteUsers: admin.role === "super_admin",
     });
   } catch (error) {
     console.error("[M2M Invitational] admin user list failed", {
@@ -151,6 +158,85 @@ async function createUser(req, res) {
   }
 }
 
+function requestedUserId(req) {
+  const rawId = Array.isArray(req.query?.id) ? "" : req.query?.id;
+  const id = Number(rawId);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+async function deleteUser(req, res) {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  if (!isSameOrigin(req)) {
+    sendJson(res, 403, { ok: false, message: "Request not allowed." });
+    return;
+  }
+  if (admin.role !== "super_admin") {
+    sendJson(res, 403, {
+      ok: false,
+      message: "Only a super administrator can delete dashboard users.",
+    });
+    return;
+  }
+
+  const id = requestedUserId(req);
+  if (!id) {
+    sendJson(res, 400, { ok: false, message: "Select a valid user to delete." });
+    return;
+  }
+  if (id === Number(admin.id)) {
+    sendJson(res, 409, {
+      ok: false,
+      message: "You cannot delete the account you are currently using.",
+    });
+    return;
+  }
+
+  try {
+    const target = await findAdminById(id);
+    if (!target) {
+      sendJson(res, 404, {
+        ok: false,
+        message: "This dashboard user no longer exists.",
+      });
+      return;
+    }
+    const deleted = await deleteAdminUser(id);
+    if (!deleted) {
+      sendJson(res, 404, {
+        ok: false,
+        message: "This dashboard user no longer exists.",
+      });
+      return;
+    }
+    sendJson(res, 200, {
+      ok: true,
+      deletedUser: {
+        id: Number(deleted.id),
+        email: deleted.email,
+        displayName: deleted.display_name || "",
+      },
+    });
+  } catch (error) {
+    if (error?.code === "last_super_admin") {
+      sendJson(res, 409, {
+        ok: false,
+        message: "The final active super administrator cannot be deleted.",
+      });
+      return;
+    }
+    console.error("[M2M Invitational] admin user deletion failed", {
+      code: error?.code || "admin_user_delete_failed",
+      admin: admin.email,
+      targetId: id,
+    });
+    sendJson(res, 503, {
+      ok: false,
+      message: "The dashboard user could not be deleted right now.",
+    });
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method === "GET") {
     await listUsers(req, res);
@@ -160,7 +246,11 @@ export default async function handler(req, res) {
     await createUser(req, res);
     return;
   }
-  res.setHeader("Allow", "GET, POST");
+  if (req.method === "DELETE") {
+    await deleteUser(req, res);
+    return;
+  }
+  res.setHeader("Allow", "GET, POST, DELETE");
   sendJson(res, 405, { ok: false, message: "Method not allowed." });
 }
 
