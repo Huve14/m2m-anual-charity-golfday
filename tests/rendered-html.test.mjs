@@ -9,7 +9,7 @@ import {
 } from "../api/_registration.js";
 
 test("builds the confirmed M2M Invitational experience for Vercel", async () => {
-  const [html, hole, golfStage, privacy, support, indexLogic, holeLogic] = await Promise.all([
+  const [html, hole, golfStage, privacy, support, indexLogic, holeLogic, admin, adminLogic] = await Promise.all([
     readFile(new URL("../dist/index.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/hole-2.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/golf-3d.js", import.meta.url), "utf8"),
@@ -17,6 +17,8 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
     readFile(new URL("../dist/support.js", import.meta.url), "utf8"),
     readFile(new URL("../dist/index-logic.js", import.meta.url), "utf8"),
     readFile(new URL("../dist/hole-2-logic.js", import.meta.url), "utf8"),
+    readFile(new URL("../dist/admin.html", import.meta.url), "utf8"),
+    readFile(new URL("../dist/admin.js", import.meta.url), "utf8"),
   ]);
 
   assert.match(html, /M2M Invitational \| Fourball Registration/);
@@ -110,6 +112,17 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(privacy, /Version POPIA-2026-08-20/);
   assert.match(privacy, /Backend access and sharing/);
   assert.match(privacy, /Information Regulator South Africa/);
+  assert.match(admin, /M2M Golf Day \| Admin/);
+  assert.match(admin, /Administrator sign in/);
+  assert.match(admin, /Private registration overview/);
+  assert.match(admin, /noindex,nofollow,noarchive/);
+  assert.match(adminLogic, /\/api\/admin-session/);
+  assert.match(adminLogic, /\/api\/admin-registrations/);
+  assert.match(adminLogic, /credentials: "same-origin"/);
+  assert.match(admin, /Export CSV/);
+  assert.match(adminLogic, /exportCsv/);
+  assert.doesNotMatch(adminLogic, /SUPABASE_(?:SECRET|SERVICE_ROLE)/);
+  assert.doesNotMatch(adminLogic, /raw_registration|consent_text_snapshot|user_id/);
 });
 
 test("neutralises spreadsheet formulas in user-controlled values", () => {
