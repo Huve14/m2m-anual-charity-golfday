@@ -6,6 +6,8 @@
     registrations: [],
     filtered: [],
     admin: null,
+    adminUsers: [],
+    newCredentials: null,
     generatedAt: null,
     refreshTimer: null,
   };
@@ -21,6 +23,7 @@
     refreshButton: $("#refresh-button"),
     exportButton: $("#export-button"),
     logoutButton: $("#logout-button"),
+    manageUsersButton: $("#manage-users-button"),
     search: $("#search-input"),
     status: $("#status-filter"),
     sponsorship: $("#sponsorship-filter"),
@@ -41,6 +44,22 @@
     detailTitle: $("#detail-title"),
     detailBody: $("#detail-body"),
     toast: $("#toast"),
+    userDialog: $("#user-dialog"),
+    userDialogClose: $("#user-dialog-close"),
+    userForm: $("#user-form"),
+    userFormMessage: $("#user-form-message"),
+    userRole: $("#new-user-role"),
+    superAdminOption: $("#super-admin-option"),
+    newUserPassword: $("#new-user-password"),
+    newUserPasswordToggle: $("#new-user-password-toggle"),
+    generatePasswordButton: $("#generate-password-button"),
+    createUserButton: $("#create-user-button"),
+    usersLoading: $("#users-loading"),
+    userList: $("#user-list"),
+    credentialCard: $("#credential-card"),
+    credentialSummary: $("#credential-summary"),
+    copyCredentialsButton: $("#copy-credentials-button"),
+    dismissCredentialsButton: $("#dismiss-credentials-button"),
   };
 
   const currency = new Intl.NumberFormat("en-ZA", {
@@ -120,6 +139,8 @@
     state.admin = null;
     state.registrations = [];
     state.filtered = [];
+    state.adminUsers = [];
+    state.newCredentials = null;
     window.clearInterval(state.refreshTimer);
     els.dashboardView.hidden = true;
     els.loginView.hidden = false;
@@ -131,11 +152,107 @@
     state.admin = admin;
     els.loginView.hidden = true;
     els.dashboardView.hidden = false;
-    els.dashboardSubtitle.textContent = `Signed in as ${admin.email}. Registration values are enquiries, not confirmed revenue.`;
+    const identity = admin.displayName || admin.email;
+    els.dashboardSubtitle.textContent = `Signed in as ${identity}. Registration values are enquiries, not confirmed revenue.`;
     window.clearInterval(state.refreshTimer);
     state.refreshTimer = window.setInterval(() => {
       if (document.visibilityState === "visible") loadRegistrations({ quiet: true });
     }, 120_000);
+  }
+
+  function randomIndex(maximum) {
+    const values = new Uint32Array(1);
+    window.crypto.getRandomValues(values);
+    return values[0] % maximum;
+  }
+
+  function generateSecurePassword() {
+    const groups = [
+      "ABCDEFGHJKLMNPQRSTUVWXYZ",
+      "abcdefghijkmnopqrstuvwxyz",
+      "23456789",
+      "!@#$%&*?",
+    ];
+    const all = groups.join("");
+    const characters = groups.map((group) => group[randomIndex(group.length)]);
+    while (characters.length < 20) characters.push(all[randomIndex(all.length)]);
+    for (let index = characters.length - 1; index > 0; index -= 1) {
+      const target = randomIndex(index + 1);
+      [characters[index], characters[target]] = [characters[target], characters[index]];
+    }
+    return characters.join("");
+  }
+
+  function roleLabel(role) {
+    return role === "super_admin" ? "Super administrator" : "Administrator";
+  }
+
+  function renderAdminUsers() {
+    els.userList.replaceChildren(
+      ...state.adminUsers.map((user) => {
+        const row = node("article", "user-row");
+        const identity = document.createElement("div");
+        identity.append(
+          node("strong", "", text(user.displayName, "M2M administrator")),
+          node("span", "", text(user.email)),
+        );
+        const meta = node("div", "user-meta");
+        meta.append(
+          node(
+            "span",
+            `role-pill${user.role === "super_admin" ? " super" : ""}`,
+            roleLabel(user.role),
+          ),
+          node(
+            "span",
+            "user-last",
+            user.lastLoginAt ? `Last login ${date(user.lastLoginAt)}` : "Not signed in yet",
+          ),
+        );
+        row.append(identity, meta);
+        return row;
+      }),
+    );
+    els.usersLoading.hidden = true;
+    els.userList.hidden = false;
+  }
+
+  async function loadAdminUsers() {
+    els.usersLoading.hidden = false;
+    els.usersLoading.textContent = "Loading authorised users...";
+    els.userList.hidden = true;
+    try {
+      const payload = await api("/api/admin-users");
+      state.adminUsers = Array.isArray(payload.users) ? payload.users : [];
+      els.superAdminOption.hidden = !payload.canCreateSuperAdmins;
+      els.superAdminOption.disabled = !payload.canCreateSuperAdmins;
+      if (!payload.canCreateSuperAdmins) els.userRole.value = "admin";
+      renderAdminUsers();
+    } catch (error) {
+      els.usersLoading.textContent = error.message;
+      if (error.status === 401) {
+        els.userDialog.close();
+        showLogin();
+      }
+    }
+  }
+
+  async function openUserManagement() {
+    els.userFormMessage.textContent = "";
+    els.credentialCard.hidden = true;
+    state.newCredentials = null;
+    els.userDialog.showModal();
+    await loadAdminUsers();
+  }
+
+  function closeUserManagement() {
+    state.newCredentials = null;
+    els.userForm.reset();
+    els.credentialCard.hidden = true;
+    els.userFormMessage.textContent = "";
+    els.newUserPassword.type = "password";
+    els.newUserPasswordToggle.textContent = "Show";
+    els.userDialog.close();
   }
 
   function renderMetrics() {
@@ -403,7 +520,7 @@
         body: JSON.stringify({ email, password, website }),
       });
       els.loginForm.reset();
-      showDashboard({ email: payload.email });
+      showDashboard(payload.admin);
       await loadRegistrations();
     } catch (error) {
       els.loginMessage.textContent = error.message;
@@ -420,6 +537,75 @@
     els.password.type = visible ? "password" : "text";
     els.passwordToggle.textContent = visible ? "Show" : "Hide";
     els.password.focus();
+  });
+  els.manageUsersButton.addEventListener("click", openUserManagement);
+  els.generatePasswordButton.addEventListener("click", () => {
+    els.newUserPassword.value = generateSecurePassword();
+    els.newUserPassword.type = "text";
+    els.newUserPasswordToggle.textContent = "Hide";
+    els.newUserPassword.focus();
+    els.newUserPassword.select();
+    showToast("A strong temporary password has been generated.");
+  });
+  els.newUserPasswordToggle.addEventListener("click", () => {
+    const visible = els.newUserPassword.type === "text";
+    els.newUserPassword.type = visible ? "password" : "text";
+    els.newUserPasswordToggle.textContent = visible ? "Show" : "Hide";
+    els.newUserPassword.focus();
+  });
+  els.userForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = new FormData(els.userForm);
+    const displayName = String(form.get("displayName") || "").trim();
+    const email = String(form.get("email") || "").trim();
+    const password = String(form.get("password") || "");
+    const role = String(form.get("role") || "admin");
+    const website = String(form.get("website") || "");
+    if (!displayName || !email || !password) {
+      els.userFormMessage.textContent = "Enter the user's name, email address and temporary password.";
+      return;
+    }
+    els.createUserButton.disabled = true;
+    els.createUserButton.querySelector("span").textContent = "Creating user...";
+    els.userFormMessage.textContent = "";
+    try {
+      const payload = await api("/api/admin-users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName, email, password, role, website }),
+      });
+      state.newCredentials = { email: payload.user.email, password };
+      els.credentialSummary.textContent = `Email: ${payload.user.email} · Temporary password: ${password}`;
+      els.credentialCard.hidden = false;
+      els.userForm.reset();
+      els.newUserPassword.type = "password";
+      els.newUserPasswordToggle.textContent = "Show";
+      await loadAdminUsers();
+      showToast(`${payload.user.displayName} can now access the dashboard.`);
+    } catch (error) {
+      els.userFormMessage.textContent = error.message;
+    } finally {
+      els.createUserButton.disabled = false;
+      els.createUserButton.querySelector("span").textContent = "Create dashboard user";
+    }
+  });
+  els.copyCredentialsButton.addEventListener("click", async () => {
+    if (!state.newCredentials) return;
+    const value = `M2M Golf Day Admin\nDashboard: ${window.location.origin}/admin\nEmail: ${state.newCredentials.email}\nTemporary password: ${state.newCredentials.password}`;
+    try {
+      await navigator.clipboard.writeText(value);
+      showToast("Login details copied securely.");
+    } catch {
+      showToast("Copy was blocked. Select the displayed login details instead.");
+    }
+  });
+  els.dismissCredentialsButton.addEventListener("click", () => {
+    state.newCredentials = null;
+    els.credentialCard.hidden = true;
+  });
+  els.userDialogClose.addEventListener("click", closeUserManagement);
+  els.userDialog.addEventListener("click", (event) => {
+    if (event.target === els.userDialog) closeUserManagement();
   });
   els.search.addEventListener("input", applyFilters);
   els.status.addEventListener("change", applyFilters);

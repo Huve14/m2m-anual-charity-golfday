@@ -120,7 +120,12 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(adminLogic, /\/api\/admin-registrations/);
   assert.match(adminLogic, /credentials: "same-origin"/);
   assert.match(admin, /Export CSV/);
+  assert.match(admin, /Manage users/);
+  assert.match(admin, /Create dashboard user/);
+  assert.match(admin, /Generate secure password/);
   assert.match(adminLogic, /exportCsv/);
+  assert.match(adminLogic, /\/api\/admin-users/);
+  assert.match(adminLogic, /window\.crypto\.getRandomValues/);
   assert.doesNotMatch(adminLogic, /SUPABASE_(?:SECRET|SERVICE_ROLE)/);
   assert.doesNotMatch(adminLogic, /raw_registration|consent_text_snapshot|user_id/);
 });
