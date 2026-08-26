@@ -156,6 +156,170 @@ test("reads only selected private fields through the server after admin authenti
   assert.equal(payload.registrations[0].registration_id, "M2M-TEST123");
 });
 
+test("authorised administrators can permanently delete one selected registration", async (t) => {
+  const originalFetch = globalThis.fetch;
+  const standardAdmin = { ...admin, id: 11, role: "admin" };
+  const requests = [];
+  globalThis.fetch = async (url, init = {}) => {
+    requests.push({ url: String(url), init });
+    if (init.method === "DELETE") {
+      return new Response(
+        JSON.stringify([
+          {
+            registration_id: "M2M-TEST123",
+            contact_name: "Test Registrant",
+            company: "Test Company",
+          },
+        ]),
+        { status: 200 },
+      );
+    }
+    return new Response(JSON.stringify([standardAdmin]), { status: 200 });
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const session = createAdminSession(standardAdmin);
+  const res = createResponse();
+  await registrationsHandler(
+    {
+      method: "DELETE",
+      query: { id: "M2M-TEST123" },
+      headers: {
+        cookie: `${ADMIN_COOKIE_NAME}=${session}`,
+        origin: "https://golfday.marketing2themax.co.za",
+        host: "golfday.marketing2themax.co.za",
+        "x-forwarded-proto": "https",
+        "sec-fetch-site": "same-origin",
+      },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 200);
+  const deleteRequest = requests.find((request) => request.init.method === "DELETE");
+  assert.ok(deleteRequest);
+  assert.match(deleteRequest.url, /registration_id=eq\.M2M-TEST123/);
+  assert.match(deleteRequest.url, /select=registration_id%2Ccontact_name%2Ccompany/);
+  assert.equal(deleteRequest.init.headers.apikey, "test-service-role");
+  assert.equal(deleteRequest.init.headers.Prefer, "return=representation");
+  assert.deepEqual(JSON.parse(res.body), {
+    ok: true,
+    deletedRegistration: {
+      registrationId: "M2M-TEST123",
+      contactName: "Test Registrant",
+      company: "Test Company",
+    },
+  });
+});
+
+test("registration deletion requires a valid admin session before touching storage", async (t) => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return new Response("[]", { status: 200 });
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const res = createResponse();
+  await registrationsHandler(
+    { method: "DELETE", query: { id: "M2M-TEST123" }, headers: {} },
+    res,
+  );
+
+  assert.equal(res.statusCode, 401);
+  assert.equal(calls, 0);
+});
+
+test("registration deletion rejects cross-origin and invalid identifiers", async (t) => {
+  const originalFetch = globalThis.fetch;
+  let deleteCalls = 0;
+  globalThis.fetch = async (url, init = {}) => {
+    if (init.method === "DELETE") deleteCalls += 1;
+    return new Response(JSON.stringify([admin]), { status: 200 });
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const session = createAdminSession(admin);
+  const common = {
+    cookie: `${ADMIN_COOKIE_NAME}=${session}`,
+    host: "golfday.marketing2themax.co.za",
+    "x-forwarded-proto": "https",
+  };
+  const crossOrigin = createResponse();
+  await registrationsHandler(
+    {
+      method: "DELETE",
+      query: { id: "M2M-TEST123" },
+      headers: {
+        ...common,
+        origin: "https://malicious.example",
+        "sec-fetch-site": "cross-site",
+      },
+    },
+    crossOrigin,
+  );
+  assert.equal(crossOrigin.statusCode, 403);
+
+  const invalid = createResponse();
+  await registrationsHandler(
+    {
+      method: "DELETE",
+      query: { id: "M2M-TEST123,registration_id.neq.null" },
+      headers: {
+        ...common,
+        origin: "https://golfday.marketing2themax.co.za",
+        "sec-fetch-site": "same-origin",
+      },
+    },
+    invalid,
+  );
+  assert.equal(invalid.statusCode, 400);
+  assert.equal(deleteCalls, 0);
+});
+
+test("registration deletion reports a missing entry without exposing provider details", async (t) => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => {
+    if (init.method === "DELETE") {
+      return new Response(JSON.stringify([]), { status: 200 });
+    }
+    return new Response(JSON.stringify([admin]), { status: 200 });
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const session = createAdminSession(admin);
+  const res = createResponse();
+  await registrationsHandler(
+    {
+      method: "DELETE",
+      query: { id: "M2M-MISSING1" },
+      headers: {
+        cookie: `${ADMIN_COOKIE_NAME}=${session}`,
+        origin: "https://golfday.marketing2themax.co.za",
+        host: "golfday.marketing2themax.co.za",
+        "x-forwarded-proto": "https",
+        "sec-fetch-site": "same-origin",
+      },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 404);
+  assert.deepEqual(JSON.parse(res.body), {
+    ok: false,
+    message: "This registration no longer exists.",
+  });
+});
+
 test("creates individual admin users with only a password hash sent to Supabase", async (t) => {
   const originalFetch = globalThis.fetch;
   const requests = [];

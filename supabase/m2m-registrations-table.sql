@@ -207,7 +207,7 @@ alter table public.m2m_registrations force row level security;
 -- role. Browsers and signed-in registrants do not receive direct table access.
 revoke all on table public.m2m_registrations from public, anon, authenticated;
 grant usage on schema public to service_role;
-grant select, insert, update on table public.m2m_registrations to service_role;
+grant select, insert, update, delete on table public.m2m_registrations to service_role;
 
 drop policy if exists "service-role-only" on public.m2m_registrations;
 
