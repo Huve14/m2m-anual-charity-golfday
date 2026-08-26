@@ -8,6 +8,7 @@
     admin: null,
     adminUsers: [],
     newCredentials: null,
+    pendingDeleteUser: null,
     generatedAt: null,
     refreshTimer: null,
   };
@@ -60,6 +61,12 @@
     credentialSummary: $("#credential-summary"),
     copyCredentialsButton: $("#copy-credentials-button"),
     dismissCredentialsButton: $("#dismiss-credentials-button"),
+    deleteUserDialog: $("#delete-user-dialog"),
+    deleteUserClose: $("#delete-user-close"),
+    deleteUserSummary: $("#delete-user-summary"),
+    deleteUserMessage: $("#delete-user-message"),
+    cancelDeleteUser: $("#cancel-delete-user"),
+    confirmDeleteUser: $("#confirm-delete-user"),
   };
 
   const currency = new Intl.NumberFormat("en-ZA", {
@@ -141,6 +148,7 @@
     state.filtered = [];
     state.adminUsers = [];
     state.newCredentials = null;
+    state.pendingDeleteUser = null;
     window.clearInterval(state.refreshTimer);
     els.dashboardView.hidden = true;
     els.loginView.hidden = false;
@@ -209,7 +217,18 @@
             user.lastLoginAt ? `Last login ${date(user.lastLoginAt)}` : "Not signed in yet",
           ),
         );
-        row.append(identity, meta);
+        const controls = node("div", "user-controls");
+        controls.append(meta);
+        if (user.canDelete) {
+          const button = node("button", "mini-action delete-user-action", "Delete");
+          button.type = "button";
+          button.setAttribute("aria-label", `Delete ${text(user.displayName, user.email)}`);
+          button.addEventListener("click", () => openDeleteConfirmation(user));
+          controls.append(button);
+        } else if (state.admin?.email === user.email) {
+          controls.append(node("span", "current-user-pill", "You"));
+        }
+        row.append(identity, controls);
         return row;
       }),
     );
@@ -246,6 +265,7 @@
   }
 
   function closeUserManagement() {
+    if (els.deleteUserDialog.open) closeDeleteConfirmation();
     state.newCredentials = null;
     els.userForm.reset();
     els.credentialCard.hidden = true;
@@ -253,6 +273,49 @@
     els.newUserPassword.type = "password";
     els.newUserPasswordToggle.textContent = "Show";
     els.userDialog.close();
+  }
+
+  function openDeleteConfirmation(user) {
+    state.pendingDeleteUser = user;
+    els.deleteUserMessage.textContent = "";
+    els.deleteUserSummary.textContent = `${text(user.displayName, "This user")} (${text(user.email)}) will no longer be able to sign in.`;
+    els.deleteUserDialog.showModal();
+    window.setTimeout(() => els.cancelDeleteUser.focus(), 60);
+  }
+
+  function closeDeleteConfirmation() {
+    state.pendingDeleteUser = null;
+    els.deleteUserMessage.textContent = "";
+    els.confirmDeleteUser.disabled = false;
+    els.confirmDeleteUser.querySelector("span").textContent = "Delete user";
+    if (els.deleteUserDialog.open) els.deleteUserDialog.close();
+  }
+
+  async function confirmDeleteUser() {
+    const user = state.pendingDeleteUser;
+    if (!user) return;
+    const deletedName = text(user.displayName, user.email);
+    els.confirmDeleteUser.disabled = true;
+    els.confirmDeleteUser.querySelector("span").textContent = "Deleting...";
+    els.deleteUserMessage.textContent = "";
+    try {
+      await api(`/api/admin-users?id=${encodeURIComponent(user.id)}`, {
+        method: "DELETE",
+      });
+      closeDeleteConfirmation();
+      await loadAdminUsers();
+      showToast(`${deletedName}'s dashboard access has been deleted.`);
+    } catch (error) {
+      els.deleteUserMessage.textContent = error.message;
+      if (error.status === 401) {
+        closeDeleteConfirmation();
+        els.userDialog.close();
+        showLogin();
+      } else {
+        els.confirmDeleteUser.disabled = false;
+        els.confirmDeleteUser.querySelector("span").textContent = "Delete user";
+      }
+    }
   }
 
   function renderMetrics() {
@@ -602,6 +665,15 @@
   els.dismissCredentialsButton.addEventListener("click", () => {
     state.newCredentials = null;
     els.credentialCard.hidden = true;
+  });
+  els.deleteUserClose.addEventListener("click", closeDeleteConfirmation);
+  els.cancelDeleteUser.addEventListener("click", closeDeleteConfirmation);
+  els.confirmDeleteUser.addEventListener("click", confirmDeleteUser);
+  els.deleteUserDialog.addEventListener("click", (event) => {
+    if (event.target === els.deleteUserDialog) closeDeleteConfirmation();
+  });
+  els.deleteUserDialog.addEventListener("close", () => {
+    state.pendingDeleteUser = null;
   });
   els.userDialogClose.addEventListener("click", closeUserManagement);
   els.userDialog.addEventListener("click", (event) => {

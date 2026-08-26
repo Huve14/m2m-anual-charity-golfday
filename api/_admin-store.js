@@ -76,8 +76,15 @@ async function request(query, init = {}) {
   });
   const payload = await providerPayload(response);
   if (!response.ok) {
+    const providerMessage = stringValue(payload?.message);
+    const code =
+      response.status === 409
+        ? "admin_email_exists"
+        : payload?.code === "P0001" && providerMessage === "m2m_last_super_admin"
+          ? "last_super_admin"
+          : "admin_store_failed";
     throw storeError(
-      response.status === 409 ? "admin_email_exists" : "admin_store_failed",
+      code,
       response.status,
       payload?.code || null,
     );
@@ -138,6 +145,21 @@ export async function createAdminUser(record) {
     throw storeError("admin_store_invalid_response");
   }
   return rows[0];
+}
+
+export async function deleteAdminUser(id) {
+  const numericId = Number(id);
+  if (!Number.isSafeInteger(numericId) || numericId < 1) return null;
+  const query = new URLSearchParams({
+    select: "id,email,display_name,role,is_active",
+    id: `eq.${numericId}`,
+  });
+  const rows = await request(query, {
+    method: "DELETE",
+    prefer: "return=representation",
+  });
+  if (!Array.isArray(rows)) throw storeError("admin_store_invalid_response");
+  return rows[0] || null;
 }
 
 export async function recordAdminLogin(id) {

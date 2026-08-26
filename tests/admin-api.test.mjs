@@ -287,3 +287,127 @@ test("standard administrators cannot grant super-administrator access", async (t
   assert.equal(storedRole, "admin");
   assert.equal(JSON.parse(res.body).user.role, "admin");
 });
+
+test("super administrators can permanently delete another dashboard user", async (t) => {
+  const originalFetch = globalThis.fetch;
+  const target = {
+    id: 10,
+    email: "former.admin@example.com",
+    display_name: "Former Admin",
+    role: "admin",
+    is_active: true,
+    session_version: 1,
+  };
+  const requests = [];
+  globalThis.fetch = async (url, init = {}) => {
+    requests.push({ url: String(url), init });
+    if (init.method === "DELETE") {
+      return new Response(JSON.stringify([target]), { status: 200 });
+    }
+    if (String(url).includes("id=eq.10")) {
+      return new Response(JSON.stringify([target]), { status: 200 });
+    }
+    return new Response(JSON.stringify([admin]), { status: 200 });
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const session = createAdminSession(admin);
+  const res = createResponse();
+  await usersHandler(
+    {
+      method: "DELETE",
+      query: { id: "10" },
+      headers: {
+        cookie: `${ADMIN_COOKIE_NAME}=${session}`,
+        origin: "https://golfday.marketing2themax.co.za",
+        host: "golfday.marketing2themax.co.za",
+        "x-forwarded-proto": "https",
+        "sec-fetch-site": "same-origin",
+      },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 200);
+  const deleteRequest = requests.find((request) => request.init.method === "DELETE");
+  assert.ok(deleteRequest);
+  assert.match(deleteRequest.url, /id=eq\.10/);
+  assert.equal(deleteRequest.init.headers.apikey, "test-service-role");
+  assert.deepEqual(JSON.parse(res.body), {
+    ok: true,
+    deletedUser: {
+      id: 10,
+      email: target.email,
+      displayName: target.display_name,
+    },
+  });
+});
+
+test("standard administrators cannot delete dashboard users", async (t) => {
+  const originalFetch = globalThis.fetch;
+  const standardAdmin = { ...admin, id: 11, role: "admin" };
+  let deleteCalls = 0;
+  globalThis.fetch = async (url, init = {}) => {
+    if (init.method === "DELETE") deleteCalls += 1;
+    return new Response(JSON.stringify([standardAdmin]), { status: 200 });
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const session = createAdminSession(standardAdmin);
+  const res = createResponse();
+  await usersHandler(
+    {
+      method: "DELETE",
+      query: { id: "12" },
+      headers: {
+        cookie: `${ADMIN_COOKIE_NAME}=${session}`,
+        origin: "https://golfday.marketing2themax.co.za",
+        host: "golfday.marketing2themax.co.za",
+        "x-forwarded-proto": "https",
+        "sec-fetch-site": "same-origin",
+      },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(deleteCalls, 0);
+  assert.match(JSON.parse(res.body).message, /super administrator/i);
+});
+
+test("super administrators cannot delete their current account", async (t) => {
+  const originalFetch = globalThis.fetch;
+  let deleteCalls = 0;
+  globalThis.fetch = async (url, init = {}) => {
+    if (init.method === "DELETE") deleteCalls += 1;
+    return new Response(JSON.stringify([admin]), { status: 200 });
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const session = createAdminSession(admin);
+  const res = createResponse();
+  await usersHandler(
+    {
+      method: "DELETE",
+      query: { id: String(admin.id) },
+      headers: {
+        cookie: `${ADMIN_COOKIE_NAME}=${session}`,
+        origin: "https://golfday.marketing2themax.co.za",
+        host: "golfday.marketing2themax.co.za",
+        "x-forwarded-proto": "https",
+        "sec-fetch-site": "same-origin",
+      },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 409);
+  assert.equal(deleteCalls, 0);
+  assert.match(JSON.parse(res.body).message, /cannot delete/i);
+});

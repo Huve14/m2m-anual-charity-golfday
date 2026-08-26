@@ -140,14 +140,27 @@
       .user-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px;background:#fff;border:1px solid var(--line)}
       .user-row strong{display:block;color:var(--navy);font-size:13px}
       .user-row span{display:block;margin-top:4px;color:#6c788a;font-size:11px;overflow-wrap:anywhere}
+      .user-controls{display:flex;align-items:center;justify-content:flex-end;gap:12px}
       .user-meta{text-align:right}
       .role-pill{display:inline-block!important;margin:0!important;padding:6px 8px;background:#edf1f7;color:#42526b!important;font-size:9px!important;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
       .role-pill.super{background:#fff0f1;color:var(--red-dark)!important}
       .user-last{margin-top:6px!important;font-size:9px!important}
+      .delete-user-action{flex:0 0 auto;border-color:rgba(200,16,46,.35);color:var(--red-dark)}
+      .delete-user-action:hover{border-color:var(--red);background:#fff2f3;color:var(--red-dark)}
+      .current-user-pill{display:inline-block!important;margin:0!important;padding:6px 8px;background:#e8f7f1;color:#12674e!important;font-size:9px!important;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+      .confirm-dialog{width:min(520px,calc(100% - 28px))}
+      .confirm-body{padding:clamp(24px,4vw,36px)}
+      .confirm-body h3{margin:0 0 12px;color:var(--navy);font:600 23px/1.12 Aquire,sans-serif;text-transform:uppercase}
+      .confirm-body>p{margin:0;color:#536075;font-size:14px;line-height:1.65;overflow-wrap:anywhere}
+      .confirm-warning{margin-top:20px;padding:15px 16px;border-left:4px solid var(--red);background:#fff1f2;color:#74142a;font-size:12px;font-weight:700;line-height:1.55}
+      .confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}
+      .delete-confirm{border-color:var(--red);background:var(--red);color:#fff}
+      .delete-confirm:hover{border-color:var(--red-dark);background:var(--red-dark);color:#fff}
+      .delete-message{min-height:0;margin-top:14px!important;color:var(--red-dark)!important;font-size:12px!important}
       .users-loading{padding:34px 12px;color:#697589;text-align:center;font-size:12px}
       .toast{position:fixed;z-index:50;right:22px;bottom:max(22px,env(safe-area-inset-bottom));max-width:min(430px,calc(100% - 32px));padding:15px 18px;background:var(--navy);color:#fff;border-left:4px solid var(--red);box-shadow:0 18px 50px rgba(0,0,0,.28);font-size:13px;line-height:1.55}
       @media (max-width:980px){.login-stage{grid-template-columns:1fr;max-width:760px}.login-intro h1{font-size:clamp(48px,11vw,80px)}.stats{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr 1fr}.search-wrap{grid-column:1/-1}.brand-copy{display:none}}
-      @media (max-width:720px){.topbar{padding-left:18px;padding-right:18px}.brand img{width:145px}.secure-tag{font-size:9px;letter-spacing:.1em}.login-stage{padding:34px 18px 52px;gap:34px}.login-intro h1{font-size:clamp(43px,15vw,66px);margin-top:20px}.login-intro p{font-size:15px}.dashboard{padding:24px 14px 50px}.dash-heading{align-items:flex-start;flex-direction:column}.heading-actions{width:100%;justify-content:flex-start}.action{flex:1}.stats{gap:10px}.stat{min-height:132px;padding:18px}.toolbar{grid-template-columns:1fr;padding:12px;border-bottom:1px solid var(--line)}.search-wrap{grid-column:auto}.table-wrap{display:none}.mobile-list{display:grid}.data-foot{flex-direction:column;gap:6px}.detail-body{padding:16px}.detail-head{padding:20px}.detail-grid{grid-template-columns:1fr}.detail-item.wide{grid-column:auto}.players{grid-template-columns:1fr}.user-body{grid-template-columns:1fr}.user-existing{border-left:0;border-top:1px solid var(--line)}.user-row{grid-template-columns:1fr}.user-meta{text-align:left}.user-list{max-height:none}}
+      @media (max-width:720px){.topbar{padding-left:18px;padding-right:18px}.brand img{width:145px}.secure-tag{font-size:9px;letter-spacing:.1em}.login-stage{padding:34px 18px 52px;gap:34px}.login-intro h1{font-size:clamp(43px,15vw,66px);margin-top:20px}.login-intro p{font-size:15px}.dashboard{padding:24px 14px 50px}.dash-heading{align-items:flex-start;flex-direction:column}.heading-actions{width:100%;justify-content:flex-start}.action{flex:1}.stats{gap:10px}.stat{min-height:132px;padding:18px}.toolbar{grid-template-columns:1fr;padding:12px;border-bottom:1px solid var(--line)}.search-wrap{grid-column:auto}.table-wrap{display:none}.mobile-list{display:grid}.data-foot{flex-direction:column;gap:6px}.detail-body{padding:16px}.detail-head{padding:20px}.detail-grid{grid-template-columns:1fr}.detail-item.wide{grid-column:auto}.players{grid-template-columns:1fr}.user-body{grid-template-columns:1fr}.user-existing{border-left:0;border-top:1px solid var(--line)}.user-row{grid-template-columns:1fr}.user-controls{justify-content:space-between}.user-meta{text-align:left}.user-list{max-height:none}.confirm-actions{flex-direction:column-reverse}.confirm-actions .mini-action{width:100%;min-height:44px}}
       @media (max-width:430px){.stats{grid-template-columns:1fr 1fr}.stat{min-height:118px;padding:15px}.stat-value{font-size:27px}.stat-note{font-size:9px}.mobile-meta{grid-template-columns:1fr}.secure-tag span:last-child{display:none}.login-note{font-size:12px}}
       @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.spinner{animation:none}.primary,.action,tbody tr{transition:none}}
     </style>
@@ -282,10 +295,26 @@
         </section>
         <section class="user-existing" aria-labelledby="existing-users-title">
           <h3 id="existing-users-title" class="section-title">Authorised users</h3>
-          <p class="section-copy">Every person has their own login. Password hashes and private session details are never shown here.</p>
+          <p class="section-copy">Every person has their own login. Super administrators can permanently remove access using the Delete button.</p>
           <div id="users-loading" class="users-loading">Loading authorised users...</div>
           <div id="user-list" class="user-list" hidden></div>
         </section>
+      </div>
+    </dialog>
+    <dialog id="delete-user-dialog" class="confirm-dialog" aria-labelledby="delete-user-title">
+      <header class="detail-head">
+        <div><small>Permanent action</small><h2 id="delete-user-title">Delete dashboard user</h2></div>
+        <button id="delete-user-close" class="dialog-close" type="button" aria-label="Close delete confirmation">×</button>
+      </header>
+      <div class="confirm-body">
+        <h3>Remove this person's access?</h3>
+        <p id="delete-user-summary"></p>
+        <div class="confirm-warning">This permanently deletes the dashboard account and immediately invalidates its active sessions. Registration records are not affected.</div>
+        <div class="confirm-actions">
+          <button id="cancel-delete-user" class="mini-action" type="button">Keep user</button>
+          <button id="confirm-delete-user" class="mini-action delete-confirm" type="button"><span>Delete user</span></button>
+        </div>
+        <p id="delete-user-message" class="delete-message" role="alert" aria-live="polite"></p>
       </div>
     </dialog>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
