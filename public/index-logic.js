@@ -27,7 +27,7 @@ window.__dcLogicFactories["index"] = (DCLogic) => {
             || probe.getContext('webgl', { failIfMajorPerformanceCaveat: true });
           webglReady = !!gl;
           if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
-        } catch (_) { webglReady = false; }
+        } catch { webglReady = false; }
       }
       this._mobile3d = mobileViewport && webglReady && !reducedMotion
         && !connection.saveData && !slowConnection && !lowMemory && !lowCpu;

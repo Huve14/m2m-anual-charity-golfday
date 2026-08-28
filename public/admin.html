@@ -170,8 +170,38 @@
       @media (max-width:720px){.topbar{padding-left:18px;padding-right:18px}.brand img{width:145px}.secure-tag{font-size:9px;letter-spacing:.1em}.login-stage{padding:34px 18px 52px;gap:34px}.login-intro h1{font-size:clamp(43px,15vw,66px);margin-top:20px}.login-intro p{font-size:15px}.dashboard{padding:24px 14px 50px}.dash-heading{align-items:flex-start;flex-direction:column}.heading-actions{width:100%;justify-content:flex-start}.action{flex:1}.stats{gap:10px}.stat{min-height:132px;padding:18px}.toolbar{grid-template-columns:1fr;padding:12px;border-bottom:1px solid var(--line)}.search-wrap{grid-column:auto}.table-wrap{display:none}.mobile-list{display:grid}.data-foot{flex-direction:column;gap:6px}.detail-body{padding:16px}.detail-head{padding:20px}.detail-grid{grid-template-columns:1fr}.detail-item.wide{grid-column:auto}.detail-actions{grid-column:auto;align-items:flex-start;flex-direction:column}.detail-action-note{text-align:left}.players{grid-template-columns:1fr}.user-body{grid-template-columns:1fr}.user-existing{border-left:0;border-top:1px solid var(--line)}.user-row{grid-template-columns:1fr}.user-controls{justify-content:space-between}.user-meta{text-align:left}.user-list{max-height:none}.confirm-actions{flex-direction:column-reverse}.confirm-actions .mini-action{width:100%;min-height:44px}.mobile-card-actions .mini-action{width:100%;min-height:44px}}
       @media (max-width:430px){.stats{grid-template-columns:1fr 1fr}.stat{min-height:118px;padding:15px}.stat-value{font-size:27px}.stat-note{font-size:9px}.mobile-meta{grid-template-columns:1fr}.secure-tag span:last-child{display:none}.login-note{font-size:12px}}
       @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.spinner{animation:none}.primary,.action,tbody tr{transition:none}}
+      .module-tabs{display:flex;gap:8px;overflow-x:auto;margin:0 0 22px;padding:6px;background:#e9edf3;border:1px solid #d8dee8;scrollbar-width:thin}
+      .module-tab{flex:0 0 auto;min-height:43px;border:0;background:transparent;color:#526078;padding:11px 16px;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+      .module-tab[aria-selected="true"]{background:var(--navy);color:#fff;box-shadow:0 8px 20px -14px #0c1735}
+      .module-panel[hidden]{display:none!important}
+      .host-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+      .host-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px;padding:16px;background:#fff;border:1px solid var(--line)}
+      .host-toolbar .search-wrap{flex:1 1 320px}
+      .host-toolbar .search-wrap input{width:100%;min-height:48px;border:1px solid #cdd5df;padding:12px 14px 12px 43px}
+      .host-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+      .host-card{padding:22px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--red);box-shadow:0 16px 32px -30px #0c1735}
+      .host-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+      .host-card h3{margin:0;color:var(--navy);font:600 20px/1.08 Aquire,sans-serif;text-transform:uppercase}
+      .host-card p{margin:8px 0 0;color:#687489;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+      .host-card-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid #e3e7ed}
+      .host-card-meta span{display:block;color:#8b94a3;font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+      .host-card-meta strong{display:block;margin-top:6px;color:var(--navy);font-size:12px;line-height:1.35}
+      .host-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.host-card-actions .mini-action{flex:1}
+      .import-layout{display:grid;grid-template-columns:minmax(0,.8fr) minmax(380px,1.2fr);gap:18px}
+      .import-card{padding:clamp(24px,3vw,36px);background:#fff;border:1px solid var(--line)}
+      .import-drop{display:grid;place-items:center;min-height:250px;margin-top:22px;padding:28px;border:2px dashed #bec7d4;background:#f7f9fc;text-align:center;transition:.2s}
+      .import-drop.dragging{border-color:var(--red);background:#fff2f3}.import-drop input{position:absolute;opacity:0;pointer-events:none}
+      .import-drop strong{display:block;color:var(--navy);font:600 22px/1.1 Aquire,sans-serif;text-transform:uppercase}.import-drop span{display:block;margin-top:12px;color:#69768a;font-size:12px;line-height:1.55}
+      .import-guidance{display:grid;gap:12px;margin-top:22px}.guidance-row{display:flex;gap:12px;padding:14px;border-left:3px solid var(--navy);background:#f3f6fa;color:#556277;font-size:12px;line-height:1.55}.guidance-row strong{color:var(--navy)}
+      .preview-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}.preview-stat{padding:15px;background:#f2f5f9;border:1px solid #e0e5ec}.preview-stat span{display:block;color:#7b8696;font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.preview-stat strong{display:block;margin-top:7px;color:var(--navy);font:600 23px/1 Aquire,sans-serif}
+      .preview-table{max-height:48vh;overflow:auto;border:1px solid var(--line)}.preview-table table{min-width:880px}.row-message{display:block;margin-top:5px;color:var(--red-dark);font-size:10px}
+      .batch-list{display:grid;gap:10px}.batch-row{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(4,minmax(90px,.4fr));gap:12px;align-items:center;padding:17px;background:#fff;border:1px solid var(--line)}.batch-row strong{color:var(--navy);font-size:13px}.batch-row span{color:#748095;font-size:10px;line-height:1.45}
+      .holes-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.hole-admin-card{padding:20px;background:#fff;border:1px solid var(--line)}.hole-admin-card h3{margin:0;color:var(--navy);font:600 18px/1.1 Aquire,sans-serif;text-transform:uppercase}.hole-admin-card p{margin:8px 0 16px;color:#69758a;font-size:11px;line-height:1.5}.hole-control{display:flex;gap:8px}.hole-control select{flex:1;min-height:42px;border:1px solid #ccd4df;background:#fff;padding:9px}.access-preview{margin-top:18px;padding:16px;border-left:4px solid var(--red);background:#fff3f4;color:#642334;font-size:12px;line-height:1.6}
+      @media (max-width:980px){.host-stats{grid-template-columns:repeat(2,1fr)}.host-grid{grid-template-columns:1fr}.import-layout{grid-template-columns:1fr}.holes-grid{grid-template-columns:repeat(2,1fr)}}
+      @media (max-width:620px){.module-tabs{margin-left:-14px;margin-right:-14px;border-left:0;border-right:0}.host-stats{grid-template-columns:1fr 1fr}.host-card-meta{grid-template-columns:1fr}.preview-summary{grid-template-columns:1fr 1fr}.batch-row{grid-template-columns:1fr 1fr}.batch-row>*:first-child{grid-column:1/-1}.holes-grid{grid-template-columns:1fr}.import-drop{min-height:210px}.host-card-actions{flex-direction:column}}
     </style>
     <script src="/admin.js" defer></script>
+    <script src="/admin-hosts.js" defer></script>
   </head>
   <body>
     <div class="shell">
@@ -229,6 +259,16 @@
             </div>
           </div>
 
+          <nav class="module-tabs" aria-label="Dashboard areas">
+            <button class="module-tab" type="button" data-module="enquiries" aria-selected="true">Public enquiries</button>
+            <button class="module-tab" type="button" data-module="hosts" aria-selected="false">Host companies</button>
+            <button class="module-tab" type="button" data-module="import" aria-selected="false">Import Excel</button>
+            <button class="module-tab" type="button" data-module="history" aria-selected="false">Import history</button>
+            <button class="module-tab" type="button" data-module="allocations" aria-selected="false">Allocations &amp; access</button>
+          </nav>
+
+          <section id="module-enquiries" class="module-panel">
+
           <div class="stats" aria-label="Registration totals">
             <article class="stat"><span class="stat-label">Enquiries</span><strong id="stat-registrations" class="stat-value">0</strong><span class="stat-note">Submitted forms</span></article>
             <article class="stat"><span class="stat-label">Fourballs</span><strong id="stat-fourballs" class="stat-value">0</strong><span class="stat-note">Reserved in enquiries</span></article>
@@ -256,6 +296,51 @@
             </div>
             <div id="mobile-list" class="mobile-list" hidden></div>
             <footer class="data-foot"><span id="result-count">0 entries</span><span id="last-updated">Not yet updated</span></footer>
+          </section>
+          </section>
+
+          <section id="module-hosts" class="module-panel" hidden>
+            <div id="host-stats" class="host-stats"></div>
+            <div class="host-toolbar">
+              <label class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="host-search" type="search" placeholder="Search host company or contact email" /></label>
+              <button id="refresh-hosts" class="action" type="button">Refresh hosts</button>
+            </div>
+            <div id="host-list" class="host-grid"><div class="loading"><span class="spinner"></span><span>Open this area to load host companies.</span></div></div>
+          </section>
+
+          <section id="module-import" class="module-panel" hidden>
+            <div class="import-layout">
+              <article class="import-card">
+                <div class="eyebrow">Step 1</div><h2 class="section-title" style="margin-top:18px">Download the approved template</h2>
+                <p class="section-copy">Use the controlled columns and values so every company, booking and allocation can be safely previewed.</p>
+                <a class="action accent" href="/assets/m2m-host-company-import-template.xlsx" download>Download Excel template</a>
+                <div class="import-guidance">
+                  <div class="guidance-row"><strong>No emails:</strong><span>Uploading, previewing and approving never contacts a host.</span></div>
+                  <div class="guidance-row"><strong>Fixed pricing:</strong><span>The package catalogue controls amounts. Spreadsheet prices and formulas are rejected.</span></div>
+                  <div class="guidance-row"><strong>Safe matching:</strong><span>Company reference is checked first, then the normalised email. Similar names are never merged.</span></div>
+                </div>
+              </article>
+              <article class="import-card">
+                <div class="eyebrow">Step 2</div><h2 class="section-title" style="margin-top:18px">Upload and preview</h2>
+                <p class="section-copy">Accepts .xlsx or .csv, up to 5 MB and 500 company rows. Formula and macro files are rejected.</p>
+                <label id="import-drop" class="import-drop">
+                  <input id="import-file" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" />
+                  <span><strong>Choose or drop a file</strong><span id="import-file-label">No spreadsheet selected</span></span>
+                </label>
+                <button id="preview-import" class="primary" type="button" disabled><span>Securely preview import</span></button>
+                <p id="import-message" class="form-message" role="alert" aria-live="polite"></p>
+              </article>
+            </div>
+          </section>
+
+          <section id="module-history" class="module-panel" hidden>
+            <div class="dash-heading"><div><div class="eyebrow">Server-side record</div><h2 class="section-title" style="margin-top:16px">Import history</h2><p>Every preview and committed batch records the responsible administrator and result.</p></div><button id="refresh-history" class="action" type="button">Refresh history</button></div>
+            <div id="batch-list" class="batch-list"><div class="loading"><span class="spinner"></span><span>Open this area to load import history.</span></div></div>
+          </section>
+
+          <section id="module-allocations" class="module-panel" hidden>
+            <div class="dash-heading"><div><div class="eyebrow">Admin controlled</div><h2 class="section-title" style="margin-top:16px">Holes &amp; portal access</h2><p>Assign one sponsor per hole, monitor roster completion and release access only after final review.</p></div></div>
+            <div id="holes-list" class="holes-grid"><div class="loading"><span class="spinner"></span><span>Open this area to load sponsorship allocations.</span></div></div>
           </section>
         </section>
       </main>
@@ -338,6 +423,25 @@
           <button id="confirm-delete-registration" class="mini-action delete-confirm" type="button"><span>Delete registration</span></button>
         </div>
         <p id="delete-registration-message" class="delete-message" role="alert" aria-live="polite"></p>
+      </div>
+    </dialog>
+    <dialog id="import-preview-dialog" class="user-dialog" aria-labelledby="import-preview-title">
+      <header class="detail-head"><div><small>Review before saving</small><h2 id="import-preview-title">Import preview</h2></div><button id="import-preview-close" class="dialog-close" type="button" aria-label="Close import preview">×</button></header>
+      <div class="detail-body">
+        <div id="preview-summary" class="preview-summary"></div>
+        <div id="preview-rows" class="preview-table"></div>
+        <div class="confirm-warning">Approving saves the valid batch in one transaction. It creates pending profiles only. No login, password or email is created.</div>
+        <div class="confirm-actions"><button id="cancel-import" class="mini-action" type="button">Cancel</button><button id="commit-import" class="mini-action delete-confirm" type="button"><span>Approve import</span></button></div>
+        <p id="preview-message" class="form-message" role="alert" aria-live="polite"></p>
+      </div>
+    </dialog>
+    <dialog id="access-dialog" class="confirm-dialog" aria-labelledby="access-dialog-title">
+      <header class="detail-head"><div><small>Final communication check</small><h2 id="access-dialog-title">Send portal access</h2></div><button id="access-dialog-close" class="dialog-close" type="button" aria-label="Close access confirmation">×</button></header>
+      <div class="confirm-body">
+        <h3>Confirm the exact recipient</h3><p id="access-summary"></p><div id="access-allocations" class="access-preview"></div>
+        <div class="confirm-warning">This is the only step that sends communication. Supabase sends a one-time set-password invitation. No plaintext password is shown or stored.</div>
+        <div class="confirm-actions"><button id="cancel-access" class="mini-action" type="button">Not yet</button><button id="confirm-access" class="mini-action delete-confirm" type="button"><span>Send secure access</span></button></div>
+        <p id="access-message" class="form-message" role="alert" aria-live="polite"></p>
       </div>
     </dialog>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

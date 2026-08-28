@@ -17,9 +17,12 @@
   },
   "dependencies": {
     "@composio/core": "^0.17.0",
+    "@supabase/supabase-js": "2.112.4",
     "drizzle-orm": "0.45.2",
+    "fflate": "0.8.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "read-excel-file": "9.3.10",
     "three": "0.184.0"
   },
   "devDependencies": {
