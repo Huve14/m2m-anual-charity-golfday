@@ -72,7 +72,10 @@ export default async function handler(req, res) {
         role: admin.role,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("[M2M Invitational] admin login failed", {
+      code: error?.code || error?.message || "unknown",
+    });
     const remaining = MIN_FAILURE_DELAY_MS - (Date.now() - startedAt);
     if (remaining > 0) await wait(remaining);
     sendJson(res, 401, {
