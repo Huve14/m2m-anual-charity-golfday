@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 let cachedAdminClient;
+let cachedAuthClient;
 
 function clean(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -33,6 +34,20 @@ export function adminClient() {
     });
   }
   return cachedAdminClient;
+}
+
+function authClient() {
+  const config = opsConfig();
+  if (!config.url || !config.publishableKey) {
+    throw apiFailure("auth_unavailable", "Authentication is unavailable.", 503);
+  }
+  if (!cachedAuthClient) {
+    cachedAuthClient = createClient(config.url, config.publishableKey, {
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+      global: { headers: { "X-Client-Info": "m2m-golf-operations-auth/1.0" } },
+    });
+  }
+  return cachedAuthClient;
 }
 
 export function apiFailure(code, message, status = 400, fieldErrors) {
@@ -91,11 +106,13 @@ function bearerToken(req) {
 export async function requireProfile(req, roles = []) {
   const token = bearerToken(req);
   if (!token) throw apiFailure("authentication_required", "Sign in is required.", 401);
-  const client = adminClient();
-  const { data: authData, error: authError } = await client.auth.getUser(token);
+  // Validate the user's bearer token with the same public Auth credentials used
+  // by the browser. Keep the secret client reserved for privileged data access.
+  const { data: authData, error: authError } = await authClient().auth.getUser(token);
   if (authError || !authData?.user?.id) {
     throw apiFailure("session_invalid", "Your session has expired. Sign in again.", 401);
   }
+  const client = adminClient();
   const { data: profile, error: profileError } = await client
     .from("m2m_profiles")
     .select("id,email,full_name,role,is_active,last_seen_at")
