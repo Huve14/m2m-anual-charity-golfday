@@ -4,8 +4,10 @@ import { adminClient, fromSupabase, parseJsonBody, recordAudit, requireAdmin, se
 const createSchema = z.object({
   eventId: z.string().uuid(),
   eventCompanyId: z.string().uuid(),
-  teamName: z.string().trim().min(2).max(160),
-  bookingStatus: z.enum(["pending", "confirmed", "cancelled"]).default("pending"),
+  fourballTypeId: z.string().uuid(),
+  quantity: z.number().int().min(1).max(100).default(1),
+  teamNamePrefix: z.string().trim().min(2).max(140),
+  bookingStatus: z.enum(["pending", "confirmed"]).default("pending"),
   confirmedAmountMinor: z.number().int().min(0).default(0),
   invoiceReference: z.string().trim().max(120).optional(),
   paymentStatus: z.enum(["unpaid", "partial", "paid", "waived"]).default("unpaid"),
@@ -40,6 +42,8 @@ function shape(item) {
   return {
     id: item.id, eventId: item.event_id, eventCompanyId: item.event_company_id,
     companyName: item.eventCompany?.company?.name || "", teamName: item.team_name,
+    fourballTypeId: item.fourball_type_id || null, fourballTypeName: item.fourballType?.name || "Legacy fourball",
+    unitPriceMinor: item.unit_price_minor || 0,
     bookingStatus: item.booking_status, confirmedAmountMinor: item.confirmed_amount_minor,
     invoiceReference: item.invoice_reference || "", paymentStatus: item.payment_status,
     submissionStatus: item.submission_status, submittedAt: item.submitted_at,
@@ -49,7 +53,7 @@ function shape(item) {
   };
 }
 
-const SELECT = "*,players:m2m_players(*),hosts:m2m_fourball_hosts(*,profile:m2m_profiles(id,email,full_name)),eventCompany:m2m_event_companies(id,company:m2m_companies(id,name)),teeSlot:m2m_tee_slots(id,slot_label,hole:m2m_event_holes(id,label))";
+const SELECT = "*,fourballType:m2m_fourball_types(id,name,price_minor),players:m2m_players(*),hosts:m2m_fourball_hosts(*,profile:m2m_profiles(id,email,full_name)),eventCompany:m2m_event_companies(id,company:m2m_companies(id,name)),teeSlot:m2m_tee_slots(id,slot_label,hole:m2m_event_holes(id,label))";
 
 async function list(req, res) {
   await requireAdmin(req);
@@ -68,21 +72,17 @@ async function create(req, res) {
   const profile = await requireAdmin(req);
   const input = validate(createSchema, parseJsonBody(req));
   const client = adminClient();
-  const { data, error } = await client.from("m2m_fourballs").insert({
-    event_id: input.eventId, event_company_id: input.eventCompanyId, team_name: input.teamName,
-    booking_status: input.bookingStatus, confirmed_amount_minor: input.confirmedAmountMinor,
-    invoice_reference: input.invoiceReference || null, payment_status: input.paymentStatus, notes: input.notes || null,
-  }).select("id").single();
-  if (error) throw fromSupabase(error, "fourball_create_failed", "The fourball could not be created.");
-  const { error: playerError } = await client.from("m2m_players").insert(Array.from({ length: 4 }, (_, index) => ({ event_id: input.eventId, fourball_id: data.id, position: index + 1 })));
-  if (playerError) {
-    await client.from("m2m_fourballs").delete().eq("id", data.id);
-    throw fromSupabase(playerError, "player_slots_create_failed", "The player positions could not be created.");
-  }
-  await recordAudit({ eventId: input.eventId, actorId: profile.id, action: "fourball.created", entityType: "fourball", entityId: data.id });
-  const { data: created, error: readError } = await client.from("m2m_fourballs").select(SELECT).eq("id", data.id).single();
+  const { data: createdIds, error } = await client.rpc("m2m_create_fourball_booking", {
+    p_event_id: input.eventId, p_event_company_id: input.eventCompanyId,
+    p_fourball_type_id: input.fourballTypeId, p_quantity: input.quantity,
+    p_booking_status: input.bookingStatus, p_confirmed_amount_minor: input.confirmedAmountMinor,
+    p_team_name_prefix: input.teamNamePrefix, p_invoice_reference: input.invoiceReference || "",
+    p_payment_status: input.paymentStatus, p_notes: input.notes || "", p_actor_id: profile.id,
+  });
+  if (error) throw fromSupabase(error, "fourball_create_failed", "The fourballs could not be created.");
+  const { data: created, error: readError } = await client.from("m2m_fourballs").select(SELECT).in("id", createdIds || []).order("created_at");
   if (readError) throw fromSupabase(readError);
-  sendJson(res, 201, { ok: true, fourball: shape(created) });
+  sendJson(res, 201, { ok: true, fourballs: created.map(shape) });
 }
 
 async function update(req, res) {
@@ -141,4 +141,3 @@ export default async function handler(req, res) {
 }
 
 export const config = { maxDuration: 30 };
-

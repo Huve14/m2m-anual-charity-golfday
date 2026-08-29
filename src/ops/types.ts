@@ -24,6 +24,7 @@ export interface PlayerRecord {
 
 export interface FourballRecord {
   id: string; eventId: string; eventCompanyId: string; companyName: string; teamName: string;
+  fourballTypeId: string | null; fourballTypeName: string; unitPriceMinor: number;
   bookingStatus: string; confirmedAmountMinor: number; invoiceReference: string; paymentStatus: string;
   submissionStatus: string; submittedAt: string | null; notes: string; players: PlayerRecord[];
   hosts: Array<{ id: string; profileId: string; isPrimary: boolean; invitedAt: string | null; acceptedAt: string | null; fullName: string; email: string }>;
@@ -33,4 +34,3 @@ export interface FourballRecord {
 export interface UserRecord {
   id: string; email: string; fullName: string; role: Role; isActive: boolean; lastSeenAt: string | null;
 }
-

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { fromSupabase, validate } from "../api/_ops.js";
 
 const migrationUrl = new URL("../supabase/migrations/20260829053332_create_multi_event_golf_management.sql", import.meta.url);
+const fourballTypesMigrationUrl = new URL("../supabase/migrations/20260829185408_add_fourball_types_and_bulk_bookings.sql", import.meta.url);
 
 test("defines the isolated multi-event operations model without replacing legacy storage", async () => {
   const sql = await readFile(migrationUrl, "utf8");
@@ -40,9 +41,25 @@ test("enforces capacity, allocations, tee uniqueness, primary hosts, deadlines a
   assert.match(sql, /m2m_event_setup_incomplete/);
 });
 
+test("supports editable fourball types and transactional bulk client bookings", async () => {
+  const [sql, api, ui] = await Promise.all([
+    readFile(fourballTypesMigrationUrl, "utf8"),
+    readFile(new URL("../api/v1/admin/fourballs.js", import.meta.url), "utf8"),
+    readFile(new URL("../src/admin/AdminApp.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(sql, /create table public\.m2m_fourball_types/);
+  assert.match(sql, /m2m_fourball_capacity_exceeded/);
+  assert.match(sql, /m2m_fourball_capacity_below_booked/);
+  assert.match(sql, /create or replace function public\.m2m_create_fourball_booking/);
+  assert.match(sql, /grant execute on function public\.m2m_create_fourball_booking[\s\S]+to service_role/);
+  assert.match(api, /m2m_create_fourball_booking/);
+  assert.match(ui, /Adjusted total value/);
+  assert.match(ui, /Assign existing host/);
+});
+
 test("keeps operational data behind authenticated versioned APIs", async () => {
   const paths = [
-    "events", "dashboard", "companies", "sponsorships", "fourballs", "player-fields", "branding",
+    "events", "dashboard", "companies", "sponsorships", "fourballs", "fourball-types", "player-fields", "branding",
     "exports", "users", "reminders", "enquiries",
   ];
   for (const path of paths) {
