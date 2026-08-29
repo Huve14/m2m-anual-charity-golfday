@@ -9,7 +9,7 @@ import {
 } from "../api/_registration.js";
 
 test("builds the confirmed M2M Invitational experience for Vercel", async () => {
-  const [html, hole, golfStage, privacy, support, indexLogic, holeLogic, admin, adminLogic] = await Promise.all([
+  const [html, hole, golfStage, privacy, support, indexLogic, holeLogic, admin, host, auth] = await Promise.all([
     readFile(new URL("../dist/index.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/hole-2.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/golf-3d.js", import.meta.url), "utf8"),
@@ -18,8 +18,12 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
     readFile(new URL("../dist/index-logic.js", import.meta.url), "utf8"),
     readFile(new URL("../dist/hole-2-logic.js", import.meta.url), "utf8"),
     readFile(new URL("../dist/admin.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/admin.js", import.meta.url), "utf8"),
+    readFile(new URL("../dist/host.html", import.meta.url), "utf8"),
+    readFile(new URL("../dist/auth.html", import.meta.url), "utf8"),
   ]);
+  const adminBundlePath = admin.match(/src="\/(assets\/admin-[^"]+\.js)"/)?.[1];
+  assert.ok(adminBundlePath, "the admin entry references its compiled React bundle");
+  const adminLogic = await readFile(new URL(`../dist/${adminBundlePath}`, import.meta.url), "utf8");
 
   assert.match(html, /M2M Invitational \| Fourball Registration/);
   assert.match(html, /Register your fourball/);
@@ -112,30 +116,22 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(privacy, /Version POPIA-2026-08-20/);
   assert.match(privacy, /Backend access and sharing/);
   assert.match(privacy, /Information Regulator South Africa/);
-  assert.match(admin, /M2M Golf Day \| Admin/);
-  assert.match(admin, /Administrator sign in/);
-  assert.match(admin, /Private registration overview/);
+  assert.match(admin, /M2M Golf Operations \| Admin/);
+  assert.match(admin, /admin-root/);
   assert.match(admin, /noindex,nofollow,noarchive/);
-  assert.match(adminLogic, /\/api\/admin-session/);
-  assert.match(adminLogic, /\/api\/admin-registrations/);
-  assert.match(adminLogic, /credentials: "same-origin"/);
-  assert.match(admin, /Export CSV/);
-  assert.match(admin, /Manage users/);
-  assert.match(admin, /Create dashboard user/);
-  assert.match(admin, /Generate secure password/);
-  assert.match(admin, /Delete dashboard user/);
-  assert.match(admin, /Registration records are not affected/);
-  assert.match(admin, /Delete registration/);
-  assert.match(admin, /Delete this fourball enquiry/);
-  assert.match(admin, /Dashboard administrator accounts are not affected/);
-  assert.match(adminLogic, /exportCsv/);
-  assert.match(adminLogic, /\/api\/admin-users/);
-  assert.match(adminLogic, /method: "DELETE"/);
-  assert.match(adminLogic, /openDeleteConfirmation/);
-  assert.match(adminLogic, /openDeleteRegistration/);
-  assert.match(adminLogic, /confirmDeleteRegistrationEntry/);
-  assert.match(adminLogic, /\/api\/admin-registrations\?id=/);
-  assert.match(adminLogic, /window\.crypto\.getRandomValues/);
+  assert.match(host, /M2M Golf Day \| Host Portal/);
+  assert.match(host, /host-root/);
+  assert.match(auth, /Secure sign-in \| M2M Golf Day/);
+  assert.match(auth, /auth-root/);
+  assert.match(adminLogic, /\/api\/v1\/admin\/events/);
+  assert.match(adminLogic, /\/api\/v1\/admin\/dashboard/);
+  assert.match(adminLogic, /\/api\/v1\/admin\/fourballs/);
+  assert.match(adminLogic, /\/api\/v1\/admin\/sponsorships/);
+  assert.match(adminLogic, /\/api\/v1\/admin\/enquiries/);
+  assert.match(adminLogic, /Operational exports/);
+  assert.match(adminLogic, /Administrators and hosts/);
+  assert.match(adminLogic, /Website enquiries/);
+  assert.match(adminLogic, /Inventory and hole allocation/);
   assert.doesNotMatch(adminLogic, /SUPABASE_(?:SECRET|SERVICE_ROLE)/);
   assert.doesNotMatch(adminLogic, /raw_registration|consent_text_snapshot|user_id/);
 });

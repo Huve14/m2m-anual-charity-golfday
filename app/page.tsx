@@ -149,12 +149,13 @@ export default function Home() {
           setAccountCredentials(null);
           setAccountEmailStatus(null);
         }
-      if (result.excel?.status && result.excel.status !== "inserted") {
+      const excelResult = result.excel;
+      if (excelResult?.status && excelResult.status !== "inserted") {
         setWarnings((previousWarnings) => {
           const list = [...(previousWarnings || [])];
-          const detail = result.excel?.reason
-            ? `${result.excel.status}: ${result.excel.reason}`
-            : `Excel sync: ${result.excel.status}`;
+          const detail = excelResult.reason
+            ? `${excelResult.status}: ${excelResult.reason}`
+            : `Excel sync: ${excelResult.status}`;
           if (list.includes(detail)) return list;
           list.push(detail);
           return list;

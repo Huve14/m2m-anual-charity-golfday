@@ -13,7 +13,12 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "icons:generate": "node ./scripts/generate-m2m-icons.mjs",
     "db:generate": "drizzle-kit generate",
-    "supabase:create-table": "node ./scripts/create-m2m-reg-table.mjs"
+    "supabase:create-table": "node ./scripts/create-m2m-reg-table.mjs",
+    "supabase:reset": "supabase db reset",
+    "supabase:lint": "supabase db lint --local --level warning",
+    "supabase:test": "supabase test db supabase/tests/multi_event_golf_day.test.sql --local",
+    "supabase:types": "supabase gen types typescript --local > src/types/database.generated.ts",
+    "ops:invite-admins": "node ./scripts/invite-operations-admins.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.17.0",
@@ -23,10 +28,12 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "read-excel-file": "9.3.10",
-    "three": "0.184.0"
+    "three": "0.184.0",
+    "zod": "4.1.11"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.53.0",
+    "@cloudflare/workers-types": "5.20260829.1",
     "@eslint/js": "9.39.4",
     "@next/eslint-plugin-next": "16.3.1",
     "@openai/sites-vite-plugin": "0.1.0",

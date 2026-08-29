@@ -1,126 +1,92 @@
-# vinext-starter
+# M2M Charity Golf Day
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+The existing public M2M Invitational enquiry form and a new multi-event operations system live in this repository.
 
-## Prerequisites
+- `/` remains the public form and continues to submit to `/api/register`.
+- `/admin` is the event-scoped React administration console.
+- `/host` is the mobile-first fourball host portal.
+- `/auth` completes Supabase invitation and magic-link sign-in.
+- `/api/v1/admin/*` and `/api/v1/host/*` are the authenticated operational API boundary.
 
-- Node.js `>=22.13.0`
+Operational browsers use Supabase only for authentication. Every business-data request is made to the versioned Vercel API, which verifies the bearer token, active profile, role and host assignment before using the server-only service role. The new public-schema tables force RLS and grant no access to `anon` or `authenticated`.
 
-## Quick Start
+## Capabilities
+
+Admins can create isolated events, configure course starts, deadlines, rules, branding and player requirements, reuse companies, manage sponsorship capacity and typed hole slots, create multiple fourballs per company, assign tee positions and primary/co-hosts, complete player data, review the website-enquiry inbox and export event-scoped CSV files. The dashboard reports sponsor, team, player, host, tee-sheet and setup readiness.
+
+Hosts see only assigned fourballs. They can save drafts, answer built-in or custom player questions and submit after confirming their authority to provide player details. Submission and deadline locks are enforced on the server; admins can reopen a submitted list.
+
+## Local setup
+
+Requirements: Node.js 22.13+, Supabase CLI 2.75+ and Docker Desktop for the local Supabase stack.
 
 ```bash
-npm install
+npm ci
+supabase start
+npm run supabase:reset
+npm run supabase:lint
+npm run supabase:test
+npm run supabase:types
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+The Vite server runs at `http://127.0.0.1:5173` for frontend work. Authenticated API workflows require a Vercel preview (or a local Vercel Functions runtime); Inbucket, printed by `supabase start`, captures local Auth email.
 
-## Included Shape
+The committed Supabase configuration disables public sign-up, requires 12-character mixed passwords and enables secure password changes. Add the deployed `/auth` URL to the hosted Supabase Auth redirect allow-list before inviting users. Leaked-password protection is a hosted project setting and must be enabled in the Supabase dashboard.
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+## Environment
 
-## Workspace Auth Headers
+Server-only variables:
 
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY`
+- `CRON_SECRET`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `RESEND_FROM_NAME` and `RESEND_REPLY_TO` (optional)
+- `SUPABASE_REGISTRATION_TABLE` (optional, defaults to `m2m_registrations`)
+- `M2M_EXCEL_WORKBOOK_ID`, `M2M_EXCEL_TABLE_ID` and `COMPOSIO_API_KEY` for the unchanged public-form Excel integration
 
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
+The public Auth configuration endpoint exposes only `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (or the existing anon-key equivalent). Never expose a service-role or secret key to Vite.
 
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
+## Database rollout
 
-Treat the full name as optional and fall back to email when it is absent:
+The migration at `supabase/migrations/20260829053332_create_multi_event_golf_management.sql` is additive. It does not delete or alter the legacy registration or custom-admin tables. It creates service-role-only transaction functions for event activation, sponsor allocation, tee assignment, host submission, reopening and idempotent legacy conversion.
 
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Deployment Environment Variables
-
-- `M2M_EXCEL_WORKBOOK_ID` and `M2M_EXCEL_TABLE_ID`: required for writing registrations to Excel.
-- `COMPOSIO_API_KEY`: required for the Excel connector session.
-- `SUPABASE_URL`: Supabase project URL (for example `https://<project-ref>.supabase.co`) for automatic account creation.
-- `SUPABASE_SERVICE_ROLE_KEY`: service role key used by the server route to provision users.
-- `SUPABASE_REGISTRATION_TABLE` (optional): table name used for capturing four-ball registration rows (defaults to `m2m_registrations`).
-- `SUPABASE_REGISTRATION_TABLE` can be created with `supabase/m2m-registrations-table.sql`.
-- `RESEND_API_KEY`: Resend API key used to email login credentials automatically after registration.
-- `RESEND_FROM_EMAIL`: Sending email address for user credentials (for example `no-reply@m2m-charity.org`).
-- `RESEND_FROM_NAME` (optional): Display name shown on email `from` line.
-- `RESEND_REPLY_TO` (optional): Reply-to email address for credential emails.
-
-### Create the Supabase registration table
-
-- The registration table is defined in `supabase/m2m-registrations-table.sql`.
-- New registrations require acceptance of privacy notice `POPIA-2026-08-20` and record registration consent, player-data authority, optional marketing consent, consent tags, the server timestamp and the exact notice-text snapshot.
-- Existing registrations are intentionally left with `registration_consent = false` and no consent timestamp. Do not backfill consent that was not actually collected.
-- If you have a PostgreSQL connection URL (for example `postgres://...`), run:
+Validate it on a Supabase development branch before production:
 
 ```bash
-SUPABASE_DB_URL="your_supabase_postgres_url" npm run supabase:create-table
+supabase link --project-ref YOUR_DEVELOPMENT_BRANCH_REF
+supabase db push --dry-run
+supabase db push
+supabase gen types typescript --linked > src/types/database.generated.ts
+supabase db lint --linked --level warning
 ```
 
-- Alternatively, open the SQL file in the Supabase SQL Editor and run it directly.
+Then run Supabase security and performance advisors, fix relevant findings, configure the branding bucket/redirect URLs, and create two representative events for the isolation acceptance run. The compatibility RPC expects the separately managed `m2m_registrations` table already used by `/api/register`.
 
-## Learn More
+## Administrator invitations
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+After the migration and preview deployment are verified, invite the four administrators. The first address becomes `super_admin`; the others become `admin`:
+
+```bash
+M2M_INITIAL_ADMIN_EMAILS="first@example.org,second@example.org,third@example.org,fourth@example.org" \
+M2M_OPERATIONS_SITE_URL="https://preview.example.org" \
+npm run ops:invite-admins
+```
+
+This intentionally does not reuse legacy scrypt password hashes. Do not run the command until the preview URL, Auth redirect allow-list and email delivery are ready.
+
+## Verification
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm test
+```
+
+The tests cover the preserved public registration path, compiled admin/host entries, authenticated API contract, event-scoped foreign keys, service-role isolation, capacity/slot/primary-host constraints, submission/deadline guards, branding, reminder deduplication and cron configuration. Database integration and browser acceptance require the local Supabase stack or a development branch.
+
+## Deployment and rollback
+
+Deploy a Vercel preview first. The daily cron calls `/api/v1/cron-reminders` at 06:00 UTC (08:00 SAST) with `CRON_SECRET`. Keep the prior Vercel deployment and legacy database tables available until all four administrators have accepted their new invitations and the two-event acceptance scenario passes. The old custom login API can then be disabled in a later cleanup release; it remains present in this release for rollback compatibility.
