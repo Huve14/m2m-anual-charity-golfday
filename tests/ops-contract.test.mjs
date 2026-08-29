@@ -83,3 +83,12 @@ test("configures event-scoped branding, reminder deduplication and the daily cro
   assert.match(vercel, /"schedule": "0 6 \* \* \*"/);
   assert.match(vercel, /\/api\/v1\/cron-reminders/);
 });
+
+test("completes Supabase invite callbacks and returns administrators to admin", async () => {
+  const callback = await readFile(new URL("../src/auth-main.tsx", import.meta.url), "utf8");
+  assert.match(callback, /exchangeCodeForSession\(code\)/);
+  assert.match(callback, /setSession\(\{ access_token: accessToken, refresh_token: refreshToken \}\)/);
+  assert.match(callback, /fetch\("\/api\/v1\/admin\/events"/);
+  assert.match(callback, /response\.ok \? "\/admin" : "\/host"/);
+  assert.match(callback, /href="\/admin">Administrator sign in/);
+});
