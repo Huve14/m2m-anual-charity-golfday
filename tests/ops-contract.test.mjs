@@ -92,3 +92,11 @@ test("completes Supabase invite callbacks and returns administrators to admin", 
   assert.match(callback, /response\.ok \? "\/admin" : "\/host"/);
   assert.match(callback, /href="\/admin">Administrator sign in/);
 });
+
+test("supports scanner-safe email OTP sign-in", async () => {
+  const auth = await readFile(new URL("../src/ops/Auth.tsx", import.meta.url), "utf8");
+  assert.match(auth, /Email me a sign-in code/);
+  assert.match(auth, /verifyOtp\(\{ email, token, type: "email" \}\)/);
+  assert.match(auth, /autoComplete="one-time-code"/);
+  assert.doesNotMatch(auth, /Email me a secure link/);
+});

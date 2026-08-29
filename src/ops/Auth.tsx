@@ -36,6 +36,7 @@ export function useOpsSession() {
 export function SignIn({ audience }: { audience: "admin" | "host" }) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,7 +54,7 @@ export function SignIn({ audience }: { audience: "admin" | "host" }) {
     }
   }
 
-  async function magicLink(form: HTMLFormElement) {
+  async function emailCode(form: HTMLFormElement) {
     const email = String(new FormData(form).get("email") || "").trim();
     if (!email) { setMessage("Enter your email address first."); return; }
     setBusy(true);
@@ -63,9 +64,29 @@ export function SignIn({ audience }: { audience: "admin" | "host" }) {
       const destination = `${window.location.origin}/auth?next=${encodeURIComponent(audience === "admin" ? "/admin" : "/host")}`;
       const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: destination } });
       if (error) throw error;
-      setMessage("A secure sign-in link is on its way. Check your inbox.");
+      setCodeSent(true);
+      setMessage("A six-digit sign-in code is on its way. Enter it below.");
     } catch (caught) {
-      setMessage(caught instanceof Error ? caught.message : "The sign-in link could not be sent.");
+      setMessage(caught instanceof Error ? caught.message : "The sign-in code could not be sent.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyCode(form: HTMLFormElement) {
+    const data = new FormData(form);
+    const email = String(data.get("email") || "").trim();
+    const token = String(data.get("otp") || "").replace(/\s/g, "");
+    if (!/^\d{6}$/.test(token)) { setMessage("Enter the six-digit code from your email."); return; }
+    setBusy(true);
+    setMessage("");
+    try {
+      const client = await getSupabase();
+      const { error } = await client.auth.verifyOtp({ email, token, type: "email" });
+      if (error) throw error;
+      setMessage("Signed in successfully.");
+    } catch (caught) {
+      setMessage(caught instanceof Error ? caught.message : "The sign-in code could not be verified.");
     } finally {
       setBusy(false);
     }
@@ -85,7 +106,8 @@ export function SignIn({ audience }: { audience: "admin" | "host" }) {
         <label><span>Email address</span><input type="email" name="email" autoComplete="email" required /></label>
         <label><span>Password</span><input type="password" name="password" autoComplete="current-password" required /></label>
         <button className="primary-button" type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
-        <button className="text-button" type="button" disabled={busy} onClick={(event) => magicLink(event.currentTarget.form!)}>Email me a secure link</button>
+        <button className="text-button" type="button" disabled={busy} onClick={(event) => emailCode(event.currentTarget.form!)}>Email me a sign-in code</button>
+        {codeSent ? <div className="otp-entry"><label><span>Six-digit code</span><input type="text" name="otp" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required /></label><button className="secondary-button" type="button" disabled={busy} onClick={(event) => verifyCode(event.currentTarget.form!)}>Verify code</button></div> : null}
         {message ? <p className="form-message" role="status">{message}</p> : null}
       </form>
     </main>
