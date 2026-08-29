@@ -12,4 +12,4 @@ create index if not exists host_import_rows_applied_company_idx
 
 create index if not exists admin_audit_log_administrator_idx
   on public.admin_audit_log (administrator_id)
-  where administrator_id is not null;
+  where administrator_id is not null;;

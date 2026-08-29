@@ -170,7 +170,6 @@ create table public.fourball_players (
 );
 
 create index fourball_players_allocation_idx on public.fourball_players (allocation_id);
-create index fourball_players_updated_by_idx on public.fourball_players (updated_by) where updated_by is not null;
 
 create table public.host_import_batches (
   id uuid primary key default extensions.gen_random_uuid(),
@@ -197,7 +196,6 @@ create table public.host_import_batches (
 );
 
 create index host_import_batches_created_idx on public.host_import_batches (created_at desc);
-create index host_import_batches_uploaded_by_admin_idx on public.host_import_batches (uploaded_by_admin_id) where uploaded_by_admin_id is not null;
 
 create table public.host_import_rows (
   id bigint generated always as identity primary key,
@@ -225,7 +223,6 @@ create table public.host_import_rows (
 
 create index host_import_rows_batch_idx on public.host_import_rows (batch_id);
 create index host_import_rows_matched_company_idx on public.host_import_rows (matched_company_id) where matched_company_id is not null;
-create index host_import_rows_applied_company_idx on public.host_import_rows (applied_company_id) where applied_company_id is not null;
 
 create table public.admin_audit_log (
   id bigint generated always as identity primary key,
@@ -249,7 +246,6 @@ create table public.admin_audit_log (
 
 create index admin_audit_log_created_idx on public.admin_audit_log (created_at desc);
 create index admin_audit_log_entity_idx on public.admin_audit_log (entity_type, entity_id);
-create index admin_audit_log_administrator_idx on public.admin_audit_log (administrator_id) where administrator_id is not null;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
@@ -781,3 +777,4 @@ comment on table public.admin_audit_log is 'Append-only service-side audit recor
 comment on column public.booking_allocations.price_zar is 'Fixed catalogue price captured at allocation time; never sourced from spreadsheet formulas.';
 
 notify pgrst, 'reload schema';
+;

@@ -100,7 +100,7 @@ test("ships private host pages and leaves the public home route in place", async
 
 test("migration enforces tenant RLS, one active sponsor per hole and service-only imports", async () => {
   const migration = await fs.readFile(
-    new URL("../supabase/migrations/20260828204314_host_portal_staging.sql", import.meta.url),
+    new URL("../supabase/migrations/20260828212856_host_portal_staging.sql", import.meta.url),
     "utf8",
   );
   assert.match(migration, /booking_allocations_active_hole_unique_idx/);

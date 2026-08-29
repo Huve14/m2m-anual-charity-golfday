@@ -39,19 +39,12 @@ create table if not exists public.m2m_registrations (
   consent_text_snapshot jsonb not null default '{}'::jsonb check (jsonb_typeof(consent_text_snapshot) = 'object'),
   account_status text not null default 'pending_secure_invite'
 );
-
-create index if not exists m2m_registrations_email_idx
-  on public.m2m_registrations (lower(email));
-create index if not exists m2m_registrations_username_idx
-  on public.m2m_registrations (username);
-create index if not exists m2m_registrations_submitted_at_idx
-  on public.m2m_registrations (submitted_at desc);
-
+create index if not exists m2m_registrations_email_idx on public.m2m_registrations (lower(email));
+create index if not exists m2m_registrations_username_idx on public.m2m_registrations (username);
+create index if not exists m2m_registrations_submitted_at_idx on public.m2m_registrations (submitted_at desc);
 alter table public.m2m_registrations enable row level security;
-
 revoke all on public.m2m_registrations from anon, authenticated;
 grant select, insert, update, delete on public.m2m_registrations to service_role;
-
 do $$
 begin
   if not exists (
@@ -65,6 +58,5 @@ begin
   end if;
 end;
 $$;
-
 comment on table public.m2m_registrations is
-  'Public website enquiries. Browser roles have no direct access; writes are validated by the server API.';
+  'Public website enquiries. Browser roles have no direct access; writes are validated by the server API.';;
