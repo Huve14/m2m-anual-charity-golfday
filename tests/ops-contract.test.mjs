@@ -125,10 +125,10 @@ test("completes Supabase invite callbacks and returns administrators to admin", 
   assert.match(callback, /href="\/admin">Administrator sign in/);
 });
 
-test("supports scanner-safe email OTP sign-in", async () => {
+test("uses provisioned passwords and forces replacement of temporary credentials", async () => {
   const auth = await readFile(new URL("../src/ops/Auth.tsx", import.meta.url), "utf8");
-  assert.match(auth, /Email me a sign-in code/);
-  assert.match(auth, /verifyOtp\(\{ email, token, type: "email" \}\)/);
-  assert.match(auth, /autoComplete="one-time-code"/);
-  assert.doesNotMatch(auth, /Email me a secure link/);
+  assert.match(auth, /signInWithPassword/);
+  assert.match(auth, /Change password/);
+  assert.match(auth, /mustChangePassword/);
+  assert.doesNotMatch(auth, /signInWithOtp/);
 });

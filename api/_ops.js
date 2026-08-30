@@ -50,7 +50,8 @@ export async function ensureContactProfile({ email, fullName }) {
   }
 
   let authUser = null;
-  const created = await client.auth.admin.createUser({ email: normalisedEmail, email_confirm: false, user_metadata: { full_name: normalisedName } });
+  const generatedPassword = `${crypto.randomUUID()}Aa1!`;
+  const created = await client.auth.admin.createUser({ email: normalisedEmail, password: generatedPassword, email_confirm: true, user_metadata: { full_name: normalisedName } });
   if (!created.error) authUser = created.data.user;
   else {
     for (let page = 1; page <= 10 && !authUser; page += 1) {
@@ -63,7 +64,7 @@ export async function ensureContactProfile({ email, fullName }) {
   }
 
   const { data: profile, error } = await client.from("m2m_profiles").insert({
-    id: authUser.id, email: normalisedEmail, full_name: normalisedName, role: "host", is_active: true,
+    id: authUser.id, email: normalisedEmail, full_name: normalisedName, role: "host", is_active: true, must_change_password: true,
   }).select("*").single();
   if (error) throw fromSupabase(error, "contact_profile_create_failed", "The primary contact account could not be created.");
   return profile;
@@ -136,7 +137,7 @@ function bearerToken(req) {
   return authorization.toLowerCase().startsWith("bearer ") ? authorization.slice(7).trim() : "";
 }
 
-export async function requireProfile(req, roles = []) {
+export async function requireProfile(req, roles = [], options = {}) {
   const token = bearerToken(req);
   if (!token) throw apiFailure("authentication_required", "Sign in is required.", 401);
   // Validate the user's bearer token with the same public Auth credentials used
@@ -148,11 +149,14 @@ export async function requireProfile(req, roles = []) {
   const client = adminClient();
   const { data: profile, error: profileError } = await client
     .from("m2m_profiles")
-    .select("id,email,full_name,role,is_active,last_seen_at")
+    .select("id,email,full_name,role,is_active,last_seen_at,must_change_password")
     .eq("id", authData.user.id)
     .maybeSingle();
   if (profileError) throw fromSupabase(profileError, "profile_load_failed");
   if (!profile?.is_active) throw apiFailure("account_inactive", "This account is not active.", 403);
+  if (profile.must_change_password && !options.allowPasswordChange) {
+    throw apiFailure("password_change_required", "Change your temporary password before continuing.", 403);
+  }
   if (roles.length > 0 && !roles.includes(profile.role)) {
     throw apiFailure("permission_denied", "You do not have permission to perform this action.", 403);
   }
@@ -230,6 +234,7 @@ export function publicProfile(profile) {
     role: profile.role,
     isActive: Boolean(profile.is_active),
     lastSeenAt: profile.last_seen_at || null,
+    mustChangePassword: Boolean(profile.must_change_password),
   };
 }
 
