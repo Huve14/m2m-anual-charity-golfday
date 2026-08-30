@@ -132,3 +132,18 @@ test("uses provisioned passwords and forces replacement of temporary credentials
   assert.match(auth, /mustChangePassword/);
   assert.doesNotMatch(auth, /signInWithOtp/);
 });
+
+test("imports confirmed company workbooks transactionally and idempotently", async () => {
+  const migration = await readFile(new URL("../supabase/migrations/20260830075803_add_confirmed_company_imports.sql", import.meta.url), "utf8");
+  const api = await readFile(new URL("../api/v1/admin/confirmed-imports.js", import.meta.url), "utf8");
+  const admin = await readFile(new URL("../src/admin/AdminApp.tsx", import.meta.url), "utf8");
+  assert.match(migration, /m2m_import_confirmed_companies/);
+  assert.match(migration, /unique \(event_id, file_sha256\)/);
+  assert.match(migration, /m2m_create_fourball_booking/);
+  assert.match(migration, /status, quantity,[\s\S]*'confirmed', 1/);
+  assert.match(api, /requireAdmin/);
+  assert.match(api, /companies: z\.array\(companySchema\)\.min\(1\)\.max\(500\)/);
+  assert.match(admin, /Remove spreadsheet formulas before importing/);
+  assert.match(admin, /Review warnings/);
+  assert.match(admin, /Import confirmed list/);
+});

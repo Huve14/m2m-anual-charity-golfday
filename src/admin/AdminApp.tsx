@@ -1,16 +1,19 @@
 import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import readXlsxFile from "read-excel-file/browser";
+import { strFromU8, unzipSync } from "fflate";
 import { AccountGate, SignIn, signOut, useOpsSession } from "../ops/Auth";
 import { dateTime, money, opsApi, toIso, toLocalInput } from "../ops/client";
 import type { EventCompany, EventRecord, FourballRecord, UserRecord } from "../ops/types";
 
-type Tab = "overview" | "setup" | "companies" | "sponsorships" | "fourballs" | "tee" | "hosts" | "players" | "exports" | "enquiries";
+type Tab = "overview" | "setup" | "companies" | "sponsorships" | "fourballs" | "tee" | "hosts" | "players" | "imports" | "exports" | "enquiries";
 
 const tabs: Array<{ id: Tab; label: string; icon: string }> = [
   { id: "overview", label: "Overview", icon: "01" }, { id: "setup", label: "Event setup", icon: "02" },
   { id: "companies", label: "Companies", icon: "03" }, { id: "sponsorships", label: "Sponsorships", icon: "04" },
   { id: "fourballs", label: "Fourballs", icon: "05" }, { id: "tee", label: "Tee sheet", icon: "06" },
   { id: "hosts", label: "Hosts", icon: "07" }, { id: "players", label: "Players", icon: "08" },
-  { id: "exports", label: "Exports", icon: "09" }, { id: "enquiries", label: "Website enquiries", icon: "10" },
+  { id: "imports", label: "Imports", icon: "09" }, { id: "exports", label: "Exports", icon: "10" },
+  { id: "enquiries", label: "Website enquiries", icon: "11" },
 ];
 
 const golfFormats = [
@@ -202,6 +205,7 @@ function EventTab({ event, tab, version, onRefresh }: { event: EventRecord; tab:
   if (tab === "tee") return <TeeSheet event={event} version={version} onRefresh={onRefresh} />;
   if (tab === "hosts") return <Hosts event={event} version={version} onRefresh={onRefresh} />;
   if (tab === "players") return <Players event={event} version={version} />;
+  if (tab === "imports") return <ConfirmedImports event={event} onRefresh={onRefresh} />;
   if (tab === "exports") return <Exports event={event} />;
   return <Enquiries event={event} version={version} onRefresh={onRefresh} />;
 }
@@ -335,6 +339,84 @@ function Players({ event, version }: { event: EventRecord; version: number }) {
   const loaded = useFourballs(event.id, version); const [query, setQuery] = useState(""); const [onlyIncomplete, setOnlyIncomplete] = useState(false);
   const players = useMemo(() => (loaded.data?.fourballs || []).flatMap((fourball) => fourball.players.map((player) => ({ ...player, teamName: fourball.teamName, companyName: fourball.companyName, bookingStatus: fourball.bookingStatus, complete: event.requiredPlayerFields.every((field) => { const map: Record<string, string> = { full_name: player.fullName, email: player.email, phone: player.phone, handicap: player.handicap, shirt_size: player.shirtSize, dietary_requirements: player.dietaryRequirements, special_requirements: player.specialRequirements, home_club: player.homeClub, golf_id: player.golfId }; return Boolean(map[field]?.trim()); }) }))).filter((player) => (!onlyIncomplete || !player.complete) && `${player.fullName} ${player.teamName} ${player.companyName}`.toLowerCase().includes(query.toLowerCase())), [loaded.data, event.requiredPlayerFields, onlyIncomplete, query]);
   return <><SectionHeader eyebrow="Player readiness" title="Player list completion" copy="Filter incomplete records and review the final operational player list." /><ErrorBanner message={loaded.error} /><div className="filter-bar"><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search player, team or company" /><label className="check-inline"><input type="checkbox" checked={onlyIncomplete} onChange={(e) => setOnlyIncomplete(e.target.checked)} />Incomplete only</label><strong>{players.length} player positions</strong></div>{!loaded.data ? <Loading /> : <div className="table-scroll panel"><table><thead><tr><th>Status</th><th>Player</th><th>Company / team</th><th>Contact</th><th>Golf</th><th>Shirt</th><th>Requirements</th></tr></thead><tbody>{players.map((player) => <tr key={player.id}><td><Pill value={player.complete ? "complete" : "incomplete"} /></td><td><strong>{player.fullName || `Player ${player.position}`}</strong></td><td>{player.companyName}<small>{player.teamName}</small></td><td>{player.email || "—"}<small>{player.phone}</small></td><td>{player.handicap ? `HCP ${player.handicap}` : "—"}<small>{player.homeClub}</small></td><td>{player.shirtSize || "—"}</td><td>{player.dietaryRequirements || "—"}<small>{player.specialRequirements}</small></td></tr>)}</tbody></table></div>}</>;
+}
+
+interface ImportCompany { companyName: string; contactName: string; contactEmail: string; fourballQuantity: number; sponsorshipConfirmed: boolean; sourceRows: number[] }
+interface ImportPreview { fileName: string; fileSha256: string; companies: ImportCompany[]; warnings: string[]; rowCount: number }
+interface ImportSetup { ok: true; fourballTypes: Array<{ id: string; name: string; capacity: number; priceMinor: number }>; sponsorshipTypes: Array<{ id: string; name: string; capacity: number; priceMinor: number; requiresHole: boolean }>; batches: Array<{ id: string; fileName: string; companyCount: number; fourballCount: number; sponsorshipCount: number; createdAt: string }> }
+
+function normalHeader(value: unknown) { return String(value ?? "").trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " "); }
+function cleanCell(value: unknown, maximum = 254) { return String(value ?? "").trim().slice(0, maximum); }
+
+async function parseConfirmedWorkbook(file: File): Promise<ImportPreview> {
+  if (!file.name.toLowerCase().endsWith(".xlsx") || file.size === 0 || file.size > 5 * 1024 * 1024) throw new Error("Choose an XLSX workbook smaller than 5 MB.");
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let archive: Record<string, Uint8Array>;
+  try { archive = unzipSync(bytes); } catch { throw new Error("The XLSX workbook could not be read."); }
+  const names = Object.keys(archive);
+  if (names.some((name) => /vbaProject|macrosheets|xl\/externalLinks/i.test(name))) throw new Error("Workbooks with macros or external links are not accepted.");
+  for (const name of names) if (/^xl\/worksheets\/.*\.xml$/i.test(name) && /<f(?:\s|>)/i.test(strFromU8(archive[name]))) throw new Error("Remove spreadsheet formulas before importing.");
+  const rows = await readXlsxFile(file);
+  if (rows.length < 2 || rows.length > 501) throw new Error("The workbook must contain a header and between 1 and 500 data rows.");
+  const aliases: Record<string, string> = { company: "company", "company name": "company", "first name": "first", "contact name": "first", "last name": "last", surname: "last", email: "email", "email address": "email", "4ball yes/no": "fourball", "4 ball yes/no": "fourball", "fourball yes/no": "fourball", "fourball quantity": "fourball", "hole sponsor ? yes / no": "sponsor", "hole sponsor? yes / no": "sponsor", "hole sponsor": "sponsor", "sponsorship confirmed": "sponsor" };
+  const columns = new Map<string, number>();
+  rows[0].forEach((cell, index) => { const alias = aliases[normalHeader(cell)]; if (alias && !columns.has(alias)) columns.set(alias, index); });
+  for (const required of ["company", "fourball", "sponsor"]) if (!columns.has(required)) throw new Error(`Required column not found: ${required}.`);
+  const grouped = new Map<string, ImportCompany>();
+  const warnings: string[] = [];
+  rows.slice(1).forEach((row, offset) => {
+    const rowNumber = offset + 2;
+    const companyName = cleanCell(row[columns.get("company")!], 180).replace(/\s+/g, " ");
+    if (!companyName) { warnings.push(`Row ${rowNumber}: skipped because company is blank.`); return; }
+    const first = cleanCell(row[columns.get("first") ?? -1], 100);
+    const last = cleanCell(row[columns.get("last") ?? -1], 100);
+    const email = cleanCell(row[columns.get("email") ?? -1]).toLowerCase();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) warnings.push(`Row ${rowNumber}: “${email}” is not a valid email and was omitted.`);
+    if (/^\d+$/.test(first)) warnings.push(`Row ${rowNumber}: first name “${first}” looks unusual; review this company before importing.`);
+    const fourballRaw = cleanCell(row[columns.get("fourball")!], 30).toLowerCase();
+    let fourballs = 0;
+    if (["yes", "y", "true"].includes(fourballRaw)) fourballs = 1;
+    else if (/^\d+$/.test(fourballRaw)) fourballs = Number(fourballRaw);
+    else if (fourballRaw && !["no", "n", "false"].includes(fourballRaw)) warnings.push(`Row ${rowNumber}: fourball value “${fourballRaw}” was treated as No.`);
+    const sponsorRaw = cleanCell(row[columns.get("sponsor")!], 40).toLowerCase();
+    const sponsorshipConfirmed = ["yes", "y", "true"].includes(sponsorRaw);
+    if (sponsorRaw && !["yes", "y", "true", "no", "n", "false"].includes(sponsorRaw)) warnings.push(`Row ${rowNumber}: sponsorship value “${sponsorRaw}” is ambiguous and was left off for manual review.`);
+    const key = companyName.toLowerCase();
+    const existing = grouped.get(key) || { companyName, contactName: "", contactEmail: "", fourballQuantity: 0, sponsorshipConfirmed: false, sourceRows: [] };
+    existing.fourballQuantity += fourballs;
+    existing.sponsorshipConfirmed ||= sponsorshipConfirmed;
+    existing.sourceRows.push(rowNumber);
+    if (!existing.contactName && (first || last)) existing.contactName = `${first} ${last}`.trim();
+    if (!existing.contactEmail && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) existing.contactEmail = email;
+    grouped.set(key, existing);
+  });
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const fileSha256 = [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
+  return { fileName: file.name, fileSha256, companies: [...grouped.values()], warnings, rowCount: rows.length - 1 };
+}
+
+function ConfirmedImports({ event, onRefresh }: { event: EventRecord; onRefresh: () => void }) {
+  const [setup, setSetup] = useState<ImportSetup | null>(null); const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const [fourballTypeId, setFourballTypeId] = useState(""); const [sponsorshipTypeId, setSponsorshipTypeId] = useState("");
+  const [error, setError] = useState(""); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false); const [version, setVersion] = useState(0);
+  useEffect(() => { let active = true; opsApi<ImportSetup>(`/api/v1/admin/confirmed-imports?eventId=${event.id}`).then((data) => { if (!active) return; setSetup(data); setFourballTypeId((value) => value || data.fourballTypes[0]?.id || ""); setSponsorshipTypeId((value) => value || data.sponsorshipTypes[0]?.id || ""); }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version]);
+  async function chooseFile(file: File | undefined) { if (!file) return; setBusy(true); setError(""); setMessage(""); try { setPreview(await parseConfirmedWorkbook(file)); } catch (caught) { setPreview(null); setError(caught instanceof Error ? caught.message : "The workbook could not be previewed."); } finally { setBusy(false); } }
+  function updateCompany(index: number, changes: Partial<ImportCompany>) { setPreview((current) => current ? { ...current, companies: current.companies.map((company, companyIndex) => companyIndex === index ? { ...company, ...changes } : company) } : current); }
+  async function commit() {
+    if (!preview || !fourballTypeId) return;
+    const sponsors = preview.companies.filter((company) => company.sponsorshipConfirmed).length;
+    if (sponsors && !sponsorshipTypeId) { setError("Select the sponsorship type before importing."); return; }
+    if (!window.confirm(`Import ${preview.companies.length} companies, ${preview.companies.reduce((sum, company) => sum + company.fourballQuantity, 0)} fourballs and ${sponsors} sponsorships as confirmed?`)) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const result = await jsonMutation<{ ok: true; result: { companiesProcessed: number; fourballsCreated: number; sponsorshipsCreated: number; skippedFourballs: number; skippedSponsorships: number } }>("/api/v1/admin/confirmed-imports", "POST", { eventId: event.id, fileName: preview.fileName, fileSha256: preview.fileSha256, fourballTypeId, sponsorshipTypeId: sponsors ? sponsorshipTypeId : null, companies: preview.companies.map((company) => ({ companyName: company.companyName, contactName: company.contactName, contactEmail: company.contactEmail, fourballQuantity: company.fourballQuantity, sponsorshipConfirmed: company.sponsorshipConfirmed })) });
+      setMessage(`Imported ${result.result.companiesProcessed} companies, created ${result.result.fourballsCreated} fourballs and ${result.result.sponsorshipsCreated} sponsorships.${result.result.skippedFourballs || result.result.skippedSponsorships ? " Existing matching allocations were left unchanged." : ""}`);
+      setPreview(null); setVersion((value) => value + 1); onRefresh();
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "The import failed."); } finally { setBusy(false); }
+  }
+  const totalFourballs = preview?.companies.reduce((sum, company) => sum + company.fourballQuantity, 0) || 0;
+  const totalSponsors = preview?.companies.filter((company) => company.sponsorshipConfirmed).length || 0;
+  return <><SectionHeader eyebrow="Existing confirmations" title="Import confirmed companies" copy="Preview your existing XLSX list, consolidate repeated companies and create only missing confirmed bookings and sponsorships." /><ErrorBanner message={error} />{message ? <div className="success-banner" role="status">{message}</div> : null}<section className="panel"><div className="form-grid compact"><label><span>Confirmed-list workbook</span><input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={busy} onChange={(change) => chooseFile(change.target.files?.[0])} /></label><label><span>Fourball type</span><select value={fourballTypeId} onChange={(change) => setFourballTypeId(change.target.value)} required><option value="">Select type</option>{setup?.fourballTypes.map((type) => <option key={type.id} value={type.id}>{type.name} · {money(type.priceMinor, event.currency)}</option>)}</select></label><label><span>Hole sponsorship type</span><select value={sponsorshipTypeId} onChange={(change) => setSponsorshipTypeId(change.target.value)}><option value="">Do not map sponsorships</option>{setup?.sponsorshipTypes.map((type) => <option key={type.id} value={type.id}>{type.name} · {money(type.priceMinor, event.currency)}</option>)}</select></label></div>{setup && setup.fourballTypes.length === 0 ? <p className="warning-copy">Configure at least one active fourball type before importing.</p> : null}{setup && setup.sponsorshipTypes.length === 0 ? <p className="warning-copy">Configure a sponsorship type before mapping confirmed hole sponsors.</p> : null}</section>{preview ? <><div className="metric-grid"><article className="metric-card"><span>Workbook rows</span><strong>{preview.rowCount}</strong></article><article className="metric-card"><span>Consolidated companies</span><strong>{preview.companies.length}</strong></article><article className="metric-card"><span>Confirmed fourballs</span><strong>{totalFourballs}</strong></article><article className="metric-card"><span>Confirmed sponsors</span><strong>{totalSponsors}</strong></article></div>{preview.warnings.length ? <section className="panel"><h3>Review warnings</h3><ul className="warning-list">{preview.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></section> : null}<section className="panel"><h3>Import preview</h3><div className="table-scroll"><table><thead><tr><th>Company</th><th>Primary contact</th><th>Source rows</th><th>Fourballs</th><th>Hole sponsor</th></tr></thead><tbody>{preview.companies.map((company, index) => <tr key={`${company.companyName}-${index}`}><td><input value={company.companyName} onChange={(change) => updateCompany(index, { companyName: change.target.value })} /></td><td><input value={company.contactName} placeholder="Name" onChange={(change) => updateCompany(index, { contactName: change.target.value })} /><input type="email" value={company.contactEmail} placeholder="Email optional" onChange={(change) => updateCompany(index, { contactEmail: change.target.value })} /></td><td>{company.sourceRows.join(", ")}</td><td><input type="number" min="0" max="100" value={company.fourballQuantity} onChange={(change) => updateCompany(index, { fourballQuantity: Number(change.target.value) })} /></td><td><input type="checkbox" checked={company.sponsorshipConfirmed} aria-label={`${company.companyName} sponsorship confirmed`} onChange={(change) => updateCompany(index, { sponsorshipConfirmed: change.target.checked })} /></td></tr>)}</tbody></table></div><div className="form-actions"><button className="primary-button" disabled={busy || !fourballTypeId || preview.companies.length === 0} onClick={commit}>{busy ? "Importing…" : "Import confirmed list"}</button></div></section></> : <Empty title={busy ? "Reading workbook…" : "No workbook selected"} copy="Choose your confirmed-list XLSX file to see every proposed company, fourball and sponsorship before anything is saved." />}{setup?.batches.length ? <section className="panel"><h3>Previous imports</h3><div className="compact-list">{setup.batches.map((batch) => <div key={batch.id}><div><strong>{batch.fileName}</strong><span>{dateTime(batch.createdAt)}</span></div><span>{batch.companyCount} companies · {batch.fourballCount} fourballs · {batch.sponsorshipCount} sponsors</span></div>)}</div></section> : null}</>;
 }
 
 function Exports({ event }: { event: EventRecord }) {
