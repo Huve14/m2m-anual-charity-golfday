@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { getSupabase } from "./client";
+import { getSupabase, opsApi } from "./client";
 
 export function useOpsSession() {
   const [session, setSession] = useState<Session | null>(null);
@@ -36,7 +36,6 @@ export function useOpsSession() {
 export function SignIn({ audience }: { audience: "admin" | "host" }) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [codeSent, setCodeSent] = useState(false);
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,44 +48,6 @@ export function SignIn({ audience }: { audience: "admin" | "host" }) {
       if (error) throw error;
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : "Sign-in failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function emailCode(form: HTMLFormElement) {
-    const email = String(new FormData(form).get("email") || "").trim();
-    if (!email) { setMessage("Enter your email address first."); return; }
-    setBusy(true);
-    setMessage("");
-    try {
-      const client = await getSupabase();
-      const destination = `${window.location.origin}/auth?next=${encodeURIComponent(audience === "admin" ? "/admin" : "/host")}`;
-      const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: destination } });
-      if (error) throw error;
-      setCodeSent(true);
-      setMessage("A six-digit sign-in code is on its way. Enter it below.");
-    } catch (caught) {
-      setMessage(caught instanceof Error ? caught.message : "The sign-in code could not be sent.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function verifyCode(form: HTMLFormElement) {
-    const data = new FormData(form);
-    const email = String(data.get("email") || "").trim();
-    const token = String(data.get("otp") || "").replace(/\s/g, "");
-    if (!/^\d{6}$/.test(token)) { setMessage("Enter the six-digit code from your email."); return; }
-    setBusy(true);
-    setMessage("");
-    try {
-      const client = await getSupabase();
-      const { error } = await client.auth.verifyOtp({ email, token, type: "email" });
-      if (error) throw error;
-      setMessage("Signed in successfully.");
-    } catch (caught) {
-      setMessage(caught instanceof Error ? caught.message : "The sign-in code could not be verified.");
     } finally {
       setBusy(false);
     }
@@ -106,12 +67,27 @@ export function SignIn({ audience }: { audience: "admin" | "host" }) {
         <label><span>Email address</span><input type="email" name="email" autoComplete="email" required /></label>
         <label><span>Password</span><input type="password" name="password" autoComplete="current-password" required /></label>
         <button className="primary-button" type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
-        <button className="text-button" type="button" disabled={busy} onClick={(event) => emailCode(event.currentTarget.form!)}>Email me a sign-in code</button>
-        {codeSent ? <div className="otp-entry"><label><span>Six-digit code</span><input type="text" name="otp" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required /></label><button className="secondary-button" type="button" disabled={busy} onClick={(event) => verifyCode(event.currentTarget.form!)}>Verify code</button></div> : null}
+        <p className="form-help">Use your email address and the password supplied by an administrator.</p>
         {message ? <p className="form-message" role="status">{message}</p> : null}
       </form>
     </main>
   );
+}
+
+export function AccountGate({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<"loading" | "ready" | "change">("loading");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { opsApi<{ profile: { mustChangePassword: boolean } }>("/api/v1/account").then((data) => setState(data.profile.mustChangePassword ? "change" : "ready")).catch((error) => setMessage(error instanceof Error ? error.message : "Your account could not be loaded.")); }, []);
+  if (state === "ready") return <>{children}</>;
+  if (state === "loading" && !message) return <main className="callback-shell"><span className="spinner" /><h1>Checking your account…</h1></main>;
+  async function change(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setBusy(true); setMessage(""); const data = new FormData(event.currentTarget);
+    try { await opsApi("/api/v1/account", { method: "PATCH", body: JSON.stringify({ password: data.get("password"), confirmation: data.get("confirmation") }) }); setState("ready"); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Your password could not be changed."); }
+    finally { setBusy(false); }
+  }
+  return <main className="signin-shell"><section className="signin-story"><img src="/assets/m2m-logo.png" alt="Marketing 2 The Max" /><p className="eyebrow">Account security</p><h1>Set your<br /><span>own password.</span></h1><p>Your temporary password must be replaced before you can access golf-day information.</p></section><form className="signin-card" onSubmit={change}><p className="eyebrow">First sign in</p><h2>Change password</h2><label><span>New password</span><input type="password" name="password" minLength={12} autoComplete="new-password" required /></label><label><span>Confirm password</span><input type="password" name="confirmation" minLength={12} autoComplete="new-password" required /></label><p className="form-help">Use at least 12 characters with uppercase, lowercase, a number and a symbol.</p><button className="primary-button" disabled={busy}>{busy ? "Changing…" : "Change password"}</button>{message ? <p className="form-message" role="alert">{message}</p> : null}</form></main>;
 }
 
 export async function signOut() {

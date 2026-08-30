@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
-  adminClient, apiFailure, escapeHtml, fromSupabase, parseJsonBody, publicProfile, recordAudit,
-  requestOrigin, requireAdmin, requireSuperAdmin, sendError, sendJson, sendOperationalEmail, validate,
+  adminClient, apiFailure, fromSupabase, parseJsonBody, publicProfile, recordAudit,
+  requireAdmin, requireSuperAdmin, sendError, sendJson, validate,
 } from "../../_ops.js";
 
 const inviteSchema = z.object({
@@ -12,6 +12,11 @@ const inviteSchema = z.object({
   eventId: z.string().uuid().optional(),
   fourballId: z.string().uuid().optional(),
   isPrimary: z.boolean().default(false),
+  temporaryPassword: z.string().min(12).max(128)
+    .regex(/[a-z]/, "Include a lowercase letter.")
+    .regex(/[A-Z]/, "Include an uppercase letter.")
+    .regex(/[0-9]/, "Include a number.")
+    .regex(/[^A-Za-z0-9]/, "Include a symbol."),
 });
 
 const statusSchema = z.object({
@@ -38,36 +43,20 @@ async function invite(req, res) {
   const client = adminClient();
   const { data: existing, error: existingError } = await client.from("m2m_profiles").select("*").eq("email", input.email).maybeSingle();
   if (existingError) throw fromSupabase(existingError, "user_lookup_failed");
-  const nextPath = input.eventId ? `/host?event=${encodeURIComponent(input.eventId)}` : "/admin";
-  const redirectTo = `${requestOrigin(req)}/auth?next=${encodeURIComponent(nextPath)}`;
-  const useCustomEmail = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
   let authUserId = existing?.id || null;
-  let actionLink = null;
-  let delivery = { status: "sent", providerId: null, failureCode: null };
-
-  if (useCustomEmail) {
-    const { data, error } = await client.auth.admin.generateLink({
-      type: existing ? "magiclink" : "invite",
-      email: input.email,
-      options: { redirectTo, data: { full_name: input.fullName } },
-    });
-    if (error || !data?.user?.id || !data?.properties?.action_link) {
-      throw apiFailure("invite_link_failed", "A secure invitation link could not be created.", 503);
-    }
-    authUserId = data.user.id;
-    actionLink = data.properties.action_link;
-  } else if (existing) {
-    const { error } = await client.auth.signInWithOtp({ email: input.email, options: { shouldCreateUser: false, emailRedirectTo: redirectTo } });
-    if (error) throw apiFailure("invite_send_failed", "The sign-in link could not be sent.", 503);
+  if (existing) {
+    const { error } = await client.auth.admin.updateUserById(existing.id, { password: input.temporaryPassword, email_confirm: true, user_metadata: { full_name: input.fullName } });
+    if (error) throw apiFailure("account_password_failed", "The temporary password could not be set.", 503);
   } else {
-    const { data, error } = await client.auth.admin.inviteUserByEmail(input.email, { redirectTo, data: { full_name: input.fullName } });
-    if (error || !data?.user?.id) throw apiFailure("invite_send_failed", "The invitation could not be sent.", 503);
+    const { data, error } = await client.auth.admin.createUser({ email: input.email, password: input.temporaryPassword, email_confirm: true, user_metadata: { full_name: input.fullName } });
+    if (error || !data?.user?.id) throw apiFailure("account_create_failed", "The account could not be created.", 503);
     authUserId = data.user.id;
   }
 
+  const effectiveRole = existing && input.role === "host" ? existing.role : input.role;
   const { data: profile, error: profileError } = await client.from("m2m_profiles").upsert({
-    id: authUserId, email: input.email, full_name: input.fullName, role: input.role,
-    is_active: true,
+    id: authUserId, email: input.email, full_name: input.fullName, role: effectiveRole,
+    is_active: true, must_change_password: true,
   }, { onConflict: "id" }).select("*").single();
   if (profileError) throw fromSupabase(profileError, "profile_create_failed", "The user profile could not be created.");
 
@@ -80,19 +69,7 @@ async function invite(req, res) {
     if (error) throw fromSupabase(error, "host_assignment_failed", "The host could not be assigned.");
   }
 
-  if (actionLink) {
-    let eventName = "M2M Golf Day";
-    let deadline = null;
-    if (input.eventId) {
-      const { data } = await client.from("m2m_events").select("name,player_deadline_at").eq("id", input.eventId).maybeSingle();
-      if (data) { eventName = data.name; deadline = data.player_deadline_at; }
-    }
-    delivery = await sendOperationalEmail({
-      to: input.email,
-      subject: input.role === "host" ? `Your ${eventName} host invitation` : "Your M2M Golf Day administrator invitation",
-      html: `<div style="font-family:Arial,sans-serif;color:#17223b;line-height:1.6"><h1 style="color:#c8102e">${escapeHtml(eventName)}</h1><p>Hello ${escapeHtml(input.fullName)},</p><p>You have been invited as ${input.role === "host" ? "a fourball host" : "an administrator"}.${deadline ? ` Player details are due by ${escapeHtml(new Date(deadline).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg" }))}.` : ""}</p><p><a href="${escapeHtml(actionLink)}" style="display:inline-block;padding:14px 20px;background:#c8102e;color:white;text-decoration:none">Open secure portal</a></p><p>This link is personal and should not be forwarded.</p></div>`,
-    });
-  }
+  const delivery = { status: "not_applicable", providerId: null, failureCode: null };
 
   if (input.eventId) {
     await client.from("m2m_notification_deliveries").insert({
@@ -102,7 +79,7 @@ async function invite(req, res) {
       failure_code: delivery.failureCode, sent_at: delivery.status === "sent" ? new Date().toISOString() : null,
     });
   }
-  await recordAudit({ eventId: input.eventId || null, actorId: actor.id, action: "user.invited", entityType: "profile", entityId: profile.id, metadata: { role: input.role, deliveryStatus: delivery.status } });
+  await recordAudit({ eventId: input.eventId || null, actorId: actor.id, action: "user.invited", entityType: "profile", entityId: profile.id, metadata: { role: effectiveRole, assignedAsHost: input.role === "host", deliveryStatus: delivery.status } });
   sendJson(res, 201, { ok: true, user: publicProfile(profile), delivery: { status: delivery.status } });
 }
 
@@ -133,4 +110,3 @@ export default async function handler(req, res) {
 }
 
 export const config = { maxDuration: 30 };
-

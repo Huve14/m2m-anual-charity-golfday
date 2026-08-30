@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { adminClient, fromSupabase, parseJsonBody, recordAudit, requireAdmin, sendError, sendJson, validate } from "../../_ops.js";
+import { adminClient, ensureContactProfile, fromSupabase, parseJsonBody, recordAudit, requireAdmin, sendError, sendJson, validate } from "../../_ops.js";
 
 const createSchema = z.object({
   eventId: z.string().uuid(),
@@ -14,7 +14,8 @@ const createSchema = z.object({
   primaryContactEmail: z.union([z.string().email(), z.literal("")]).optional(),
   primaryContactPhone: z.string().trim().max(40).optional(),
   notes: z.string().trim().max(5000).optional(),
-}).refine((value) => value.companyId || value.name, { message: "Choose or name a company.", path: ["name"] });
+}).refine((value) => value.companyId || value.name, { message: "Choose or name a company.", path: ["name"] })
+  .refine((value) => Boolean(value.primaryContactName) === Boolean(value.primaryContactEmail), { message: "Enter both the primary contact name and email.", path: ["primaryContactEmail"] });
 
 const updateSchema = createSchema.partial().extend({ id: z.string().uuid(), eventId: z.string().uuid() });
 
@@ -32,6 +33,7 @@ function shape(row) {
     primaryContactName: row.primary_contact_name || "",
     primaryContactEmail: row.primary_contact_email || "",
     primaryContactPhone: row.primary_contact_phone || "",
+    primaryContactProfileId: row.primary_contact_profile_id || null,
     notes: row.notes || "",
   };
 }
@@ -55,6 +57,7 @@ async function create(req, res) {
   const profile = await requireAdmin(req);
   const input = validate(createSchema, parseJsonBody(req));
   const client = adminClient();
+  const contactProfile = await ensureContactProfile({ email: input.primaryContactEmail, fullName: input.primaryContactName });
   let companyId = input.companyId;
   if (!companyId) {
     const { data, error } = await client.from("m2m_companies").insert({
@@ -75,6 +78,7 @@ async function create(req, res) {
     primary_contact_name: input.primaryContactName || null,
     primary_contact_email: input.primaryContactEmail || null,
     primary_contact_phone: input.primaryContactPhone || null,
+    primary_contact_profile_id: contactProfile?.id || null,
     notes: input.notes || null,
   }).select("*,company:m2m_companies(*)").single();
   if (error) throw fromSupabase(error, "company_link_failed", "The company could not be added to this event.");
@@ -90,6 +94,10 @@ async function update(req, res) {
   if (input.primaryContactName !== undefined) changes.primary_contact_name = input.primaryContactName || null;
   if (input.primaryContactEmail !== undefined) changes.primary_contact_email = input.primaryContactEmail || null;
   if (input.primaryContactPhone !== undefined) changes.primary_contact_phone = input.primaryContactPhone || null;
+  if (input.primaryContactName !== undefined || input.primaryContactEmail !== undefined) {
+    const contactProfile = await ensureContactProfile({ email: input.primaryContactEmail, fullName: input.primaryContactName });
+    changes.primary_contact_profile_id = contactProfile?.id || null;
+  }
   if (input.notes !== undefined) changes.notes = input.notes || null;
   const client = adminClient();
   const { data, error } = await client.from("m2m_event_companies").update(changes).eq("id", input.id).eq("event_id", input.eventId).select("*,company:m2m_companies(*)").single();
@@ -111,4 +119,3 @@ export default async function handler(req, res) {
 }
 
 export const config = { maxDuration: 30 };
-

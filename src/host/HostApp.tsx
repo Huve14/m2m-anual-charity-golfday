@@ -1,5 +1,5 @@
 import { type CSSProperties, type FormEvent, useEffect, useMemo, useState } from "react";
-import { SignIn, signOut, useOpsSession } from "../ops/Auth";
+import { AccountGate, SignIn, signOut, useOpsSession } from "../ops/Auth";
 import { dateTime, opsApi } from "../ops/client";
 import type { PlayerRecord } from "../ops/types";
 
@@ -16,7 +16,7 @@ export function HostRoot() {
   const auth = useOpsSession();
   if (auth.loading) return <Loading />;
   if (!auth.session) return <><ErrorBanner message={auth.error} /><SignIn audience="host" /></>;
-  return <HostApp />;
+  return <AccountGate><HostApp /></AccountGate>;
 }
 
 function HostApp() {

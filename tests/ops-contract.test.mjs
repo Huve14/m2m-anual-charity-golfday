@@ -6,6 +6,7 @@ import { fromSupabase, validate } from "../api/_ops.js";
 
 const migrationUrl = new URL("../supabase/migrations/20260829053332_create_multi_event_golf_management.sql", import.meta.url);
 const fourballTypesMigrationUrl = new URL("../supabase/migrations/20260829185408_add_fourball_types_and_bulk_bookings.sql", import.meta.url);
+const companyHostsMigrationUrl = new URL("../supabase/migrations/20260830072515_link_company_primary_contacts_to_hosts.sql", import.meta.url);
 
 test("defines the isolated multi-event operations model without replacing legacy storage", async () => {
   const sql = await readFile(migrationUrl, "utf8");
@@ -55,6 +56,20 @@ test("supports editable fourball types and transactional bulk client bookings", 
   assert.match(api, /m2m_create_fourball_booking/);
   assert.match(ui, /Adjusted total value/);
   assert.match(ui, /Assign existing host/);
+});
+
+test("creates company contacts as reusable hosts without downgrading administrator roles", async () => {
+  const [sql, companies, users, ui] = await Promise.all([
+    readFile(companyHostsMigrationUrl, "utf8"),
+    readFile(new URL("../api/v1/admin/companies.js", import.meta.url), "utf8"),
+    readFile(new URL("../api/v1/admin/users.js", import.meta.url), "utf8"),
+    readFile(new URL("../src/admin/AdminApp.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(sql, /primary_contact_profile_id uuid/);
+  assert.match(sql, /insert into public\.m2m_fourball_hosts/);
+  assert.match(companies, /ensureContactProfile/);
+  assert.match(users, /existing && input\.role === "host" \? existing\.role : input\.role/);
+  assert.doesNotMatch(ui, /profile\.role === "host" && !fourball\.hosts/);
 });
 
 test("keeps operational data behind authenticated versioned APIs", async () => {
@@ -110,10 +125,10 @@ test("completes Supabase invite callbacks and returns administrators to admin", 
   assert.match(callback, /href="\/admin">Administrator sign in/);
 });
 
-test("supports scanner-safe email OTP sign-in", async () => {
+test("uses provisioned passwords and forces replacement of temporary credentials", async () => {
   const auth = await readFile(new URL("../src/ops/Auth.tsx", import.meta.url), "utf8");
-  assert.match(auth, /Email me a sign-in code/);
-  assert.match(auth, /verifyOtp\(\{ email, token, type: "email" \}\)/);
-  assert.match(auth, /autoComplete="one-time-code"/);
-  assert.doesNotMatch(auth, /Email me a secure link/);
+  assert.match(auth, /signInWithPassword/);
+  assert.match(auth, /Change password/);
+  assert.match(auth, /mustChangePassword/);
+  assert.doesNotMatch(auth, /signInWithOtp/);
 });
