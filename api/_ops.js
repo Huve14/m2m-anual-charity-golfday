@@ -36,6 +36,39 @@ export function adminClient() {
   return cachedAdminClient;
 }
 
+export async function ensureContactProfile({ email, fullName }) {
+  const normalisedEmail = clean(email).toLowerCase();
+  const normalisedName = clean(fullName);
+  if (!normalisedEmail || !normalisedName) return null;
+  const client = adminClient();
+  const { data: existing, error: lookupError } = await client.from("m2m_profiles").select("*").eq("email", normalisedEmail).maybeSingle();
+  if (lookupError) throw fromSupabase(lookupError, "contact_profile_lookup_failed", "The primary contact could not be checked.");
+  if (existing) {
+    const { data, error } = await client.from("m2m_profiles").update({ full_name: normalisedName, is_active: true }).eq("id", existing.id).select("*").single();
+    if (error) throw fromSupabase(error, "contact_profile_update_failed", "The primary contact account could not be updated.");
+    return data;
+  }
+
+  let authUser = null;
+  const created = await client.auth.admin.createUser({ email: normalisedEmail, email_confirm: false, user_metadata: { full_name: normalisedName } });
+  if (!created.error) authUser = created.data.user;
+  else {
+    for (let page = 1; page <= 10 && !authUser; page += 1) {
+      const listed = await client.auth.admin.listUsers({ page, perPage: 1000 });
+      if (listed.error) throw apiFailure("contact_account_lookup_failed", "The primary contact account could not be checked.", 503);
+      authUser = listed.data.users.find((user) => user.email?.toLowerCase() === normalisedEmail) || null;
+      if (listed.data.users.length < 1000) break;
+    }
+    if (!authUser) throw apiFailure("contact_account_create_failed", "The primary contact account could not be created.", 503);
+  }
+
+  const { data: profile, error } = await client.from("m2m_profiles").insert({
+    id: authUser.id, email: normalisedEmail, full_name: normalisedName, role: "host", is_active: true,
+  }).select("*").single();
+  if (error) throw fromSupabase(error, "contact_profile_create_failed", "The primary contact account could not be created.");
+  return profile;
+}
+
 function authClient() {
   const config = opsConfig();
   if (!config.url || !config.publishableKey) {

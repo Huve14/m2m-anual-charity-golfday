@@ -65,8 +65,9 @@ async function invite(req, res) {
     authUserId = data.user.id;
   }
 
+  const effectiveRole = existing && input.role === "host" ? existing.role : input.role;
   const { data: profile, error: profileError } = await client.from("m2m_profiles").upsert({
-    id: authUserId, email: input.email, full_name: input.fullName, role: input.role,
+    id: authUserId, email: input.email, full_name: input.fullName, role: effectiveRole,
     is_active: true,
   }, { onConflict: "id" }).select("*").single();
   if (profileError) throw fromSupabase(profileError, "profile_create_failed", "The user profile could not be created.");
@@ -102,7 +103,7 @@ async function invite(req, res) {
       failure_code: delivery.failureCode, sent_at: delivery.status === "sent" ? new Date().toISOString() : null,
     });
   }
-  await recordAudit({ eventId: input.eventId || null, actorId: actor.id, action: "user.invited", entityType: "profile", entityId: profile.id, metadata: { role: input.role, deliveryStatus: delivery.status } });
+  await recordAudit({ eventId: input.eventId || null, actorId: actor.id, action: "user.invited", entityType: "profile", entityId: profile.id, metadata: { role: effectiveRole, assignedAsHost: input.role === "host", deliveryStatus: delivery.status } });
   sendJson(res, 201, { ok: true, user: publicProfile(profile), delivery: { status: delivery.status } });
 }
 
@@ -133,4 +134,3 @@ export default async function handler(req, res) {
 }
 
 export const config = { maxDuration: 30 };
-

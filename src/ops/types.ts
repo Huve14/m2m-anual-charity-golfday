@@ -13,7 +13,8 @@ export interface EventRecord {
 export interface EventCompany {
   id: string; eventId: string; companyId: string; name: string; registrationNumber: string;
   website: string; billingEmail: string; phone: string; relationshipStatus: string;
-  primaryContactName: string; primaryContactEmail: string; primaryContactPhone: string; notes: string;
+  primaryContactName: string; primaryContactEmail: string; primaryContactPhone: string;
+  primaryContactProfileId?: string | null; notes: string;
 }
 
 export interface PlayerRecord {
