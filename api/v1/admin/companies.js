@@ -89,6 +89,26 @@ async function create(req, res) {
 async function update(req, res) {
   const profile = await requireAdmin(req);
   const input = validate(updateSchema, parseJsonBody(req));
+  const client = adminClient();
+  const { data: linkedCompany, error: linkedCompanyError } = await client
+    .from("m2m_event_companies")
+    .select("company_id")
+    .eq("id", input.id)
+    .eq("event_id", input.eventId)
+    .single();
+  if (linkedCompanyError) throw fromSupabase(linkedCompanyError, "company_not_found", "The company could not be found in this event.");
+
+  const companyChanges = {};
+  if (input.name !== undefined) companyChanges.name = input.name;
+  if (input.registrationNumber !== undefined) companyChanges.registration_number = input.registrationNumber || null;
+  if (input.website !== undefined) companyChanges.website = input.website || null;
+  if (input.billingEmail !== undefined) companyChanges.billing_email = input.billingEmail || null;
+  if (input.phone !== undefined) companyChanges.phone = input.phone || null;
+  if (Object.keys(companyChanges).length) {
+    const { error } = await client.from("m2m_companies").update(companyChanges).eq("id", linkedCompany.company_id);
+    if (error) throw fromSupabase(error, "company_directory_update_failed", "The company details could not be updated.");
+  }
+
   const changes = {};
   if (input.relationshipStatus !== undefined) changes.relationship_status = input.relationshipStatus;
   if (input.primaryContactName !== undefined) changes.primary_contact_name = input.primaryContactName || null;
@@ -99,10 +119,11 @@ async function update(req, res) {
     changes.primary_contact_profile_id = contactProfile?.id || null;
   }
   if (input.notes !== undefined) changes.notes = input.notes || null;
-  const client = adminClient();
-  const { data, error } = await client.from("m2m_event_companies").update(changes).eq("id", input.id).eq("event_id", input.eventId).select("*,company:m2m_companies(*)").single();
+  let query = client.from("m2m_event_companies").select("*,company:m2m_companies(*)").eq("id", input.id).eq("event_id", input.eventId);
+  if (Object.keys(changes).length) query = client.from("m2m_event_companies").update(changes).eq("id", input.id).eq("event_id", input.eventId).select("*,company:m2m_companies(*)");
+  const { data, error } = await query.single();
   if (error) throw fromSupabase(error, "company_update_failed", "The company could not be updated.");
-  await recordAudit({ eventId: input.eventId, actorId: profile.id, action: "company.updated", entityType: "event_company", entityId: input.id, metadata: { fields: Object.keys(changes) } });
+  await recordAudit({ eventId: input.eventId, actorId: profile.id, action: "company.updated", entityType: "event_company", entityId: input.id, metadata: { fields: [...Object.keys(companyChanges), ...Object.keys(changes)] } });
   sendJson(res, 200, { ok: true, company: shape(data) });
 }
 
