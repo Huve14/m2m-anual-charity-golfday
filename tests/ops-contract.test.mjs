@@ -162,7 +162,6 @@ test("edits company details and sponsorship commercial records", async () => {
   assert.match(admin, /Edit quantity, price and payment/);
   assert.match(admin, /Save sponsorship/);
 });
-
 test("supports event-scoped host creation, co-hosts and primary reassignment", async () => {
   const [migration, fourballs, users, admin] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260831050251_reassign_fourball_hosts.sql", import.meta.url), "utf8"),
