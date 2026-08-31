@@ -2,13 +2,14 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 
-select plan(15);
+select plan(16);
 select has_table('public', 'm2m_events', 'events table exists');
 select has_table('public', 'm2m_fourballs', 'fourballs table exists');
 select has_table('public', 'm2m_sponsorship_commitments', 'sponsorship commitments table exists');
 select has_table('public', 'm2m_notification_deliveries', 'delivery ledger exists');
 select has_function('public', 'm2m_assign_tee_slot', array['uuid','uuid','uuid','uuid'], 'transactional tee assignment exists');
 select has_function('public', 'm2m_submit_fourball', array['uuid','uuid','uuid','text'], 'transactional host submission exists');
+select has_function('public', 'm2m_assign_fourball_host', array['uuid','uuid','uuid','boolean'], 'transactional host reassignment exists');
 
 insert into public.m2m_events(id,name,slug,venue_name,format,shotgun_start_at,registration_deadline_at,player_deadline_at,rules) values
  ('10000000-0000-0000-0000-000000000001','Event Alpha','event-alpha','Alpha Club','Better Ball','2027-10-20T08:00:00Z','2027-09-01T08:00:00Z','2027-10-01T08:00:00Z','Alpha rules'),

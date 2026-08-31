@@ -162,3 +162,21 @@ test("edits company details and sponsorship commercial records", async () => {
   assert.match(admin, /Edit quantity, price and payment/);
   assert.match(admin, /Save sponsorship/);
 });
+
+test("supports event-scoped host creation, co-hosts and primary reassignment", async () => {
+  const [migration, fourballs, users, admin] = await Promise.all([
+    readFile(new URL("../supabase/migrations/20260831050251_reassign_fourball_hosts.sql", import.meta.url), "utf8"),
+    readFile(new URL("../api/v1/admin/fourballs.js", import.meta.url), "utf8"),
+    readFile(new URL("../api/v1/admin/users.js", import.meta.url), "utf8"),
+    readFile(new URL("../src/admin/AdminApp.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(migration, /m2m_assign_fourball_host/);
+  assert.match(migration, /where event_id = p_event_id[\s\S]*fourball_id = p_fourball_id/);
+  assert.match(migration, /on conflict \(fourball_id, profile_id\) do update/);
+  assert.match(migration, /revoke all[\s\S]*from public, anon, authenticated/);
+  assert.match(fourballs, /rpc\("m2m_assign_fourball_host"/);
+  assert.match(users, /rpc\("m2m_assign_fourball_host"/);
+  assert.match(admin, /Add co-host/);
+  assert.match(admin, /Make primary/);
+  assert.match(admin, /Remove .* from this fourball/);
+});

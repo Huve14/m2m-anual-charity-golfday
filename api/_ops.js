@@ -184,6 +184,8 @@ export function fromSupabase(error, fallbackCode = "database_error", fallbackMes
     m2m_fourball_capacity_exceeded: ["fourball_capacity_exceeded", "This fourball type does not have enough availability."],
     m2m_fourball_capacity_below_booked: ["fourball_capacity_booked", "Capacity cannot be reduced below the number of active bookings."],
     m2m_fourball_type_not_found: ["fourball_type_unavailable", "Select an active fourball type for this event."],
+    m2m_fourball_not_found: ["fourball_not_found", "That fourball is not available in this event."],
+    m2m_host_not_available: ["host_not_available", "Select an active host account."],
     m2m_confirmed_import_already_completed: ["import_already_completed", "This exact file has already been imported into this event."],
     m2m_player_deadline_passed: ["deadline_passed", "The player-information deadline has passed."],
     m2m_player_details_incomplete: ["players_incomplete", "Complete all required player details before submitting."],
