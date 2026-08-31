@@ -96,8 +96,10 @@ async function update(req, res) {
     const { error } = await client.from("m2m_tee_slots").update({ fourball_id: null }).eq("event_id", input.eventId).eq("fourball_id", input.id);
     if (error) throw fromSupabase(error, "tee_assignment_failed");
   } else if (input.action === "assignHost") {
-    if (input.isPrimary) await client.from("m2m_fourball_hosts").update({ is_primary: false }).eq("fourball_id", input.id);
-    const { error } = await client.from("m2m_fourball_hosts").upsert({ event_id: input.eventId, fourball_id: input.id, profile_id: input.profileId, is_primary: input.isPrimary }, { onConflict: "fourball_id,profile_id" });
+    const { error } = await client.rpc("m2m_assign_fourball_host", {
+      p_event_id: input.eventId, p_fourball_id: input.id,
+      p_profile_id: input.profileId, p_is_primary: input.isPrimary,
+    });
     if (error) throw fromSupabase(error, "host_assignment_failed", "The host could not be assigned.");
     await recordAudit({ eventId: input.eventId, actorId: profile.id, action: "host.assigned", entityType: "fourball", entityId: input.id, metadata: { profileId: input.profileId, primary: input.isPrimary } });
   } else if (input.action === "removeHost") {

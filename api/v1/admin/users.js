@@ -61,11 +61,10 @@ async function invite(req, res) {
   if (profileError) throw fromSupabase(profileError, "profile_create_failed", "The user profile could not be created.");
 
   if (input.fourballId) {
-    if (input.isPrimary) await client.from("m2m_fourball_hosts").update({ is_primary: false }).eq("fourball_id", input.fourballId);
-    const { error } = await client.from("m2m_fourball_hosts").upsert({
-      event_id: input.eventId, fourball_id: input.fourballId, profile_id: profile.id,
-      is_primary: input.isPrimary, invited_at: new Date().toISOString(), last_notified_at: new Date().toISOString(),
-    }, { onConflict: "fourball_id,profile_id" });
+    const { error } = await client.rpc("m2m_assign_fourball_host", {
+      p_event_id: input.eventId, p_fourball_id: input.fourballId,
+      p_profile_id: profile.id, p_is_primary: input.isPrimary,
+    });
     if (error) throw fromSupabase(error, "host_assignment_failed", "The host could not be assigned.");
   }
 
