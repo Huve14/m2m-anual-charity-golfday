@@ -147,3 +147,18 @@ test("imports confirmed company workbooks transactionally and idempotently", asy
   assert.match(admin, /Review warnings/);
   assert.match(admin, /Import confirmed list/);
 });
+test("edits company details and sponsorship commercial records", async () => {
+  const [companies, sponsorships, admin] = await Promise.all([
+    readFile(new URL("../api/v1/admin/companies.js", import.meta.url), "utf8"),
+    readFile(new URL("../api/v1/admin/sponsorships.js", import.meta.url), "utf8"),
+    readFile(new URL("../src/admin/AdminApp.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(companies, /from\("m2m_companies"\)\.update\(companyChanges\)/);
+  assert.match(companies, /\.eq\("event_id", input\.eventId\)/);
+  assert.match(sponsorships, /action: z\.literal\("updateCommitment"\)/);
+  assert.match(sponsorships, /confirmed_amount_minor/);
+  assert.match(sponsorships, /payment_status/);
+  assert.match(admin, /Edit company/);
+  assert.match(admin, /Edit quantity, price and payment/);
+  assert.match(admin, /Save sponsorship/);
+});
