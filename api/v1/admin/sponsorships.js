@@ -15,13 +15,14 @@ async function list(req, res) {
   await requireAdmin(req);
   const eventId = typeof req.query?.eventId === "string" ? req.query.eventId : "";
   const client = adminClient();
-  const [types, commitments, slots, companies] = await Promise.all([
+  const [types, commitments, slots, companies, holes] = await Promise.all([
     client.from("m2m_sponsorship_types").select("*").eq("event_id", eventId).order("sort_order"),
     client.from("m2m_sponsorship_commitments").select("*,type:m2m_sponsorship_types(id,name,requires_hole,category),eventCompany:m2m_event_companies(id,company:m2m_companies(id,name)),units:m2m_sponsorship_units(*)").eq("event_id", eventId).order("created_at"),
     client.from("m2m_hole_sponsorship_slots").select("*,hole:m2m_event_holes(id,label,hole_number),type:m2m_sponsorship_types(id,name),unit:m2m_sponsorship_units(id,commitment_id)").eq("event_id", eventId).order("sort_order"),
     client.from("m2m_event_companies").select("id,company:m2m_companies(id,name)").eq("event_id", eventId),
+    client.from("m2m_event_holes").select("id,hole_number,label").eq("event_id", eventId).order("hole_number"),
   ]);
-  if (types.error || commitments.error || slots.error || companies.error) throw fromSupabase(types.error || commitments.error || slots.error || companies.error, "sponsorships_load_failed", "Sponsorships could not be loaded.");
+  if (types.error || commitments.error || slots.error || companies.error || holes.error) throw fromSupabase(types.error || commitments.error || slots.error || companies.error || holes.error, "sponsorships_load_failed", "Sponsorships could not be loaded.");
   sendJson(res, 200, {
     ok: true,
     types: types.data.map((item) => ({ id: item.id, name: item.name, category: item.category, capacity: item.capacity, priceMinor: item.price_minor, requiresHole: item.requires_hole, isActive: item.is_active })),
@@ -33,7 +34,8 @@ async function list(req, res) {
       paymentStatus: item.payment_status, notes: item.notes || "",
       units: (item.units || []).toSorted((a, b) => a.unit_number - b.unit_number).map((unit) => ({ id: unit.id, unitNumber: unit.unit_number, holeSlotId: unit.hole_slot_id, allocatedAt: unit.allocated_at })),
     })),
-    holeSlots: slots.data.map((item) => ({ id: item.id, holeId: item.hole_id, label: item.label, displayLabel: `${item.hole?.label || "Hole"} · ${item.label}`, sponsorshipTypeId: item.sponsorship_type_id, typeName: item.type?.name || "Any hole sponsorship", unitId: item.unit?.[0]?.id || null })),
+    holes: holes.data.map((hole) => ({ id: hole.id, number: hole.hole_number, label: hole.label })),
+    holeSlots: slots.data.map((item) => ({ id: item.id, holeId: item.hole_id, holeNumber: item.hole?.hole_number, label: item.label, displayLabel: `${item.hole?.label || "Hole"} · ${item.label}`, sponsorshipTypeId: item.sponsorship_type_id, typeName: item.type?.name || "Any hole sponsorship", unitId: item.unit?.[0]?.id || null })),
     companies: companies.data.map((item) => ({ id: item.id, name: item.company?.name || "" })),
   });
 }
