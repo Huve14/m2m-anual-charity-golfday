@@ -17,7 +17,7 @@ const createSchema = z.object({
 }).refine((value) => value.companyId || value.name, { message: "Choose or name a company.", path: ["name"] })
   .refine((value) => Boolean(value.primaryContactName) === Boolean(value.primaryContactEmail), { message: "Enter both the primary contact name and email.", path: ["primaryContactEmail"] });
 
-const updateSchema = createSchema.partial().extend({ id: z.string().uuid(), eventId: z.string().uuid() });
+const updateSchema = createSchema.partial().extend({ id: z.string().uuid(), eventId: z.string().uuid(), relationshipStatus: z.enum(["prospect", "pending", "confirmed", "cancelled"]).optional() });
 
 function shape(row) {
   return {
