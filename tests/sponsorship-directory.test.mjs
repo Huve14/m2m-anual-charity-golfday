@@ -24,11 +24,18 @@ test('sponsorship directory returns numeric holes and stable company/allocation 
     else if (url.pathname.endsWith('/m2m_event_companies')) body = [{ id: 'company-event', company: { name: 'Example Company' } }];
     else if (url.pathname.endsWith('/m2m_event_holes')) body = [{ id: 'hole-1', hole_number: 1, label: 'Hole 1' }, { id: 'hole-2', hole_number: 2, label: 'Hole 2' }];
     else throw new Error(`Unexpected endpoint: ${url.pathname}`);
+    if (url.pathname.endsWith('/m2m_sponsorship_commitments')) body.push(
+      { ...body[0], id: 'cancelled-company-booking', eventCompany: { relationship_status: 'cancelled', company: { name: 'Cancelled Company' } } },
+      { ...body[0], id: 'cancelled-booking', status: 'cancelled' },
+    );
+    if (url.pathname.endsWith('/m2m_event_companies')) body.push({ id: 'cancelled-company', relationship_status: 'cancelled', company: { name: 'Cancelled Company' } });
     return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
   });
   const res = response();
   await handler({ method: 'GET', headers: { authorization: 'Bearer sample-token' }, query: { eventId: 'event' } }, res);
   assert.equal(res.statusCode, 200);
+  assert.equal(res.body.commitments.length, 1);
+  assert.equal(res.body.companies.length, 1);
   assert.deepEqual(res.body.holes.map((hole) => hole.number), [1, 2]);
   assert.equal(res.body.holeSlots[0].holeNumber, 2);
   assert.equal(res.body.commitments[0].eventCompanyId, res.body.companies[0].id);
@@ -38,6 +45,10 @@ test('sponsorship directory returns numeric holes and stable company/allocation 
   for (const url of requested.filter((url) => url.pathname.startsWith('/rest/v1/') && !url.pathname.endsWith('/m2m_profiles'))) {
     assert.equal(url.searchParams.get('event_id'), 'eq.event');
   }
+  const history = response();
+  await handler({ method: 'GET', headers: { authorization: 'Bearer sample-token' }, query: { eventId: 'event', includeCancelled: 'true' } }, history);
+  assert.equal(history.body.commitments.length, 3);
+  assert.equal(history.body.companies.length, 1);
   assert.equal(requested.find((url) => url.pathname.endsWith('/m2m_event_holes')).searchParams.get('order'), 'hole_number.asc');
 });
 
@@ -46,4 +57,31 @@ test('sponsorship directory requires authentication before loading company data'
   await handler({ method: 'GET', headers: {}, query: { eventId: 'event' } }, res);
   assert.equal(res.statusCode, 401);
   assert.equal(res.body.code, 'authentication_required');
+});
+
+
+test('fourball directory excludes cancelled participation and preserves explicit history access', async (t) => {
+  const { default: fourballs } = await import('../api/v1/admin/fourballs.js');
+  t.mock.method(globalThis, 'fetch', async (input) => {
+    const url = new URL(input instanceof Request ? input.url : input);
+    let body;
+    if (url.pathname === '/auth/v1/user') body = { id: 'admin' };
+    else if (url.pathname.endsWith('/m2m_profiles')) body = url.searchParams.has('id') ? { id: 'admin', role: 'admin', is_active: true } : [];
+    else if (url.pathname.endsWith('/m2m_fourballs')) body = [
+      { id: 'active', booking_status: 'confirmed', eventCompany: { relationship_status: 'confirmed' } },
+      { id: 'cancelled-company', booking_status: 'confirmed', eventCompany: { relationship_status: 'cancelled' } },
+      { id: 'cancelled-team', booking_status: 'cancelled', eventCompany: { relationship_status: 'confirmed' } },
+    ];
+    else if (url.pathname.endsWith('/m2m_tee_slots')) body = [];
+    else throw new Error(`Unexpected endpoint: ${url.pathname}`);
+    return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+  });
+  const active = response();
+  await fourballs({ method: 'GET', headers: { authorization: 'Bearer sample-token' }, query: { eventId: 'event' } }, active);
+  assert.equal(active.statusCode, 200);
+  assert.deepEqual(active.body.fourballs.map((team) => team.id), ['active']);
+  const history = response();
+  await fourballs({ method: 'GET', headers: { authorization: 'Bearer sample-token' }, query: { eventId: 'event', includeCancelled: 'true' } }, history);
+  assert.equal(history.statusCode, 200);
+  assert.equal(history.body.fourballs.length, 3);
 });

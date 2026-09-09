@@ -17,16 +17,16 @@ async function list(req, res) {
   const client = adminClient();
   const [types, commitments, slots, companies, holes] = await Promise.all([
     client.from("m2m_sponsorship_types").select("*").eq("event_id", eventId).order("sort_order"),
-    client.from("m2m_sponsorship_commitments").select("*,type:m2m_sponsorship_types(id,name,requires_hole,category),eventCompany:m2m_event_companies(id,company:m2m_companies(id,name)),units:m2m_sponsorship_units(*)").eq("event_id", eventId).order("created_at"),
+    client.from("m2m_sponsorship_commitments").select("*,type:m2m_sponsorship_types(id,name,requires_hole,category),eventCompany:m2m_event_companies(id,relationship_status,company:m2m_companies(id,name)),units:m2m_sponsorship_units(*)").eq("event_id", eventId).order("created_at"),
     client.from("m2m_hole_sponsorship_slots").select("*,hole:m2m_event_holes(id,label,hole_number),type:m2m_sponsorship_types(id,name),unit:m2m_sponsorship_units(id,commitment_id)").eq("event_id", eventId).order("sort_order"),
-    client.from("m2m_event_companies").select("id,company:m2m_companies(id,name)").eq("event_id", eventId),
+    client.from("m2m_event_companies").select("id,relationship_status,company:m2m_companies(id,name)").eq("event_id", eventId),
     client.from("m2m_event_holes").select("id,hole_number,label").eq("event_id", eventId).order("hole_number"),
   ]);
   if (types.error || commitments.error || slots.error || companies.error || holes.error) throw fromSupabase(types.error || commitments.error || slots.error || companies.error || holes.error, "sponsorships_load_failed", "Sponsorships could not be loaded.");
   sendJson(res, 200, {
     ok: true,
     types: types.data.map((item) => ({ id: item.id, name: item.name, category: item.category, capacity: item.capacity, priceMinor: item.price_minor, requiresHole: item.requires_hole, isActive: item.is_active })),
-    commitments: commitments.data.map((item) => ({
+    commitments: commitments.data.filter((item) => req.query?.includeCancelled === "true" || (item.status !== "cancelled" && item.eventCompany?.relationship_status !== "cancelled")).map((item) => ({
       id: item.id, eventCompanyId: item.event_company_id, companyName: item.eventCompany?.company?.name || "",
       sponsorshipTypeId: item.sponsorship_type_id, typeName: item.type?.name || "", category: item.type?.category || "other",
       requiresHole: Boolean(item.type?.requires_hole), status: item.status, quantity: item.quantity,
@@ -36,7 +36,7 @@ async function list(req, res) {
     })),
     holes: holes.data.map((hole) => ({ id: hole.id, number: hole.hole_number, label: hole.label })),
     holeSlots: slots.data.map((item) => ({ id: item.id, holeId: item.hole_id, holeNumber: item.hole?.hole_number, label: item.label, displayLabel: `${item.hole?.label || "Hole"} · ${item.label}`, sponsorshipTypeId: item.sponsorship_type_id, typeName: item.type?.name || "Any hole sponsorship", unitId: item.unit?.[0]?.id || null })),
-    companies: companies.data.map((item) => ({ id: item.id, name: item.company?.name || "" })),
+    companies: companies.data.filter((item) => item.relationship_status !== "cancelled").map((item) => ({ id: item.id, name: item.company?.name || "" })),
   });
 }
 

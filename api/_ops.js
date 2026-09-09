@@ -173,6 +173,7 @@ export async function requireSuperAdmin(req) {
 
 export function fromSupabase(error, fallbackCode = "database_error", fallbackMessage) {
   const known = {
+    m2m_company_participation_cancelled: ["company_cancelled", "Reactivate this company’s participation before adding or restoring bookings."],
     m2m_sponsorship_capacity_exceeded: ["sponsorship_capacity_exceeded", "This sponsorship inventory is already fully reserved."],
     m2m_sponsorship_capacity_below_committed: ["sponsorship_capacity_committed", "Capacity cannot be reduced below reserved and confirmed inventory."],
     m2m_allocated_units_prevent_quantity_reduction: ["allocated_units", "Remove hole allocations before reducing this quantity."],

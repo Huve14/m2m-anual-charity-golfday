@@ -53,7 +53,7 @@ function shape(item) {
   };
 }
 
-const SELECT = "*,fourballType:m2m_fourball_types(id,name,price_minor),players:m2m_players(*),hosts:m2m_fourball_hosts(*,profile:m2m_profiles(id,email,full_name)),eventCompany:m2m_event_companies(id,company:m2m_companies(id,name)),teeSlot:m2m_tee_slots(id,slot_label,hole:m2m_event_holes(id,label))";
+const SELECT = "*,fourballType:m2m_fourball_types(id,name,price_minor),players:m2m_players(*),hosts:m2m_fourball_hosts(*,profile:m2m_profiles(id,email,full_name)),eventCompany:m2m_event_companies(id,relationship_status,company:m2m_companies(id,name)),teeSlot:m2m_tee_slots(id,slot_label,hole:m2m_event_holes(id,label))";
 
 async function list(req, res) {
   await requireAdmin(req);
@@ -65,7 +65,7 @@ async function list(req, res) {
     client.from("m2m_profiles").select("id,email,full_name,role,is_active").eq("is_active", true).order("full_name"),
   ]);
   if (fourballs.error || teeSlots.error || profiles.error) throw fromSupabase(fourballs.error || teeSlots.error || profiles.error, "fourballs_load_failed", "Fourballs could not be loaded.");
-  sendJson(res, 200, { ok: true, fourballs: fourballs.data.map(shape), teeSlots: teeSlots.data.map((slot) => ({ id: slot.id, label: `${slot.hole?.label || "Hole"} ${slot.slot_label}`, fourballId: slot.fourball_id })), profiles: profiles.data.map((p) => ({ id: p.id, email: p.email, fullName: p.full_name, role: p.role })) });
+  sendJson(res, 200, { ok: true, fourballs: fourballs.data.filter((item) => req.query?.includeCancelled === "true" || (item.booking_status !== "cancelled" && item.eventCompany?.relationship_status !== "cancelled")).map(shape), teeSlots: teeSlots.data.map((slot) => ({ id: slot.id, label: `${slot.hole?.label || "Hole"} ${slot.slot_label}`, fourballId: slot.fourball_id })), profiles: profiles.data.map((p) => ({ id: p.id, email: p.email, fullName: p.full_name, role: p.role })) });
 }
 
 async function create(req, res) {

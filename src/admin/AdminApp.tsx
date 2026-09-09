@@ -127,6 +127,7 @@ function AdminApp() {
     setSelectedId(id);
     setTab("overview");
     const url = new URL(window.location.href);
+    url.searchParams.delete("company");
     if (id) url.searchParams.set("event", id); else url.searchParams.delete("event");
     url.pathname = id ? "/admin/overview" : "/admin";
     window.history.pushState({}, "", url);
@@ -134,8 +135,10 @@ function AdminApp() {
   function chooseTab(nextTab: Tab) {
     setTab(nextTab);
     const url = new URL(window.location.href);
+    url.searchParams.delete("company");
     url.pathname = `/admin/${nextTab}`;
     window.history.pushState({}, "", url);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
   function refresh() { setVersion((value) => value + 1); }
 
@@ -247,42 +250,67 @@ function PlayerFields({ eventId }: { eventId: string }) {
 }
 
 interface CompaniesPayload { ok: true; companies: EventCompany[]; directory: Array<{ id: string; name: string }> }
+function CompanyDetailsForm({ company, busy, onSave }: { company: EventCompany; busy: boolean; onSave: (event: FormEvent<HTMLFormElement>, company: EventCompany) => Promise<void> }) {
+  return <section className="panel" id="company-details"><h3>Company & contact details</h3><form className="form-grid company-details-form" onSubmit={(submitEvent) => onSave(submitEvent, company)}><label><span>Company name</span><input name="name" defaultValue={company.name} required /></label><label><span>Participation status</span><select name="relationshipStatus" defaultValue={company.relationshipStatus}><option value="prospect">Prospect</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label><div className="two-fields"><label><span>Registration number</span><input name="registrationNumber" defaultValue={company.registrationNumber} /></label><label><span>Company phone</span><input name="phone" defaultValue={company.phone} /></label></div><label><span>Website</span><input name="website" defaultValue={company.website} /></label><label><span>Billing email</span><input type="email" name="billingEmail" defaultValue={company.billingEmail} /></label><label><span>Primary contact</span><input name="primaryContactName" defaultValue={company.primaryContactName} /></label><label><span>Contact email</span><input type="email" name="primaryContactEmail" defaultValue={company.primaryContactEmail} /></label><label><span>Contact phone</span><input name="primaryContactPhone" defaultValue={company.primaryContactPhone} /></label><label className="span-2"><span>Notes</span><textarea name="notes" defaultValue={company.notes} /></label><p className="muted-copy span-2">Cancelling participation also cancels this company’s fourballs and sponsorships and frees its course positions. Reactivating the company does not automatically restore bookings.</p><div className="form-actions span-2"><button className="primary-button" disabled={busy}>{busy ? "Saving…" : "Save company details"}</button></div></form></section>;
+}
+
 function Companies({ event, version, onRefresh }: { event: EventRecord; version: number; onRefresh: () => void }) {
   const [data, setData] = useState<CompaniesPayload | null>(null); const [error, setError] = useState(""); const [busy, setBusy] = useState(false); const [localVersion, setLocalVersion] = useState(0);
   const [query, setQuery] = useState("");
-  const [selectedCompanyId, setSelectedCompanyId] = useState("");
-  const [companySection, setCompanySection] = useState<"sponsorships" | "fourballs">("sponsorships");
+  const [selectedCompanyId, setSelectedCompanyId] = useState(() => new URLSearchParams(window.location.search).get("company") || "");
+  const [message, setMessage] = useState("");
+  function openCompany(id: string) {
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set("company", id); else url.searchParams.delete("company");
+    window.history.pushState({}, "", url); setSelectedCompanyId(id); setMessage("");
+    window.scrollTo({ top: 0 });
+  }
+  useEffect(() => {
+    const restoreCompany = () => setSelectedCompanyId(new URLSearchParams(window.location.search).get("company") || "");
+    window.addEventListener("popstate", restoreCompany);
+    return () => window.removeEventListener("popstate", restoreCompany);
+  }, []);
   const [sponsors, setSponsors] = useState<SponsorPayload | null>(null);
   const [teams, setTeams] = useState<FourballRecord[]>([]);
   const selectedCompany = data?.companies.find((company) => company.id === selectedCompanyId);
-  useEffect(() => { let active = true; Promise.all([opsApi<CompaniesPayload>(`/api/v1/admin/companies?eventId=${event.id}`), opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}`), opsApi<FourballsPayload>(`/api/v1/admin/fourballs?eventId=${event.id}`)]).then(([payload, sponsorData, teamData]) => { if (active) { setData(payload); setSponsors(sponsorData); setTeams(teamData.fourballs); setError(""); } }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version, localVersion]);
+  useEffect(() => { let active = true; Promise.all([opsApi<CompaniesPayload>(`/api/v1/admin/companies?eventId=${event.id}`), opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}&includeCancelled=true`), opsApi<FourballsPayload>(`/api/v1/admin/fourballs?eventId=${event.id}&includeCancelled=true`)]).then(([payload, sponsorData, teamData]) => { if (active) { setData(payload); setSponsors(sponsorData); setTeams(teamData.fourballs); setError(""); } }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version, localVersion]);
   async function add(formEvent: FormEvent<HTMLFormElement>) { formEvent.preventDefault(); setBusy(true); setError(""); const formElement = formEvent.currentTarget; const form = new FormData(formElement); try { await jsonMutation("/api/v1/admin/companies", "POST", { eventId: event.id, companyId: form.get("companyId") || undefined, name: form.get("name") || undefined, relationshipStatus: form.get("relationshipStatus"), primaryContactName: form.get("primaryContactName"), primaryContactEmail: form.get("primaryContactEmail"), primaryContactPhone: form.get("primaryContactPhone") }); formElement.reset(); setLocalVersion((v) => v + 1); onRefresh(); } catch (caught) { setError(caught instanceof Error ? caught.message : "Company creation failed."); } finally { setBusy(false); } }
   async function save(formEvent: FormEvent<HTMLFormElement>, company: EventCompany) {
     formEvent.preventDefault(); setBusy(true); setError("");
     const form = new FormData(formEvent.currentTarget);
     try {
-      await jsonMutation("/api/v1/admin/companies", "PATCH", {
+      const result = await jsonMutation<{ company: EventCompany }>("/api/v1/admin/companies", "PATCH", {
         id: company.id, eventId: event.id, name: form.get("name"), registrationNumber: form.get("registrationNumber"),
         website: form.get("website"), billingEmail: form.get("billingEmail"), phone: form.get("phone"),
         relationshipStatus: form.get("relationshipStatus"), primaryContactName: form.get("primaryContactName"),
         primaryContactEmail: form.get("primaryContactEmail"), primaryContactPhone: form.get("primaryContactPhone"), notes: form.get("notes"),
       });
-      setLocalVersion((v) => v + 1); onRefresh();
+      setData((current) => current ? { ...current, companies: current.companies.map((item) => item.id === result.company.id ? result.company : item) } : current);
+      setMessage("Company details saved."); setLocalVersion((v) => v + 1); onRefresh();
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Company update failed."); } finally { setBusy(false); }
   }
+  if (selectedCompanyId && !data) return <><ErrorBanner message={error} /><Loading /></>;
   if (selectedCompany) return <div className="company-workspace">
-    <button className="text-button" onClick={() => setSelectedCompanyId("")}>← All companies</button>
-    <SectionHeader eyebrow="Company workspace" title={selectedCompany.name} copy={`${selectedCompany.primaryContactName || "No primary contact"} · ${selectedCompany.primaryContactEmail || "No email"}`} />
-    <div className="company-sections"><button aria-pressed={companySection === "sponsorships"} onClick={() => setCompanySection("sponsorships")}>Sponsorships & holes</button><button aria-pressed={companySection === "fourballs"} onClick={() => setCompanySection("fourballs")}>Fourballs & players</button></div>
-    <div hidden={companySection !== "sponsorships"}><Sponsorships key={`sponsor-${selectedCompany.id}`} companyId={selectedCompany.id} event={event} version={version} onRefresh={onRefresh} /></div>
-    <div hidden={companySection !== "fourballs"}><Fourballs key={`teams-${selectedCompany.id}`} companyId={selectedCompany.id} event={event} version={version} onRefresh={onRefresh} /></div>
+    <button className="text-button" onClick={() => openCompany("")}>← All companies</button>
+    <SectionHeader eyebrow="Edit company" title={selectedCompany.name} copy="Company details, sponsorships and fourballs in one place." actions={<Pill value={selectedCompany.relationshipStatus} />} />
+    <ErrorBanner message={error} />{message ? <p className="success-banner" role="status">{message}</p> : null}
+    <nav className="company-page-links" aria-label="Company sections"><a href="#company-details">Company details</a><a href="#company-sponsorships">Sponsorships & holes</a><a href="#company-fourballs">Fourballs & players</a></nav>
+    <CompanyDetailsForm key={selectedCompany.id} company={selectedCompany} busy={busy} onSave={save} />
+    {selectedCompany.relationshipStatus === "cancelled" ? <>
+      <p className="warning-copy">Participation cancelled. This company is excluded from active sponsorship and fourball pages. Previous booking details are retained below.</p>
+      <section className="panel" id="company-sponsorships"><h3>Sponsorship history</h3>{sponsors?.commitments.filter((item) => item.eventCompanyId === selectedCompany.id).map((item) => <p key={item.id}>{item.typeName} · {item.quantity} units · {money(item.confirmedAmountMinor, event.currency)} · {item.paymentStatus}</p>)}{!sponsors?.commitments.some((item) => item.eventCompanyId === selectedCompany.id) ? <p>No sponsorships recorded.</p> : null}</section>
+      <section className="panel" id="company-fourballs"><h3>Fourball history</h3>{teams.filter((team) => team.eventCompanyId === selectedCompany.id).map((team) => <div className="company-history-team" key={team.id}><h4>{team.teamName}</h4><p>{money(team.confirmedAmountMinor, event.currency)} · {team.paymentStatus}</p><p>{team.hosts.map((host) => host.fullName || host.email).join(", ") || "No host assigned"}</p>{team.players.map((player) => <p key={player.id}>Player {player.position}: {player.fullName || "Not supplied"}{player.email ? ` · ${player.email}` : ""}</p>)}</div>)}{!teams.some((team) => team.eventCompanyId === selectedCompany.id) ? <p>No fourballs recorded.</p> : null}</section>
+    </> : <>
+      <section id="company-sponsorships"><Sponsorships key={`sponsor-${selectedCompany.id}`} companyId={selectedCompany.id} event={event} version={version + localVersion} onRefresh={onRefresh} /></section>
+      <section id="company-fourballs"><Fourballs key={`teams-${selectedCompany.id}`} companyId={selectedCompany.id} event={event} version={version + localVersion} onRefresh={onRefresh} /></section>
+    </>}
   </div>;
   return <>
     <SectionHeader eyebrow="Event relationships" title="Companies" copy="Your central company directory. Manage contacts, sponsorship holes and fourballs from each company." />
     <ErrorBanner message={error} />
     <section className="panel"><details className="action-disclosure"><summary>Add company</summary><form className="form-grid compact" onSubmit={add}><label><span>Use existing company</span><select name="companyId" defaultValue=""><option value="">Create a new company</option>{data?.directory.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label><label><span>New company name</span><input name="name" placeholder="Leave blank when choosing existing" /></label><label><span>Relationship status</span><select name="relationshipStatus" defaultValue="prospect"><option value="prospect">Prospect</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option></select></label><label><span>Primary contact</span><input name="primaryContactName" /></label><label><span>Contact email</span><input type="email" name="primaryContactEmail" /></label><label><span>Contact phone</span><input name="primaryContactPhone" /></label><FormActions busy={busy} label="Add company" /></form></details></section>
     <label className="company-filter"><span>Find company</span><input type="search" value={query} onChange={(change) => setQuery(change.target.value)} placeholder="Search company or contact…" /></label>
-    {!data ? <Loading /> : data.companies.length === 0 ? <Empty title="No companies in this event" copy="Add a sponsor or fourball company to begin." /> : <div className="data-cards">{data.companies.filter((company) => `${company.name} ${company.primaryContactName} ${company.primaryContactEmail}`.toLowerCase().includes(query.trim().toLowerCase())).map((company) => <article key={company.id} className="data-card company-card"><div><Pill value={company.relationshipStatus} /><h3>{company.name}</h3><p>{company.primaryContactName || "No primary contact"}</p><a href={company.primaryContactEmail ? `mailto:${company.primaryContactEmail}` : undefined}>{company.primaryContactEmail || "Email not supplied"}</a><div className="company-booking-summary"><span>{teams.filter((team) => team.eventCompanyId === company.id).length} fourballs</span><span>{sponsors?.commitments.filter((item) => item.eventCompanyId === company.id && item.status !== "cancelled").reduce((total, item) => total + item.quantity, 0) || 0} sponsorship units</span><span>Holes: {Array.from(new Set(sponsors?.commitments.filter((item) => item.eventCompanyId === company.id).flatMap((item) => item.units.flatMap((unit) => { const slot = sponsors.holeSlots.find((position) => position.id === unit.holeSlotId); return slot ? [slot.holeNumber] : []; })) || [])).sort((a, b) => a - b).join(", ") || "Not allocated"}</span></div><button className="secondary-button" onClick={() => { setSelectedCompanyId(company.id); setCompanySection("sponsorships"); }}>Manage sponsorships & fourballs →</button></div><details className="action-disclosure company-editor"><summary>Edit company</summary><form className="stack-form" onSubmit={(submitEvent) => save(submitEvent, company)}><label><span>Company name</span><input name="name" defaultValue={company.name} required /></label><div className="two-fields"><label><span>Registration number</span><input name="registrationNumber" defaultValue={company.registrationNumber} /></label><label><span>Company phone</span><input name="phone" defaultValue={company.phone} /></label></div><label><span>Website</span><input name="website" defaultValue={company.website} /></label><label><span>Billing email</span><input type="email" name="billingEmail" defaultValue={company.billingEmail} /></label><label><span>Relationship status</span><select name="relationshipStatus" defaultValue={company.relationshipStatus}><option value="prospect">Prospect</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label><label><span>Primary contact</span><input name="primaryContactName" defaultValue={company.primaryContactName} /></label><label><span>Contact email</span><input type="email" name="primaryContactEmail" defaultValue={company.primaryContactEmail} /></label><label><span>Contact phone</span><input name="primaryContactPhone" defaultValue={company.primaryContactPhone} /></label><label><span>Notes</span><textarea name="notes" defaultValue={company.notes} /></label><button className="secondary-button" disabled={busy}>Save company</button></form></details></article>)}</div>}
+    {!data ? <Loading /> : data.companies.length === 0 ? <Empty title="No companies in this event" copy="Add a sponsor or fourball company to begin." /> : <div className="data-cards">{data.companies.filter((company) => `${company.name} ${company.primaryContactName} ${company.primaryContactEmail}`.toLowerCase().includes(query.trim().toLowerCase())).map((company) => <article key={company.id} className="data-card company-card"><div><Pill value={company.relationshipStatus} /><h3>{company.name}</h3><p>{company.primaryContactName || "No primary contact"}</p><a href={company.primaryContactEmail ? `mailto:${company.primaryContactEmail}` : undefined}>{company.primaryContactEmail || "Email not supplied"}</a><div className="company-booking-summary"><span>{teams.filter((team) => team.eventCompanyId === company.id && team.bookingStatus !== "cancelled" && company.relationshipStatus !== "cancelled").length} fourballs</span><span>{sponsors?.commitments.filter((item) => item.eventCompanyId === company.id && item.status !== "cancelled" && company.relationshipStatus !== "cancelled").reduce((total, item) => total + item.quantity, 0) || 0} sponsorship units</span><span>Holes: {Array.from(new Set(sponsors?.commitments.filter((item) => item.eventCompanyId === company.id && item.status !== "cancelled" && company.relationshipStatus !== "cancelled").flatMap((item) => item.units.flatMap((unit) => { const slot = sponsors.holeSlots.find((position) => position.id === unit.holeSlotId); return slot ? [slot.holeNumber] : []; })) || [])).sort((a, b) => a - b).join(", ") || "Not allocated"}</span></div><button className="secondary-button" onClick={() => openCompany(company.id)}>Edit company →</button></div></article>)}</div>}
   </>;
 }
 
@@ -319,7 +347,7 @@ function Sponsorships({ event, version, onRefresh, companyId = "" }: { companyId
   const [showInventory, setShowInventory] = useState(false);
   const [message, setMessage] = useState("");
   const commitments = (data?.commitments || []).filter((item) => !companyFilter || item.eventCompanyId === companyFilter);
-  useEffect(() => { let active = true; opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}`).then((payload) => { if (active) setData(payload); }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version, localVersion]);
+  useEffect(() => { let active = true; opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}${companyId ? "&includeCancelled=true" : ""}`).then((payload) => { if (active) setData(payload); }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version, localVersion, companyId]);
   async function action(body: Record<string, unknown>) { setBusy(true); setError(""); try { await jsonMutation("/api/v1/admin/sponsorships", "POST", { eventId: event.id, ...body }); setLocalVersion((v) => v + 1); onRefresh(); setMessage("Sponsorship changes saved."); return true; } catch (caught) { setError(caught instanceof Error ? caught.message : "Sponsorship update failed."); return false; } finally { setBusy(false); } }
   async function addType(formEvent: FormEvent<HTMLFormElement>) { formEvent.preventDefault(); const formElement = formEvent.currentTarget; const form = new FormData(formElement); const saved = await action({ action: "createType", name: form.get("name"), category: form.get("category"), capacity: Number(form.get("capacity")), priceMinor: Math.round(Number(form.get("price")) * 100), requiresHole: form.get("requiresHole") === "on", isActive: true }); if (saved) formElement.reset(); }
   async function addCommitment(formEvent: FormEvent<HTMLFormElement>) { formEvent.preventDefault(); const formElement = formEvent.currentTarget; const form = new FormData(formElement); const saved = await action({ action: "createCommitment", eventCompanyId: form.get("eventCompanyId"), sponsorshipTypeId: form.get("sponsorshipTypeId"), status: form.get("status"), quantity: Number(form.get("quantity")), confirmedAmountMinor: Math.round(Number(form.get("amount")) * 100), paymentStatus: form.get("paymentStatus"), invoiceReference: form.get("invoiceReference") }); if (saved) formElement.reset(); }
@@ -345,14 +373,14 @@ function Sponsorships({ event, version, onRefresh, companyId = "" }: { companyId
 
 interface FourballsPayload { ok: true; fourballs: FourballRecord[]; teeSlots: Array<{ id: string; label: string; fourballId: string | null }>; profiles: Array<{ id: string; email: string; fullName: string; role: string }> }
 interface FourballType { id: string; eventId: string; name: string; capacity: number; priceMinor: number; isActive: boolean; booked: number }
-function useFourballs(eventId: string, version: number) {
+function useFourballs(eventId: string, version: number, includeCancelled = false) {
   const [data, setData] = useState<FourballsPayload | null>(null); const [error, setError] = useState("");
-  useEffect(() => { let active = true; opsApi<FourballsPayload>(`/api/v1/admin/fourballs?eventId=${eventId}`).then((payload) => { if (active) { setData(payload); setError(""); } }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [eventId, version]);
+  useEffect(() => { let active = true; opsApi<FourballsPayload>(`/api/v1/admin/fourballs?eventId=${eventId}${includeCancelled ? "&includeCancelled=true" : ""}`).then((payload) => { if (active) { setData(payload); setError(""); } }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [eventId, version, includeCancelled]);
   return { data, error };
 }
 
 function Fourballs({ event, version, onRefresh, companyId = "" }: { companyId?: string; event: EventRecord; version: number; onRefresh: () => void }) {
-  const [localVersion, setLocalVersion] = useState(0); const loaded = useFourballs(event.id, version + localVersion); const [companies, setCompanies] = useState<EventCompany[]>([]); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  const [localVersion, setLocalVersion] = useState(0); const loaded = useFourballs(event.id, version + localVersion, Boolean(companyId)); const [companies, setCompanies] = useState<EventCompany[]>([]); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   const [types, setTypes] = useState<FourballType[]>([]); const [selectedTypeId, setSelectedTypeId] = useState(""); const [quantity, setQuantity] = useState(1); const [bookingAmount, setBookingAmount] = useState(0);
   const [companyFilter, setCompanyFilter] = useState(companyId);
   const [query, setQuery] = useState("");
@@ -383,7 +411,7 @@ function Fourballs({ event, version, onRefresh, companyId = "" }: { companyId?: 
   return <>
     <SectionHeader eyebrow="Teams, packages and player lists" title="Fourballs" copy="Find a team, check its progress and edit its details in one place." actions={<button className="secondary-button" aria-expanded={showSetup} aria-controls="fourball-setup" onClick={() => setShowSetup(!showSetup)}>{showSetup ? "Close booking setup" : "Packages & new bookings"}</button>} />
     <ErrorBanner message={error || loaded.error} />
-    {!companyId ? <label className="company-filter"><span>Company</span><select value={companyFilter} onChange={(change) => { if (dirtyForms.length && !window.confirm("Discard unsaved changes to this fourball?")) return; setDirtyForms([]); setSelectedId(""); setPlayerPosition(1); setCompanyFilter(change.target.value); }}><option value="">All companies</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label> : null}
+    {!companyId ? <label className="company-filter"><span>Company</span><select value={companyFilter} onChange={(change) => { if (dirtyForms.length && !window.confirm("Discard unsaved changes to this fourball?")) return; setDirtyForms([]); setSelectedId(""); setPlayerPosition(1); setCompanyFilter(change.target.value); }}><option value="">All companies</option>{companies.filter((company) => company.relationshipStatus !== "cancelled").map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label> : null}
     <div id="fourball-setup" hidden={!showSetup}>
     <div className="inventory-grid">
       {types.map((type) => <form className="inventory-card" key={type.id} onSubmit={(event) => saveType(event, type)}>
