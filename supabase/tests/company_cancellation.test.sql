@@ -22,7 +22,14 @@ begin
   insert into public.m2m_hole_sponsorship_slots(id,event_id,hole_id,label) values(hole_slot,e1,h,'Primary');
   perform public.m2m_allocate_sponsorship_unit(e1,sponsor_unit,hole_slot,null);
 
-  update public.m2m_event_companies set relationship_status='cancelled' where id=ec1;
+  -- A company remains active until its last booking is cancelled.
+  update public.m2m_fourballs set booking_status='cancelled' where id=team;
+  if (select relationship_status from public.m2m_event_companies where id=ec1) <> 'confirmed' then raise exception 'Active sponsorship incorrectly cancelled the company'; end if;
+  update public.m2m_fourballs set booking_status='confirmed' where id=team;
+  update public.m2m_sponsorship_commitments set status='cancelled' where id=commitment;
+  if (select relationship_status from public.m2m_event_companies where id=ec1) <> 'confirmed' then raise exception 'Active fourball incorrectly cancelled the company'; end if;
+  update public.m2m_fourballs set booking_status='cancelled' where id=team;
+  if (select relationship_status from public.m2m_event_companies where id=ec1) <> 'cancelled' then raise exception 'Last cancellation did not update the company'; end if;
   if (select booking_status from public.m2m_fourballs where id=team) <> 'cancelled' then raise exception 'Fourball not cancelled'; end if;
   if (select status from public.m2m_sponsorship_commitments where id=commitment) <> 'cancelled' then raise exception 'Sponsorship not cancelled'; end if;
   if (select fourball_id from public.m2m_tee_slots where id=tee) is not null then raise exception 'Tee not released'; end if;
