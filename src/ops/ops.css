@@ -48,3 +48,32 @@
 @media(max-width:900px){.company-booking-panels{grid-template-columns:1fr}.company-contact-summary{align-items:flex-start;flex-direction:column}}
 @media(max-width:600px){.company-summary-strip>div{padding:14px 10px}.company-summary-strip strong{font-size:22px}.company-overview .company-participation{min-width:0;width:100%}.company-contact-summary h3{font-size:14px}}
 .sponsor-inventory-card .inventory-count-label{font-size:10px;color:var(--muted);letter-spacing:0;text-transform:none}.inventory-edit-button{margin-top:18px;align-self:flex-start}.inventory-quantity-form{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}.inventory-quantity-form label>span{display:block;margin-bottom:8px;font-size:11px;color:var(--muted)}.inventory-quantity-form>p,.sponsor-inventory-card .inventory-feedback{font-size:11px;line-height:1.5}.inventory-quantity-form>div{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+
+/* Course allocations and sponsorship cards */
+.ops-body .hole-number-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ops-body .hole-number-grid button{min-height:118px;padding:14px;overflow-wrap:anywhere}
+.ops-body .hole-number-grid .hole-company-names{font-size:12px;font-weight:600;line-height:1.5}
+.ops-body .hole-guide{border-block:1px solid var(--line);padding:16px 0;margin:18px 0}
+.ops-body .hole-facts{display:flex;flex-wrap:wrap;gap:16px;font-size:12px}
+.ops-body .tee-distances{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}
+.ops-body .tee-distances dt{font-size:10px;color:var(--muted)}
+.ops-body .tee-distances dd{margin:6px 0;font-size:17px;font-weight:700}
+.ops-body .hole-guide summary{cursor:pointer;font-size:12px;font-weight:600;margin-bottom:12px}
+.ops-body .hole-guide details>strong{font-size:11px}
+.ops-body .hole-guide .guide-source{font-size:10px;line-height:1.6;color:var(--muted)}
+.ops-body .placement-options{display:grid;gap:8px;max-height:310px;overflow:auto;margin-top:12px}
+.ops-body .placement-option{display:grid;gap:5px;text-align:left;padding:12px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--navy)}
+.ops-body .placement-option span,.ops-body .placement-option small{font-size:11px}
+.ops-body .placement-option small{color:#087960}
+.ops-body .commitment-list{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.ops-body .commitment-card{min-width:0;background:white;padding:22px}
+.ops-body .commitment-card>header{flex-direction:column}
+.ops-body .sponsorship-placement{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--wash)}
+.ops-body .placement-summary{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ops-body .placement-summary strong{font-size:15px}
+.ops-body .placement-hole-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.ops-body .placement-hole-options button{padding:10px 8px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--navy);display:grid;gap:5px;text-align:left}
+.ops-body .placement-hole-options button[aria-pressed=true]{background:var(--navy);color:white}
+.ops-body .placement-hole-options span{font-size:10px}
+.ops-body .placement-option:hover,.ops-body .placement-hole-options button:hover{border-color:var(--navy)}
+@media(max-width:700px){.ops-body .commitment-list{grid-template-columns:1fr}.ops-body .hole-number-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px}.ops-body .hole-number-grid button{padding:10px;min-height:110px}.ops-body .hole-number-grid .hole-company-names{font-size:10px}}
