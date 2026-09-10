@@ -3,7 +3,7 @@ import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo,
 import readXlsxFile from "read-excel-file/browser";
 import { strFromU8, unzipSync } from "fflate";
 import { AccountGate, SignIn, signOut, useOpsSession } from "../ops/Auth";
-import { dateTime, money, opsApi, toIso, toLocalInput } from "../ops/client";
+import { dateTime, money, OpsApiError, opsApi, toIso, toLocalInput } from "../ops/client";
 import type { EventCompany, EventRecord, FourballRecord, UserRecord } from "../ops/types";
 
 type Tab = "overview" | "setup" | "companies" | "sponsorships" | "fourballs" | "tee" | "hosts" | "players" | "imports" | "exports" | "enquiries";
@@ -256,6 +256,7 @@ function CompanyDetailsForm({ company, busy, onSave }: { company: EventCompany; 
 }
 
 function Companies({ event, version, onRefresh }: { event: EventRecord; version: number; onRefresh: () => void }) {
+  const [addErrors, setAddErrors] = useState<Record<string, string>>({});
   const [data, setData] = useState<CompaniesPayload | null>(null); const [error, setError] = useState(""); const [busy, setBusy] = useState(false); const [localVersion, setLocalVersion] = useState(0);
   const [editor, setEditor] = useState<"details" | "sponsorships" | "fourballs" | null>(null);
   const [openedEditors, setOpenedEditors] = useState({ sponsorships: false, fourballs: false });
@@ -281,7 +282,32 @@ function Companies({ event, version, onRefresh }: { event: EventRecord; version:
   const [teams, setTeams] = useState<FourballRecord[]>([]);
   const selectedCompany = data?.companies.find((company) => company.id === selectedCompanyId);
   useEffect(() => { let active = true; Promise.all([opsApi<CompaniesPayload>(`/api/v1/admin/companies?eventId=${event.id}`), opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}&includeCancelled=true`), opsApi<FourballsPayload>(`/api/v1/admin/fourballs?eventId=${event.id}&includeCancelled=true`)]).then(([payload, sponsorData, teamData]) => { if (active) { setData(payload); setSponsors(sponsorData); setTeams(teamData.fourballs); setError(""); } }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version, localVersion]);
-  async function add(formEvent: FormEvent<HTMLFormElement>) { formEvent.preventDefault(); setBusy(true); setError(""); const formElement = formEvent.currentTarget; const form = new FormData(formElement); try { await jsonMutation("/api/v1/admin/companies", "POST", { eventId: event.id, companyId: form.get("companyId") || undefined, name: form.get("name") || undefined, relationshipStatus: form.get("relationshipStatus"), primaryContactName: form.get("primaryContactName"), primaryContactEmail: form.get("primaryContactEmail"), primaryContactPhone: form.get("primaryContactPhone") }); formElement.reset(); setLocalVersion((v) => v + 1); onRefresh(); } catch (caught) { setError(caught instanceof Error ? caught.message : "Company creation failed."); } finally { setBusy(false); } }
+  async function add(formEvent: FormEvent<HTMLFormElement>) {
+    formEvent.preventDefault(); setError(""); setAddErrors({});
+    const formElement = formEvent.currentTarget;
+    const form = new FormData(formElement);
+    const text = (key: string) => String(form.get(key) || "").trim();
+    function showErrors(fields: Record<string, string>) {
+      setAddErrors(fields);
+      setError(Object.values(fields).join(" "));
+      const field = formElement.elements.namedItem(Object.keys(fields)[0]);
+      if (field instanceof HTMLElement) field.focus();
+    }
+    const fields: Record<string, string> = {};
+    if (!text("companyId") && text("name").length < 2) fields.name = "Enter a company name with at least 2 characters, or choose an existing company.";
+    if (text("primaryContactName") && !text("primaryContactEmail")) fields.primaryContactEmail = "Enter a contact email for the primary contact, or leave both name and email blank.";
+    if (text("primaryContactEmail") && !text("primaryContactName")) fields.primaryContactName = "Enter the primary contact’s name for this email address.";
+    if (Object.keys(fields).length) { showErrors(fields); return; }
+    setBusy(true);
+    try {
+      await jsonMutation("/api/v1/admin/companies", "POST", { eventId: event.id, companyId: text("companyId") || undefined, name: text("name") || undefined, relationshipStatus: form.get("relationshipStatus"), primaryContactName: text("primaryContactName"), primaryContactEmail: text("primaryContactEmail"), primaryContactPhone: text("primaryContactPhone") });
+      formElement.reset(); setLocalVersion((v) => v + 1); onRefresh();
+    } catch (caught) {
+      if (caught instanceof OpsApiError && Object.keys(caught.fieldErrors).length) showErrors(caught.fieldErrors);
+      else setError(caught instanceof Error ? caught.message : "Company creation failed.");
+    } finally { setBusy(false); }
+  }
+
   async function save(formEvent: FormEvent<HTMLFormElement>, company: EventCompany) {
     formEvent.preventDefault(); setBusy(true); setError("");
     const form = new FormData(formEvent.currentTarget);
@@ -336,7 +362,7 @@ function Companies({ event, version, onRefresh }: { event: EventRecord; version:
   return <>
     <SectionHeader eyebrow="Event relationships" title="Companies" copy="Your central company directory. Manage contacts, sponsorship holes and fourballs from each company." />
     <ErrorBanner message={error} />
-    <section className="panel"><details className="action-disclosure"><summary>Add company</summary><form className="form-grid compact" onSubmit={add}><label><span>Use existing company</span><select name="companyId" defaultValue=""><option value="">Create a new company</option>{data?.directory.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label><label><span>New company name</span><input name="name" placeholder="Leave blank when choosing existing" /></label><label><span>Relationship status</span><select name="relationshipStatus" defaultValue="prospect"><option value="prospect">Prospect</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option></select></label><label><span>Primary contact</span><input name="primaryContactName" /></label><label><span>Contact email</span><input type="email" name="primaryContactEmail" /></label><label><span>Contact phone</span><input name="primaryContactPhone" /></label><FormActions busy={busy} label="Add company" /></form></details></section>
+    <section className="panel"><details className="action-disclosure"><summary>Add company</summary><form className="form-grid compact" onSubmit={add}><label><span>Use existing company</span><select name="companyId" aria-invalid={Boolean(addErrors.companyId)} aria-describedby={addErrors.companyId ? "add-company-companyId-error" : undefined} defaultValue=""><option value="">Create a new company</option>{data?.directory.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select>{addErrors.companyId ? <small className="company-field-error" id="add-company-companyId-error">{addErrors.companyId}</small> : null}</label><label><span>New company name</span><input name="name" aria-invalid={Boolean(addErrors.name)} aria-describedby={addErrors.name ? "add-company-name-error" : undefined} placeholder="Leave blank when choosing existing" />{addErrors.name ? <small className="company-field-error" id="add-company-name-error">{addErrors.name}</small> : null}</label><label><span>Relationship status</span><select name="relationshipStatus" aria-invalid={Boolean(addErrors.relationshipStatus)} aria-describedby={addErrors.relationshipStatus ? "add-company-relationshipStatus-error" : undefined} defaultValue="prospect"><option value="prospect">Prospect</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option></select>{addErrors.relationshipStatus ? <small className="company-field-error" id="add-company-relationshipStatus-error">{addErrors.relationshipStatus}</small> : null}</label><label><span>Primary contact</span><input name="primaryContactName" aria-invalid={Boolean(addErrors.primaryContactName)} aria-describedby={addErrors.primaryContactName ? "add-company-primaryContactName-error" : undefined} />{addErrors.primaryContactName ? <small className="company-field-error" id="add-company-primaryContactName-error">{addErrors.primaryContactName}</small> : null}</label><label><span>Contact email</span><input type="email" name="primaryContactEmail" aria-invalid={Boolean(addErrors.primaryContactEmail)} aria-describedby={addErrors.primaryContactEmail ? "add-company-primaryContactEmail-error" : undefined} />{addErrors.primaryContactEmail ? <small className="company-field-error" id="add-company-primaryContactEmail-error">{addErrors.primaryContactEmail}</small> : null}</label><label><span>Contact phone</span><input name="primaryContactPhone" aria-invalid={Boolean(addErrors.primaryContactPhone)} aria-describedby={addErrors.primaryContactPhone ? "add-company-primaryContactPhone-error" : undefined} />{addErrors.primaryContactPhone ? <small className="company-field-error" id="add-company-primaryContactPhone-error">{addErrors.primaryContactPhone}</small> : null}</label><p className="muted-copy span-2">Primary contact is optional. If supplied, enter both a name and an email address.</p><FormActions busy={busy} label="Add company" /></form></details></section>
     <label className="company-filter"><span>Find company</span><input type="search" value={query} onChange={(change) => setQuery(change.target.value)} placeholder="Search company or contact…" /></label>
     {!data ? <Loading /> : data.companies.length === 0 ? <Empty title="No companies in this event" copy="Add a sponsor or fourball company to begin." /> : <div className="data-cards">{data.companies.filter((company) => `${company.name} ${company.primaryContactName} ${company.primaryContactEmail}`.toLowerCase().includes(query.trim().toLowerCase())).map((company) => <article key={company.id} className="data-card company-card"><div><div className="company-card-status"><span>Participation</span><Pill value={company.relationshipStatus} /></div><h3>{company.name}</h3><p>{company.primaryContactName || "No primary contact"}</p><a href={company.primaryContactEmail ? `mailto:${company.primaryContactEmail}` : undefined}>{company.primaryContactEmail || "Email not supplied"}</a><div className="company-booking-summary"><span>{teams.filter((team) => team.eventCompanyId === company.id && team.bookingStatus !== "cancelled" && company.relationshipStatus !== "cancelled").length} fourballs</span><span>{sponsors?.commitments.filter((item) => item.eventCompanyId === company.id && item.status !== "cancelled" && company.relationshipStatus !== "cancelled").reduce((total, item) => total + item.quantity, 0) || 0} sponsorship units</span><span>Holes: {Array.from(new Set(sponsors?.commitments.filter((item) => item.eventCompanyId === company.id && item.status !== "cancelled" && company.relationshipStatus !== "cancelled").flatMap((item) => item.units.flatMap((unit) => { const slot = sponsors.holeSlots.find((position) => position.id === unit.holeSlotId); return slot ? [slot.holeNumber] : []; })) || [])).sort((a, b) => a - b).join(", ") || "Not allocated"}</span></div><button className="secondary-button" onClick={() => openCompany(company.id)}>Edit company →</button></div></article>)}</div>}
   </>;
