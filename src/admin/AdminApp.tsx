@@ -886,6 +886,7 @@ function Exports({ event }: { event: EventRecord }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const confirmations = [
+    ["invoices", "Company invoice tracker", "Fourballs and sponsorships totalled per company, with waived items at R0 and editable invoice tracking columns."],
     ["confirmations", "All confirmations", "One workbook with a summary, companies, fourballs, players, hosts, suppliers and a tab for every sponsorship type."],
     ["confirmed-companies", "Confirmed companies", "Company participation, primary contacts and billing details."],
     ["confirmed-fourballs", "Confirmed fourballs", "Confirmed bookings, hosts, tee allocations, amounts and payment status."],

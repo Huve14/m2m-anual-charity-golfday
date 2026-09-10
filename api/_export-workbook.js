@@ -69,7 +69,7 @@ export async function createExportWorkbook(event, sheets, generatedAt = new Date
     for (const [row, value, height] of [
       [4, report.title, 30],
       [5, `${event.name} · ${event.venue_name || "Venue to be confirmed"} · ${eventDate}`, 30],
-      [6, `${report.note}\nExported ${generated} (${timeZone}).`, 42],
+      [6, `${report.note}\nExported ${generated} (${timeZone}).`, report.noteHeight || 42],
     ]) {
       sheet.mergeCells(row, 1, row, last);
       const cell = sheet.getCell(row, 1);
@@ -88,6 +88,12 @@ export async function createExportWorkbook(event, sheets, generatedAt = new Date
       cell.font = { name: "Arial", size: 10, bold: true, color: { argb: headerText } };
       cell.alignment = { vertical: "middle", wrapText: true };
     });
+    report.columns.forEach((definition, index) => {
+      if (definition.editable) {
+        header.getCell(index + 1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF245B88" } };
+        header.getCell(index + 1).font = { ...header.getCell(index + 1).font, color: { argb: "FFFFFFFF" } };
+      }
+    });
     for (const values of report.rows) {
       const row = sheet.addRow(values.map((value, index) => {
         if (value == null) return null;
@@ -103,8 +109,13 @@ export async function createExportWorkbook(event, sheets, generatedAt = new Date
         cell.alignment = { vertical: "top", wrapText: true, horizontal: ["money", "integer"].includes(definition.format) ? "right" : "left" };
         if (definition.format === "money") cell.numFmt = moneyFormat(definition.name.includes("(ZAR)") ? "ZAR" : currency);
         if (definition.format === "integer") cell.numFmt = "#,##0";
-        if (definition.format === "date") cell.numFmt = "dd mmm yyyy hh:mm";
+        if (definition.format === "date") cell.numFmt = definition.editable ? "dd mmm yyyy" : "dd mmm yyyy hh:mm";
         if (row.number % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F4F8" } };
+        if (definition.editable) {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEAF3FC" } };
+          cell.font = { ...cell.font, color: { argb: "FF245B88" } };
+          if (definition.options) cell.dataValidation = { type: "list", allowBlank: true, formulae: [`"${definition.options.join(",")}"`], showErrorMessage: true, errorTitle: "Choose an invoice status", error: "Select a status from the dropdown.", errorStyle: "stop" };
+        }
         if (typeof values[index] === "string") lines = Math.max(lines, values[index].split("\n").reduce((sum, part) => sum + Math.max(1, Math.ceil(part.length / (definition.width - 3))), 0));
       }
       row.height = Math.min(409, Math.max(28, lines * 14 + 10));
