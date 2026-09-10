@@ -1,22 +1,23 @@
+import { GalaDinner } from "./GalaDinner";
 import { prizeValueRand, supplierPrizeSummary } from "./supplierValues";
 import { PlayerInputs, playerFields } from "../ops/PlayerInputs";
 import { glendowerHoleGuide } from "./holeGuide";
 import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
-import readXlsxFile from "read-excel-file/browser";
+import { readSheet as readXlsxFile } from "read-excel-file/browser";
 import { strFromU8, unzipSync } from "fflate";
 import { AccountGate, SignIn, signOut, useOpsSession } from "../ops/Auth";
 import { currentSession, dateTime, money, OpsApiError, opsApi, toIso, toLocalInput } from "../ops/client";
 import type { EventCompany, EventRecord, FourballRecord, UserRecord } from "../ops/types";
 
-type Tab = "overview" | "setup" | "companies" | "sponsorships" | "suppliers" | "fourballs" | "tee" | "hosts" | "players" | "imports" | "exports" | "enquiries";
+type Tab = "overview" | "setup" | "companies" | "sponsorships" | "suppliers" | "fourballs" | "tee" | "hosts" | "players" | "data" | "gala" | "enquiries";
 
 const tabs: Array<{ id: Tab; label: string; icon: string }> = [
   { id: "overview", label: "Overview", icon: "01" }, { id: "setup", label: "Event setup", icon: "02" },
   { id: "companies", label: "Companies", icon: "03" }, { id: "sponsorships", label: "Sponsorships", icon: "04" },
   { id: "suppliers", label: "Suppliers", icon: "05" }, { id: "fourballs", label: "Fourballs", icon: "06" },
   { id: "tee", label: "Tee sheet", icon: "07" }, { id: "hosts", label: "Hosts", icon: "08" },
-  { id: "players", label: "Players", icon: "09" }, { id: "imports", label: "Imports", icon: "10" },
-  { id: "exports", label: "Exports", icon: "11" }, { id: "enquiries", label: "Website enquiries", icon: "12" },
+  { id: "players", label: "Players", icon: "09" }, { id: "gala", label: "Gala dinner", icon: "10" },
+  { id: "data", label: "Import / Export", icon: "11" }, { id: "enquiries", label: "Website enquiries", icon: "12" },
 ];
 
 const golfFormats = [
@@ -212,8 +213,8 @@ function EventTab({ event, tab, version, onRefresh }: { event: EventRecord; tab:
   if (tab === "tee") return <TeeSheet event={event} version={version} onRefresh={onRefresh} />;
   if (tab === "hosts") return <Hosts event={event} version={version} onRefresh={onRefresh} />;
   if (tab === "players") return <Players event={event} version={version} />;
-  if (tab === "imports") return <ConfirmedImports event={event} onRefresh={onRefresh} />;
-  if (tab === "exports") return <Exports event={event} />;
+  if (tab === "data") return <><SectionHeader eyebrow="Event data" title="Import / Export" copy="Import confirmed bookings and download event, gala dinner and catering workbooks from one place." /><ConfirmedImports event={event} onRefresh={onRefresh} /><Exports event={event} /></>;
+  if (tab === "gala") return <GalaDinner key={event.id} eventId={event.id} exports={<Exports event={event} galaOnly />} />;
   return <Enquiries event={event} version={version} onRefresh={onRefresh} />;
 }
 
@@ -882,7 +883,7 @@ function ConfirmedImports({ event, onRefresh }: { event: EventRecord; onRefresh:
   return <><SectionHeader eyebrow="Existing confirmations" title="Import confirmed companies" copy="Preview your existing XLSX list, consolidate repeated companies and create only missing confirmed bookings and sponsorships." /><ErrorBanner message={error} />{message ? <div className="success-banner" role="status">{message}</div> : null}<section className="panel"><div className="form-grid compact"><label><span>Confirmed-list workbook</span><input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={busy} onChange={(change) => chooseFile(change.target.files?.[0])} /></label><label><span>Fourball type</span><select value={fourballTypeId} onChange={(change) => setFourballTypeId(change.target.value)} required><option value="">Select type</option>{setup?.fourballTypes.map((type) => <option key={type.id} value={type.id}>{type.name} · {money(type.priceMinor, event.currency)}</option>)}</select></label><label><span>Hole sponsorship type</span><select value={sponsorshipTypeId} onChange={(change) => setSponsorshipTypeId(change.target.value)}><option value="">Do not map sponsorships</option>{setup?.sponsorshipTypes.map((type) => <option key={type.id} value={type.id}>{type.name} · {money(type.priceMinor, event.currency)}</option>)}</select></label></div>{setup && setup.fourballTypes.length === 0 ? <p className="warning-copy">Configure at least one active fourball type before importing.</p> : null}{setup && setup.sponsorshipTypes.length === 0 ? <p className="warning-copy">Configure a sponsorship type before mapping confirmed hole sponsors.</p> : null}</section>{preview ? <><div className="metric-grid"><article className="metric-card"><span>Workbook rows</span><strong>{preview.rowCount}</strong></article><article className="metric-card"><span>Consolidated companies</span><strong>{preview.companies.length}</strong></article><article className="metric-card"><span>Confirmed fourballs</span><strong>{totalFourballs}</strong></article><article className="metric-card"><span>Confirmed sponsors</span><strong>{totalSponsors}</strong></article></div>{preview.warnings.length ? <section className="panel"><h3>Review warnings</h3><ul className="warning-list">{preview.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></section> : null}<section className="panel"><h3>Import preview</h3><div className="table-scroll"><table><thead><tr><th>Company</th><th>Primary contact</th><th>Source rows</th><th>Fourballs</th><th>Hole sponsor</th></tr></thead><tbody>{preview.companies.map((company, index) => <tr key={`${company.companyName}-${index}`}><td><input value={company.companyName} onChange={(change) => updateCompany(index, { companyName: change.target.value })} /></td><td><input value={company.contactName} placeholder="Name" onChange={(change) => updateCompany(index, { contactName: change.target.value })} /><input type="email" value={company.contactEmail} placeholder="Email optional" onChange={(change) => updateCompany(index, { contactEmail: change.target.value })} /></td><td>{company.sourceRows.join(", ")}</td><td><input type="number" min="0" max="100" value={company.fourballQuantity} onChange={(change) => updateCompany(index, { fourballQuantity: Number(change.target.value) })} /></td><td><input type="checkbox" checked={company.sponsorshipConfirmed} aria-label={`${company.companyName} sponsorship confirmed`} onChange={(change) => updateCompany(index, { sponsorshipConfirmed: change.target.checked })} /></td></tr>)}</tbody></table></div><div className="form-actions"><button className="primary-button" disabled={busy || !fourballTypeId || preview.companies.length === 0} onClick={commit}>{busy ? "Importing…" : "Import confirmed list"}</button></div></section></> : <Empty title={busy ? "Reading workbook…" : "No workbook selected"} copy="Choose your confirmed-list XLSX file to see every proposed company, fourball and sponsorship before anything is saved." />}{setup?.batches.length ? <section className="panel"><h3>Previous imports</h3><div className="compact-list">{setup.batches.map((batch) => <div key={batch.id}><div><strong>{batch.fileName}</strong><span>{dateTime(batch.createdAt)}</span></div><span>{batch.companyCount} companies · {batch.fourballCount} fourballs · {batch.sponsorshipCount} sponsors</span></div>)}</div></section> : null}</>;
 }
 
-function Exports({ event }: { event: EventRecord }) {
+function Exports({ event, galaOnly = false }: { event: EventRecord; galaOnly?: boolean }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const confirmations = [
@@ -892,6 +893,10 @@ function Exports({ event }: { event: EventRecord }) {
     ["confirmed-fourballs", "Confirmed fourballs", "Confirmed bookings, hosts, tee allocations, amounts and payment status."],
     ["confirmed-sponsors", "Confirmed sponsorships", "Every sponsorship type on its own tab, with contributions and allocations."],
     ["confirmed-suppliers", "Confirmed suppliers", "Supplier contributions, prize values, contacts and locations."],
+  ];
+  const dinner = [
+    ["gala", "Gala dinner and catering", "Confirmed dinner guests, dietary requirements and table totals."],
+    ["attendees", "Complete attendance register", "Golfers and dinner-only guests, with attendance status, parties, tables and dietary requirements, plus confirmed dinner sheets."],
   ];
   const operational = [
     ["players", "Complete player list", "Contact, golf, clothing and special requirements."],
@@ -938,8 +943,9 @@ function Exports({ event }: { event: EventRecord }) {
     <SectionHeader eyebrow="Event handoff" title="Operational exports" copy="Branded Excel workbooks with your M2M logo, event colours, filters and frozen headings." />
     <ErrorBanner message={error} />
     {busy ? <p role="status">Preparing your Excel workbook…</p> : null}
-    <section className="export-section" aria-label="Confirmed records"><h3>Confirmations</h3><p>Confirmed records only. Players and hosts in the combined workbook belong to confirmed fourballs.</p>{cards(confirmations)}</section>
-    <section className="export-section" aria-label="All operational records"><h3>All operational records</h3><p>Includes pending, reserved, draft and cancelled records where applicable.</p>{cards(operational)}</section>
+    <section className="export-section" aria-label="Gala dinner exports"><h3>Gala dinner and attendance</h3>{cards(dinner)}</section>
+    {!galaOnly && <><section className="export-section" aria-label="Confirmed records"><h3>Confirmations</h3><p>Confirmed records only. Players and hosts in the combined workbook belong to confirmed fourballs.</p>{cards(confirmations)}</section>
+    <section className="export-section" aria-label="All operational records"><h3>All operational records</h3><p>Includes pending, reserved, draft and cancelled records where applicable.</p>{cards(operational)}</section></>}
   </>;
 }
 

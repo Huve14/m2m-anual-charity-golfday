@@ -90,3 +90,15 @@ The tests cover the preserved public registration path, compiled admin/host entr
 ## Deployment and rollback
 
 Deploy a Vercel preview first. The daily cron calls `/api/v1/cron-reminders` at 06:00 UTC (08:00 SAST) with `CRON_SECRET`. Keep the prior Vercel deployment and legacy database tables available until all four administrators have accepted their new invitations and the two-event acceptance scenario passes. The old custom login API can then be disabled in a later cleanup release; it remains present in this release for rollback compatibility.
+
+### Gala dinner and attendance
+
+The admin **Import / Export** page combines confirmed-company imports and operational Excel downloads. **Gala dinner** manages dinner-only guests individually within a party, with attendance, contact details, dietary requirements and one table assignment per party. Existing golfers can join a party (including their companions) without being entered twice.
+
+Apply `supabase/migrations/20260910174137_gala_dinner_parties.sql` before deploying this feature. The two new tables are accessible only through the authenticated admin API; the migration enables RLS and revokes direct client access.
+
+Named golfers from non-cancelled fourballs and companies appear automatically with pending dinner attendance. Their dietary information is read from the existing player record, so changes by hosts or administrators carry through. Confirm attendance explicitly to include someone in dinner/catering totals. Blank dietary requirements mean not recorded; enter “None” when confirmed. Party table labels are shared by all members; capacity is not enforced.
+
+**Gala dinner and catering** exports confirmed guests, dietary requirements and table totals. **Complete attendance register** includes those sheets plus every named golfer and dinner-only guest with their pending, confirmed or declined dinner status. Empty player slots and cancelled golf participation are excluded.
+
+Validation: `npm test`, `npx tsc --noEmit`, `npm run lint`. With local Supabase running, execute `supabase test db supabase/tests/gala_dinner.test.sql --local` for database access checks.

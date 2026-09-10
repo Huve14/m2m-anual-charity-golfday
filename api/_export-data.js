@@ -1,6 +1,7 @@
+import { loadGalaData, galaSheets } from "./_gala.js";
 import { fromSupabase } from "./_ops.js";
 
-export const exportTypes = ["players", "fourballs", "sponsors", "suppliers", "hosts", "confirmations", "confirmed-companies", "confirmed-fourballs", "confirmed-sponsors", "confirmed-suppliers", "invoices"];
+export const exportTypes = ["gala", "attendees", "players", "fourballs", "sponsors", "suppliers", "hosts", "confirmations", "confirmed-companies", "confirmed-fourballs", "confirmed-sponsors", "confirmed-suppliers", "invoices"];
 
 const companyJoin = "eventCompany:m2m_event_companies(id,relationship_status,primary_contact_name,primary_contact_email,primary_contact_phone,company:m2m_companies(name,billing_email))";
 const fourballJoin = `fourball:m2m_fourballs(team_name,booking_status,submission_status,${companyJoin})`;
@@ -15,6 +16,7 @@ const sources = {
 
 // Page every source so exports never silently stop at the Data API row limit.
 export async function loadExportData(client, eventId, type) {
+  if (type === "gala" || type === "attendees") return loadGalaData(client, eventId);
   const names = type === "confirmations" ? Object.keys(sources)
     : type === "invoices" ? ["fourballs", "sponsors"]
     : type === "confirmed-sponsors" ? ["sponsors", "sponsorshipTypes"]
@@ -74,6 +76,7 @@ function sponsorsSheet(rows, confirmed, name = "Sponsorships", title = "Sponsors
 }
 
 export function buildExportSheets(data, type) {
+  if (type === "gala" || type === "attendees") return galaSheets(data, type === "attendees");
   if (type === "invoices") return invoiceSheets(data);
   const confirmed = type === "confirmations" || type.startsWith("confirmed-");
   const companies = (data.companies || []).filter((row) => row.relationship_status === "confirmed");
