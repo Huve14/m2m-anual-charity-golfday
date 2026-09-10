@@ -38,7 +38,11 @@ const eventSchema = z.object({
   slotsPerHole: z.number().int().min(1).max(4).default(2),
 });
 
-const patchSchema = eventSchema.partial().omit({ holeCount: true, slotsPerHole: true }).extend({
+// Creation defaults must never run for omitted PATCH fields (Zod 4 applies
+// defaults inside optional fields). A logo-only update must stay logo-only.
+const patchSchema = z.object(Object.fromEntries(Object.entries(eventSchema.shape).map(([key, field]) => [
+  key, (field instanceof z.ZodDefault ? field.removeDefault() : field).optional(),
+]))).omit({ holeCount: true, slotsPerHole: true }).extend({
   id: z.string().uuid(),
   action: z.enum(["update", "activate", "archive", "complete", "restoreDraft"]).default("update"),
   logoPath: z.string().trim().max(500).nullable().optional(),
