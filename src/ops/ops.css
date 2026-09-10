@@ -122,3 +122,15 @@
 .player-field-option { border-top: 1px solid var(--line, #d9e1ec); }
 .player-field-option input[type="checkbox"] { width: 18px; height: 18px; min-height: 0; justify-self: center; }
 .player-field-heading span:not(:first-child) { text-align: center; }
+
+/* Supplier contributions are a separate register from hole sponsorships. */
+.suppliers-page>[hidden]{display:none}
+.supplier-entry-fields{border:0;padding:0;margin:0;min-width:0;display:grid;gap:16px}
+.supplier-register-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.supplier-register-heading h3{margin-bottom:6px}
+.supplier-contribution{margin:20px 0;padding:16px;background:var(--wash);border-radius:8px;overflow-wrap:anywhere}
+.supplier-contribution>span{font-size:11px;color:var(--muted)}
+.ops-body .supplier-contribution>p{font-size:16px;color:var(--navy);line-height:1.6;white-space:pre-wrap}
+.supplier-record .supplier-notes{white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:16px}
+.supplier-record>.action-disclosure{margin-top:12px}
+.supplier-record summary{overflow-wrap:anywhere}
