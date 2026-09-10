@@ -109,3 +109,7 @@
 @media(max-width:600px){.ops-body .fourball-page .fourball-toolbar{grid-template-columns:1fr}.ops-body .fourball-page>.section-header{gap:12px}.ops-body .fourball-page .fourball-view-switch{margin-bottom:12px}}
 .ops-body .company-field-error{display:block;margin-top:7px;color:#a5283b;font-size:12px;line-height:1.5}
 .ops-body [aria-invalid=true]{border-color:#b72b42;background:#fff7f8;outline-color:#b72b42}
+
+.company-quick-booking{display:flex;flex-wrap:wrap;align-items:end;gap:12px;padding:16px 0}.company-quick-booking label{flex:1 1 220px;min-width:0}.company-quick-booking label>span{display:block;font-size:11px;color:var(--muted);margin-bottom:8px}.company-quick-booking select{width:100%;min-width:0}.company-quick-booking p{flex-basis:100%;font-size:11px;line-height:1.5;color:var(--muted);margin:0}.company-booking-actions{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}.company-booking-actions button{font-size:12px}.company-booking-actions .status-pill{margin:0}#company-fourballs-editor,#company-sponsorships-editor{scroll-margin-top:24px}
+
+.company-sponsorship-category{border:0;padding:8px 0 0;margin:0;display:flex;flex-wrap:wrap;gap:12px}.company-sponsorship-category legend{font-size:12px;font-weight:700;margin-bottom:10px}.company-sponsorship-category label{display:flex;align-items:center;gap:7px;font-size:12px}.company-sponsorship-category input{width:auto;min-height:0;margin:0;accent-color:var(--navy)}

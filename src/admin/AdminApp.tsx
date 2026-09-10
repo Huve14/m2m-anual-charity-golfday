@@ -255,7 +255,23 @@ function CompanyDetailsForm({ company, busy, onSave }: { company: EventCompany; 
   return <section className="panel" id="company-details"><h3>Company & contact details</h3><form className="form-grid company-details-form" onSubmit={(submitEvent) => onSave(submitEvent, company)}><label><span>Company name</span><input name="name" defaultValue={company.name} required /></label><div className="two-fields"><label><span>Registration number</span><input name="registrationNumber" defaultValue={company.registrationNumber} /></label><label><span>Company phone</span><input name="phone" defaultValue={company.phone} /></label></div><label><span>Website</span><input name="website" defaultValue={company.website} /></label><label><span>Billing email</span><input type="email" name="billingEmail" defaultValue={company.billingEmail} /></label><label><span>Primary contact</span><input name="primaryContactName" defaultValue={company.primaryContactName} /></label><label><span>Contact email</span><input type="email" name="primaryContactEmail" defaultValue={company.primaryContactEmail} /></label><label><span>Contact phone</span><input name="primaryContactPhone" defaultValue={company.primaryContactPhone} /></label><label className="span-2"><span>Notes</span><textarea name="notes" defaultValue={company.notes} /></label><div className="form-actions span-2"><button className="primary-button" disabled={busy}>{busy ? "Saving…" : "Save company details"}</button></div></form></section>;
 }
 
+function QuickBookingForm({ label, options, currency, disabled, onAdd, emptyMessage = "No packages available" }: { emptyMessage?: string; label: string; options: Array<{ id: string; name: string; priceMinor: number; available: number }>; currency: string; disabled: boolean; onAdd: (typeId: string) => Promise<void> }) {
+  const [choice, setChoice] = useState("");
+  const selected = options.find((option) => option.id === choice) || options[0];
+  return <form className="company-quick-booking" onSubmit={(event) => { event.preventDefault(); if (selected && !disabled) void onAdd(selected.id); }}>
+    <label><span>{label} package</span><select aria-label={`${label} package`} value={selected?.id || ""} disabled={disabled || !selected} onChange={(event) => setChoice(event.target.value)}>
+      {!selected ? <option value="">{emptyMessage}</option> : options.map((option) => <option key={option.id} value={option.id}>{option.name} · {money(option.priceMinor, currency)} · {option.available} available</option>)}
+    </select></label>
+    <button className="primary-button" disabled={disabled || !selected}>+ Add {label.toLowerCase()}</button>
+    <p>One booking · package price · confirmed · unpaid. Details can be completed afterwards.</p>
+  </form>;
+}
+
 function Companies({ event, version, onRefresh }: { event: EventRecord; version: number; onRefresh: () => void }) {
+  const [sponsorshipCategory, setSponsorshipCategory] = useState("");
+  const [quickTeamId, setQuickTeamId] = useState("");
+  const [fourballDirty, setFourballDirty] = useState(false);
+  const [fourballTypes, setFourballTypes] = useState<FourballType[]>([]);
   const [addErrors, setAddErrors] = useState<Record<string, string>>({});
   const [data, setData] = useState<CompaniesPayload | null>(null); const [error, setError] = useState(""); const [busy, setBusy] = useState(false); const [localVersion, setLocalVersion] = useState(0);
   const [editor, setEditor] = useState<"details" | "sponsorships" | "fourballs" | null>(null);
@@ -270,7 +286,7 @@ function Companies({ event, version, onRefresh }: { event: EventRecord; version:
   function openCompany(id: string) {
     const url = new URL(window.location.href);
     if (id) url.searchParams.set("company", id); else url.searchParams.delete("company");
-    window.history.pushState({}, "", url); setSelectedCompanyId(id); setMessage(""); setEditor(null); setOpenedEditors({ sponsorships: false, fourballs: false });
+    window.history.pushState({}, "", url); setSelectedCompanyId(id); setSponsorshipCategory(""); setQuickTeamId(""); setFourballDirty(false); setMessage(""); setEditor(null); setOpenedEditors({ sponsorships: false, fourballs: false });
     window.scrollTo({ top: 0 });
   }
   useEffect(() => {
@@ -281,7 +297,7 @@ function Companies({ event, version, onRefresh }: { event: EventRecord; version:
   const [sponsors, setSponsors] = useState<SponsorPayload | null>(null);
   const [teams, setTeams] = useState<FourballRecord[]>([]);
   const selectedCompany = data?.companies.find((company) => company.id === selectedCompanyId);
-  useEffect(() => { let active = true; Promise.all([opsApi<CompaniesPayload>(`/api/v1/admin/companies?eventId=${event.id}`), opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}&includeCancelled=true`), opsApi<FourballsPayload>(`/api/v1/admin/fourballs?eventId=${event.id}&includeCancelled=true`)]).then(([payload, sponsorData, teamData]) => { if (active) { setData(payload); setSponsors(sponsorData); setTeams(teamData.fourballs); setError(""); } }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version, localVersion]);
+  useEffect(() => { let active = true; Promise.all([opsApi<CompaniesPayload>(`/api/v1/admin/companies?eventId=${event.id}`), opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}&includeCancelled=true`), opsApi<FourballsPayload>(`/api/v1/admin/fourballs?eventId=${event.id}&includeCancelled=true`), opsApi<{ types: FourballType[] }>(`/api/v1/admin/fourball-types?eventId=${event.id}`)]).then(([payload, sponsorData, teamData, typeData]) => { if (active) { setFourballTypes(typeData.types); setData(payload); setSponsors(sponsorData); setTeams(teamData.fourballs); setError(""); } }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version, localVersion]);
   async function add(formEvent: FormEvent<HTMLFormElement>) {
     formEvent.preventDefault(); setError(""); setAddErrors({});
     const formElement = formEvent.currentTarget;
@@ -333,6 +349,50 @@ function Companies({ event, version, onRefresh }: { event: EventRecord; version:
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Participation could not be saved."); }
     finally { setBusy(false); }
   }
+  function revealBooking(kind: "fourballs" | "sponsorships", teamId = "") {
+    if (kind === "fourballs" && teamId !== quickTeamId && fourballDirty && !window.confirm("Discard unsaved player or team changes?")) return;
+    if (kind === "fourballs") { setQuickTeamId(teamId); setFourballDirty(false); }
+    setOpenedEditors((current) => ({ ...current, [kind]: true })); setEditor(kind);
+    requestAnimationFrame(() => document.getElementById(`company-${kind}-editor`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+  async function quickAdd(kind: "fourballs" | "sponsorships", typeId: string) {
+    if (busy || !selectedCompany || selectedCompany.relationshipStatus === "cancelled") return;
+    if (kind === "fourballs" && fourballDirty && !window.confirm("Discard unsaved player or team changes and add a fourball?")) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      if (kind === "fourballs") {
+        const type = fourballTypes.find((item) => item.id === typeId);
+        if (!type) throw new Error("Choose an available fourball package.");
+        const result = await jsonMutation<FourballsPayload>("/api/v1/admin/fourballs", "POST", { eventId: event.id, eventCompanyId: selectedCompany.id, fourballTypeId: type.id, quantity: 1, teamNamePrefix: `${selectedCompany.name.slice(0, 125)} – ${teams.filter((team) => team.eventCompanyId === selectedCompany.id).length + 1}`, bookingStatus: "confirmed", confirmedAmountMinor: type.priceMinor, paymentStatus: "unpaid" });
+        setTeams((current) => [...current, ...result.fourballs]);
+        setQuickTeamId(result.fourballs[0]?.id || ""); setFourballDirty(false);
+      } else {
+        const type = sponsors?.types.find((item) => item.id === typeId);
+        if (!type) throw new Error("Choose an available sponsorship package.");
+        await jsonMutation("/api/v1/admin/sponsorships", "POST", { action: "createCommitment", eventId: event.id, eventCompanyId: selectedCompany.id, sponsorshipTypeId: type.id, quantity: 1, status: "confirmed", confirmedAmountMinor: type.priceMinor, paymentStatus: "unpaid" });
+      }
+      setOpenedEditors((current) => ({ ...current, [kind]: true })); setEditor(kind);
+      setMessage(kind === "fourballs" ? "Fourball added. Enter the four players below." : "Sponsorship added. Complete its details below.");
+      setLocalVersion((value) => value + 1); onRefresh();
+      requestAnimationFrame(() => document.getElementById(`company-${kind}-editor`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "The booking could not be added."); }
+    finally { setBusy(false); }
+  }
+  async function removeBooking(kind: "fourballs" | "sponsorships", id: string) {
+    if (busy || !selectedCompany || selectedCompany.relationshipStatus === "cancelled") return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      if (kind === "fourballs") {
+        await jsonMutation("/api/v1/admin/fourballs", "PATCH", { action: "update", eventId: event.id, id, bookingStatus: "cancelled" });
+        setTeams((current) => current.map((team) => team.id === id ? { ...team, bookingStatus: "cancelled", teeSlot: null } : team));
+      } else {
+        await jsonMutation("/api/v1/admin/sponsorships", "POST", { action: "updateCommitment", eventId: event.id, id, status: "cancelled" });
+        setSponsors((current) => current ? { ...current, commitments: current.commitments.map((item) => item.id === id ? { ...item, status: "cancelled" } : item) } : current);
+      }
+      setMessage("Booking removed. Its history has been retained."); setLocalVersion((value) => value + 1); onRefresh();
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "The booking could not be removed."); }
+    finally { setBusy(false); }
+  }
   if (selectedCompanyId && !data) return <><ErrorBanner message={error} /><Loading /></>;
   if (selectedCompany) {
     const companyTeams = teams.filter((team) => team.eventCompanyId === selectedCompany.id);
@@ -344,18 +404,25 @@ function Companies({ event, version, onRefresh }: { event: EventRecord; version:
     return <div className="company-workspace company-overview">
       <button className="text-button" disabled={busy} onClick={() => openCompany("")}>← All companies</button>
       <SectionHeader eyebrow="Company overview" title={selectedCompany.name} actions={<label className="company-participation"><span>Company participation · saves immediately</span><select aria-label="Company participation" value={selectedCompany.relationshipStatus} disabled={busy} onChange={(change) => saveParticipation(selectedCompany, change.target.value)}><option value="prospect">Prospect</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label>} />
-      <ErrorBanner message={error} />{message ? <p className="success-banner" role="status">{message}</p> : null}{busy ? <p role="status" className="muted-copy">Saving company…</p> : null}
-      {cancelled ? <p className="company-cancelled-banner">Participation cancelled. Bookings are inactive and course positions are released. History is retained below.</p> : null}
+      <ErrorBanner message={error} />{message ? <p className="success-banner" role="status">{message}</p> : null}{busy ? <p role="status" className="muted-copy">Saving…</p> : null}
+      {cancelled ? <p className="company-cancelled-banner">Participation cancelled. Bookings are inactive and course positions are released. History is retained below. <button className="secondary-button" disabled={busy} onClick={() => saveParticipation(selectedCompany, "confirmed")}>Resume bookings</button></p> : null}
       <div className="company-summary-strip"><div><span>Active fourballs</span><strong>{activeTeams.length}</strong></div><div><span>Sponsorship units</span><strong>{activeSponsors.reduce((total, item) => total + item.quantity, 0)}</strong></div><div><span>Allocated holes</span><strong>{allocatedHoles.join(", ") || "—"}</strong></div></div>
       <section className="panel company-contact-summary"><div><span className="eyebrow">Primary contact</span><h3>{selectedCompany.primaryContactName || "No contact supplied"}</h3><p>{selectedCompany.primaryContactEmail || "No email"}{selectedCompany.primaryContactPhone ? ` · ${selectedCompany.primaryContactPhone}` : ""}</p></div><button className="secondary-button" aria-expanded={editor === "details"} aria-controls="company-details-editor" onClick={() => toggleEditor("details")}>{editor === "details" ? "Close details" : "Edit contact & billing"}</button></section>
       <div className="company-booking-panels">
-        <section className="panel"><header><h3>Fourballs</h3><button className="text-button" disabled={cancelled} aria-expanded={editor === "fourballs"} onClick={() => toggleEditor("fourballs")}>{editor === "fourballs" ? "Close editor" : "Edit fourballs"}</button></header>{companyTeams.length ? companyTeams.map((team) => <div className="company-booking-row" key={team.id}><div><strong>{team.teamName}</strong><span>{team.players.filter((player) => player.fullName.trim()).length}/4 players named · {money(team.confirmedAmountMinor, event.currency)}</span><span>{cancelled || team.bookingStatus === "cancelled" ? "Booking cancelled" : team.teeSlot?.label || "Start not assigned"}</span></div><Pill value={cancelled ? "cancelled" : team.bookingStatus} /></div>) : <p className="muted-copy">No fourballs booked.</p>}</section>
-        <section className="panel"><header><h3>Sponsorships</h3><button className="text-button" disabled={cancelled} aria-expanded={editor === "sponsorships"} onClick={() => toggleEditor("sponsorships")}>{editor === "sponsorships" ? "Close editor" : "Edit sponsorships"}</button></header>{companySponsors.length ? companySponsors.map((item) => <div className="company-booking-row" key={item.id}><div><strong>{item.typeName}</strong><span>{item.quantity} unit{item.quantity === 1 ? "" : "s"} · {money(item.confirmedAmountMinor, event.currency)}</span><span>{cancelled || item.status === "cancelled" ? "Booking cancelled" : item.requiresHole ? item.units.map((unit) => sponsors?.holeSlots.find((slot) => slot.id === unit.holeSlotId)?.displayLabel || "Hole not assigned").join(" · ") : "No hole required"}</span></div><Pill value={cancelled ? "cancelled" : item.status} /></div>) : <p className="muted-copy">No sponsorships booked.</p>}</section>
+        <section className="panel"><header><h3>Fourballs</h3>{activeTeams.length ? <button className="text-button" disabled={busy} aria-expanded={editor === "fourballs"} onClick={() => toggleEditor("fourballs")}>{editor === "fourballs" ? "Close players" : "Enter players"}</button> : null}</header>
+          {!cancelled ? <QuickBookingForm label="Fourball" currency={event.currency} disabled={busy} options={fourballTypes.filter((type) => type.isActive && type.booked < type.capacity).map((type) => ({ ...type, available: type.capacity - type.booked }))} onAdd={(typeId) => quickAdd("fourballs", typeId)} /> : null}
+          {activeTeams.length ? activeTeams.map((team) => <div className="company-booking-row" key={team.id}><div><strong>{team.teamName}</strong><span>{team.players.filter((player) => player.fullName.trim()).length}/4 players named · {money(team.confirmedAmountMinor, event.currency)}</span><span>{team.teeSlot?.label || "Start not assigned"}</span></div><div className="company-booking-actions"><Pill value={team.bookingStatus} /><button className="text-button" disabled={busy} onClick={() => revealBooking("fourballs", team.id)}>Enter players</button><button className="danger-link" disabled={busy} aria-label={`Remove fourball ${team.teamName}`} onClick={() => removeBooking("fourballs", team.id)}>Remove</button></div></div>) : <p className="muted-copy">No fourballs booked. Add one above to enter players.</p>}
+        </section>
+        <section className="panel"><header><h3>Sponsorships</h3>{activeSponsors.length ? <button className="text-button" disabled={busy} aria-expanded={editor === "sponsorships"} onClick={() => toggleEditor("sponsorships")}>{editor === "sponsorships" ? "Close details" : "Sponsorship details"}</button> : null}</header>
+          {!cancelled ? <><fieldset className="company-sponsorship-category"><legend>Sponsorship category</legend>{[["alcoholic_hole", "Alc (Alcoholic)"], ["non_alcoholic_hole", "Non Alc (Non-alcoholic)"], ...((sponsors?.types || []).some((type) => type.isActive && !["alcoholic_hole", "non_alcoholic_hole"].includes(type.category)) ? [["other", "Branded / other"]] : [])].map(([value, label]) => <label key={value}><input type="radio" name="company-sponsorship-category" value={value} checked={sponsorshipCategory === value} disabled={busy} onChange={() => setSponsorshipCategory(value)} />{label}</label>)}</fieldset><QuickBookingForm key={sponsorshipCategory} label="Sponsorship" currency={event.currency} disabled={busy || !sponsorshipCategory} emptyMessage={sponsorshipCategory ? "No packages available in this category" : "Choose Alc or Non Alc first"} options={(sponsors?.types || []).filter((type) => type.isActive && (sponsorshipCategory === "other" ? !["alcoholic_hole", "non_alcoholic_hole"].includes(type.category) : type.category === sponsorshipCategory)).map((type) => ({ ...type, available: type.capacity - (sponsors?.commitments || []).filter((item) => item.sponsorshipTypeId === type.id && ["reserved", "confirmed"].includes(item.status)).reduce((total, item) => total + item.quantity, 0) })).filter((type) => type.available > 0)} onAdd={(typeId) => quickAdd("sponsorships", typeId)} /></> : null}
+          {activeSponsors.length ? activeSponsors.map((item) => <div className="company-booking-row" key={item.id}><div><strong>{item.typeName}</strong><span>{sponsorshipCategoryLabel(sponsors?.types.find((type) => type.id === item.sponsorshipTypeId)?.category)}</span><span>{item.quantity} unit{item.quantity === 1 ? "" : "s"} · {money(item.confirmedAmountMinor, event.currency)}</span><span>{item.requiresHole ? item.units.map((unit) => sponsors?.holeSlots.find((slot) => slot.id === unit.holeSlotId)?.displayLabel || "Hole not assigned").join(" · ") : "No hole required"}</span></div><div className="company-booking-actions"><Pill value={item.status} /><button className="danger-link" disabled={busy} aria-label={`Remove sponsorship ${item.typeName}`} onClick={() => removeBooking("sponsorships", item.id)}>Remove</button></div></div>) : <p className="muted-copy">No sponsorships booked. Add one above to enter details.</p>}
+        </section>
       </div>
+      {companyTeams.some((team) => team.bookingStatus === "cancelled") || companySponsors.some((item) => item.status === "cancelled") ? <details className="panel"><summary>Removed bookings</summary>{companyTeams.filter((team) => team.bookingStatus === "cancelled").map((team) => <p key={team.id}>{team.teamName} · Fourball · Cancelled</p>)}{companySponsors.filter((item) => item.status === "cancelled").map((item) => <p key={item.id}>{item.typeName} · {item.quantity} sponsorship unit{item.quantity === 1 ? "" : "s"} · Cancelled</p>)}</details> : null}
       <div id="company-details-editor" hidden={editor !== "details"}><CompanyDetailsForm key={selectedCompany.id} company={selectedCompany} busy={busy} onSave={save} /></div>
       {!cancelled ? <>
-        <div hidden={editor !== "sponsorships"}>{openedEditors.sponsorships ? <Sponsorships companyId={selectedCompany.id} event={event} version={version + localVersion} onRefresh={onRefresh} /> : null}</div>
-        <div hidden={editor !== "fourballs"}>{openedEditors.fourballs ? <Fourballs companyId={selectedCompany.id} event={event} version={version + localVersion} onRefresh={onRefresh} /> : null}</div>
+        <div id="company-sponsorships-editor" hidden={editor !== "sponsorships"}>{openedEditors.sponsorships && activeSponsors.length ? <Sponsorships companyId={selectedCompany.id} event={event} version={version + localVersion} onRefresh={onRefresh} /> : null}</div>
+        <div id="company-fourballs-editor" hidden={editor !== "fourballs"}>{openedEditors.fourballs && activeTeams.length ? <Fourballs key={`${selectedCompany.id}-${quickTeamId}`} initialTeamId={quickTeamId} onDirtyChange={setFourballDirty} companyId={selectedCompany.id} event={event} version={version + localVersion} onRefresh={onRefresh} /> : null}</div>
       </> : <details className="panel"><summary>View player history</summary>{companyTeams.map((team) => <div className="company-history-team" key={team.id}><h4>{team.teamName}</h4>{team.players.map((player) => <p key={player.id}>Player {player.position}: {player.fullName || "Not supplied"}{player.email ? ` · ${player.email}` : ""}</p>)}</div>)}</details>}
     </div>;
   }
@@ -368,8 +435,12 @@ function Companies({ event, version, onRefresh }: { event: EventRecord; version:
   </>;
 }
 
+function sponsorshipCategoryLabel(category?: string) {
+  return category === "alcoholic_hole" ? "Alc" : category === "non_alcoholic_hole" ? "Non Alc" : category === "branded_hole" ? "Branded hole" : "Other sponsorship";
+}
+
 interface SponsorshipType { id: string; name: string; category: string; capacity: number; priceMinor: number; requiresHole: boolean; isActive: boolean }
-interface SponsorshipCommitment { requiresHole: boolean; id: string; eventCompanyId: string; companyName: string; sponsorshipTypeId: string; typeName: string; status: string; quantity: number; confirmedAmountMinor: number; invoiceReference: string; paymentStatus: string; notes: string; units: Array<{ id: string; unitNumber: number; holeSlotId: string | null }> }
+interface SponsorshipCommitment { category?: string; requiresHole: boolean; id: string; eventCompanyId: string; companyName: string; sponsorshipTypeId: string; typeName: string; status: string; quantity: number; confirmedAmountMinor: number; invoiceReference: string; paymentStatus: string; notes: string; units: Array<{ id: string; unitNumber: number; holeSlotId: string | null }> }
 interface SponsorPayload { ok: true; holes: Array<{ id: string; number: number; label: string }>; types: SponsorshipType[]; commitments: SponsorshipCommitment[]; holeSlots: Array<{ id: string; holeId: string; holeNumber: number; label: string; displayLabel: string; unitId: string | null; sponsorshipTypeId: string | null }>; companies: Array<{ id: string; name: string }> }
 function HoleAllocationBoard({ data, venueName, companyId, busy, onAllocate, onCreateSlot }: { data: SponsorPayload; venueName: string; companyId: string; busy: boolean; onAllocate: (unitId: string, slotId: string) => Promise<void>; onCreateSlot: (holeId: string, label: string) => Promise<boolean> }) {
   const [selectedNumber, setSelectedNumber] = useState(1);
@@ -437,7 +508,7 @@ function Sponsorships({ event, version, onRefresh, companyId = "" }: { companyId
   const [companyFilter, setCompanyFilter] = useState(companyId);
   const [showInventory, setShowInventory] = useState(false);
   const [message, setMessage] = useState("");
-  const commitments = (data?.commitments || []).filter((item) => !companyFilter || item.eventCompanyId === companyFilter);
+  const commitments = (data?.commitments || []).filter((item) => (!companyFilter || item.eventCompanyId === companyFilter) && (!companyId || item.status !== "cancelled"));
   useEffect(() => { let active = true; opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}${companyId ? "&includeCancelled=true" : ""}`).then((payload) => { if (active) setData(payload); }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version, localVersion, companyId]);
   async function action(body: Record<string, unknown>) { setBusy(true); setError(""); setMessage(""); try { await jsonMutation("/api/v1/admin/sponsorships", "POST", { eventId: event.id, ...body }); setLocalVersion((v) => v + 1); onRefresh(); setMessage("Sponsorship changes saved."); return true; } catch (caught) { setError(caught instanceof Error ? caught.message : "Sponsorship update failed."); return false; } finally { setBusy(false); } }
   async function addType(formEvent: FormEvent<HTMLFormElement>) { formEvent.preventDefault(); const formElement = formEvent.currentTarget; const form = new FormData(formElement); const saved = await action({ action: "createType", name: form.get("name"), category: form.get("category"), capacity: Number(form.get("capacity")), priceMinor: Math.round(Number(form.get("price")) * 100), requiresHole: form.get("requiresHole") === "on", isActive: true }); if (saved) formElement.reset(); }
@@ -446,11 +517,11 @@ function Sponsorships({ event, version, onRefresh, companyId = "" }: { companyId
   async function allocate(unitId: string, holeSlotId: string) { await action({ action: holeSlotId ? "allocate" : "unallocate", unitId, ...(holeSlotId ? { holeSlotId } : {}) }); }
   const usedByType = useMemo(() => new Map((data?.types || []).map((type) => [type.id, (data?.commitments || []).filter((c) => c.sponsorshipTypeId === type.id && ["reserved", "confirmed"].includes(c.status)).reduce((sum, c) => sum + c.quantity, 0)])), [data]);
   return <>
-    <SectionHeader eyebrow="Sponsor operations" title="Sponsorships & holes" copy="Choose a hole, then place a confirmed company sponsorship. Changes are shared with Companies." actions={<button className="secondary-button" aria-expanded={showInventory} onClick={() => setShowInventory(!showInventory)}>{showInventory ? "Hide packages" : "Packages & bookings"}</button>} />
+    <SectionHeader eyebrow="Sponsor operations" title="Sponsorships & holes" copy="Choose a hole, then place a confirmed company sponsorship. Changes are shared with Companies." actions={!companyId ? <button className="secondary-button" aria-expanded={showInventory} onClick={() => setShowInventory(!showInventory)}>{showInventory ? "Hide packages" : "Packages & bookings"}</button> : null} />
     <ErrorBanner message={error} />
     {message ? <p className="success-banner" role="status">{message}</p> : null}
     {!companyId ? <label className="company-filter"><span>Company</span><select value={companyFilter} onChange={(change) => setCompanyFilter(change.target.value)}><option value="">All companies</option>{data?.companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label> : null}
-    {data ? <HoleAllocationBoard venueName={event.venueName} data={data} companyId={companyFilter} busy={busy} onAllocate={allocate} onCreateSlot={(holeId, label) => action({ action: "createHoleSlot", holeId, label })} /> : <Loading />}
+    {!companyId ? data ? <HoleAllocationBoard venueName={event.venueName} data={data} companyId={companyFilter} busy={busy} onAllocate={allocate} onCreateSlot={(holeId, label) => action({ action: "createHoleSlot", holeId, label })} /> : <Loading /> : null}
     <div hidden={!showInventory} className="sponsor-setup">
     {data ? <div className="inventory-grid">{data.types.map((type) => <SponsorshipInventoryCard key={type.id} type={type} used={usedByType.get(type.id) || 0} currency={event.currency} busy={busy} onSave={(capacity) => action({ action: "updateType", id: type.id, capacity })} />)}</div> : <Loading />}
     <div className="split-panels">
@@ -458,7 +529,7 @@ function Sponsorships({ event, version, onRefresh, companyId = "" }: { companyId
       <section className="panel"><details className="action-disclosure"><summary>Confirm sponsorship</summary><form className="stack-form" onSubmit={addCommitment}><label><span>Company</span><select name="eventCompanyId" defaultValue={companyId} required><option value="">Select company</option>{data?.companies.filter((c) => !companyId || c.id === companyId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label><span>Inventory type</span><select name="sponsorshipTypeId" required><option value="">Select type</option>{data?.types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></label><div className="two-fields"><label><span>Status</span><select name="status" defaultValue="confirmed"><option value="draft">Draft</option><option value="reserved">Reserved</option><option value="confirmed">Confirmed</option></select></label><label><span>Quantity</span><input type="number" name="quantity" min="1" defaultValue="1" required /></label></div><label><span>Confirmed amount ({event.currency})</span><input type="number" name="amount" min="0" step="0.01" required /></label><label><span>Payment</span><select name="paymentStatus"><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option><option value="waived">Waived</option></select></label><label><span>Invoice reference</span><input name="invoiceReference" /></label><FormActions busy={busy} label="Add sponsorship" /></form></details></section>
     </div>
     </div>
-    <section className="panel"><h3>Company sponsorships</h3>{data && commitments.length ? <div className="commitment-list">{commitments.map((item) => <article className="commitment-card" key={item.id}><header><div><h4>{item.companyName}</h4><p>{item.typeName} · {item.quantity} unit{item.quantity === 1 ? "" : "s"}</p></div><div className="pill-row"><Pill value={item.status} /><Pill value={item.paymentStatus} /></div></header><div className="unit-list">{item.requiresHole ? item.units.map((unit) => <SponsorshipPlacementCard key={unit.id} unit={unit} item={item} data={data} busy={busy} onAllocate={allocate} />) : <p className="muted-copy">This sponsorship does not require a hole.</p>}</div><details className="action-disclosure"><summary>Edit quantity, price and payment</summary><form className="form-grid compact" onSubmit={(submitEvent) => saveCommitment(submitEvent, item)}><label><span>Status</span><select name="status" defaultValue={item.status}><option value="draft">Draft</option><option value="reserved">Reserved</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label><label><span>Quantity</span><input type="number" name="quantity" min="1" max="99" defaultValue={item.quantity} required /></label><label><span>Confirmed amount ({event.currency})</span><input type="number" name="amount" min="0" step="0.01" defaultValue={item.confirmedAmountMinor / 100} required /></label><label><span>Payment status</span><select name="paymentStatus" defaultValue={item.paymentStatus}><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option><option value="waived">Waived</option></select></label><label><span>Invoice reference</span><input name="invoiceReference" defaultValue={item.invoiceReference} /></label><label className="span-2"><span>Notes</span><textarea name="notes" defaultValue={item.notes} /></label><FormActions busy={busy} label="Save sponsorship" /></form></details></article>)}</div> : <Empty title="No sponsorship commitments" copy="Add a company and confirm its first sponsorship." />}</section>
+    <section className="panel"><h3>Company sponsorships</h3>{data && commitments.length ? <div className="commitment-list">{commitments.map((item) => <article className="commitment-card" key={item.id}><header><div><h4>{item.companyName}</h4><p>{sponsorshipCategoryLabel(item.category || data.types.find((type) => type.id === item.sponsorshipTypeId)?.category)} · {item.typeName} · {item.quantity} unit{item.quantity === 1 ? "" : "s"}</p></div><div className="pill-row"><Pill value={item.status} /><Pill value={item.paymentStatus} /></div></header><div className="unit-list">{item.requiresHole ? item.units.map((unit) => <SponsorshipPlacementCard key={unit.id} unit={unit} item={item} data={data} busy={busy} onAllocate={allocate} />) : <p className="muted-copy">This sponsorship does not require a hole.</p>}</div><details className="action-disclosure"><summary>Edit quantity, price and payment</summary><form className="form-grid compact" onSubmit={(submitEvent) => saveCommitment(submitEvent, item)}><label><span>Status</span><select name="status" defaultValue={item.status}><option value="draft">Draft</option><option value="reserved">Reserved</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label><label><span>Quantity</span><input type="number" name="quantity" min="1" max="99" defaultValue={item.quantity} required /></label><label><span>Confirmed amount ({event.currency})</span><input type="number" name="amount" min="0" step="0.01" defaultValue={item.confirmedAmountMinor / 100} required /></label><label><span>Payment status</span><select name="paymentStatus" defaultValue={item.paymentStatus}><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option><option value="waived">Waived</option></select></label><label><span>Invoice reference</span><input name="invoiceReference" defaultValue={item.invoiceReference} /></label><label className="span-2"><span>Notes</span><textarea name="notes" defaultValue={item.notes} /></label><FormActions busy={busy} label="Save sponsorship" /></form></details></article>)}</div> : <Empty title="No sponsorship commitments" copy="Add a company and confirm its first sponsorship." />}</section>
   </>;
 }
 
@@ -470,19 +541,20 @@ function useFourballs(eventId: string, version: number, includeCancelled = false
   return { data, error };
 }
 
-function Fourballs({ event, version, onRefresh, companyId = "" }: { companyId?: string; event: EventRecord; version: number; onRefresh: () => void }) {
-  const [localVersion, setLocalVersion] = useState(0); const loaded = useFourballs(event.id, version + localVersion, Boolean(companyId)); const [companies, setCompanies] = useState<EventCompany[]>([]); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+function Fourballs({ event, version, onRefresh, companyId = "", initialTeamId = "", onDirtyChange }: { initialTeamId?: string; onDirtyChange?: (dirty: boolean) => void; companyId?: string; event: EventRecord; version: number; onRefresh: () => void }) {
+  const [localVersion, setLocalVersion] = useState(0); const loaded = useFourballs(event.id, version + localVersion); const [companies, setCompanies] = useState<EventCompany[]>([]); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   const [types, setTypes] = useState<FourballType[]>([]); const [selectedTypeId, setSelectedTypeId] = useState(""); const [quantity, setQuantity] = useState(1); const [bookingAmount, setBookingAmount] = useState(0);
   const [companyFilter, setCompanyFilter] = useState(companyId);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const [selectedId, setSelectedId] = useState("");
+  const [selectedId, setSelectedId] = useState(initialTeamId);
   const [playerPosition, setPlayerPosition] = useState(1);
   const [pageView, setPageView] = useState("teams");
   const [editorView, setEditorView] = useState("players");
   const [showTeamList, setShowTeamList] = useState(false);
   const [dirtyForms, setDirtyForms] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
+  useEffect(() => { onDirtyChange?.(dirtyForms.length > 0); }, [dirtyForms.length, onDirtyChange]);
   const fourballs = (loaded.data?.fourballs || []).filter((team) => !companyFilter || team.eventCompanyId === companyFilter);
   const visibleFourballs = fourballs.filter((team) => {
     const matches = `${team.teamName} ${team.companyName} ${team.hosts.map((host) => `${host.fullName} ${host.email}`).join(" ")} ${team.players.map((player) => player.fullName).join(" ")}`.toLowerCase().includes(query.trim().toLowerCase());
@@ -502,8 +574,8 @@ function Fourballs({ event, version, onRefresh, companyId = "" }: { companyId?: 
   async function saveType(formEvent: FormEvent<HTMLFormElement>, type: FourballType) { formEvent.preventDefault(); setBusy(true); setError(""); const form = new FormData(formEvent.currentTarget); try { await jsonMutation("/api/v1/admin/fourball-types", "PATCH", { id: type.id, eventId: event.id, name: form.get("name"), capacity: Number(form.get("capacity")), priceMinor: Math.round(Number(form.get("price")) * 100), isActive: form.get("isActive") === "on" }); changed(); } catch (caught) { setError(caught instanceof Error ? caught.message : "Fourball type update failed."); } finally { setBusy(false); } }
   async function savePlayer(formEvent: FormEvent<HTMLFormElement>, fourballId: string, playerId: string) { formEvent.preventDefault(); const form = new FormData(formEvent.currentTarget); await action({ action: "savePlayer", id: playerId, fourballId, fullName: form.get("fullName"), email: form.get("email"), phone: form.get("phone"), handicap: form.get("handicap"), shirtSize: form.get("shirtSize"), dietaryRequirements: form.get("dietaryRequirements"), specialRequirements: form.get("specialRequirements"), homeClub: form.get("homeClub"), golfId: form.get("golfId") }, playerId); }
   return <div className="fourball-page">
-    <SectionHeader eyebrow="Team management" title="Fourballs" copy="Choose a team and enter its players." actions={<button className="primary-button" aria-pressed={pageView === "new"} onClick={() => setPageView(pageView === "new" ? "teams" : "new")}>{pageView === "new" ? "Back to teams" : "+ Add fourballs"}</button>} />
-    <div className="fourball-view-switch" aria-label="Fourball workspace views">{[["teams", "Teams & players"], ["new", "New booking"], ["packages", "Manage packages"]].map(([value, label]) => <button key={value} aria-pressed={pageView === value} onClick={() => setPageView(value)}>{label}</button>)}</div>
+    <SectionHeader eyebrow="Team management" title="Fourballs" copy="Choose a team and enter its players." actions={!companyId ? <button className="primary-button" aria-pressed={pageView === "new"} onClick={() => setPageView(pageView === "new" ? "teams" : "new")}>{pageView === "new" ? "Back to teams" : "+ Add fourballs"}</button> : null} />
+    {!companyId ? <div className="fourball-view-switch" aria-label="Fourball workspace views">{[["teams", "Teams & players"], ["new", "New booking"], ["packages", "Manage packages"]].map(([value, label]) => <button key={value} aria-pressed={pageView === value} onClick={() => setPageView(value)}>{label}</button>)}</div> : null}
     <ErrorBanner message={error || loaded.error} />
 
     <div className="fourball-view-panel" hidden={pageView !== "packages"}>
