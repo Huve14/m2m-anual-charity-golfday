@@ -133,3 +133,27 @@ test('venue positions save a named event location without inventing a numbered h
   assert.equal(res.statusCode, 200);
   assert.deepEqual(position, { event_id: supplierEvent, location_name: 'Putting green', label: 'Prize display' });
 });
+
+test('supplier prize value is saved atomically in cents and rejects invalid amounts before writing', async (t) => {
+  const writes = [];
+  t.mock.method(globalThis, 'fetch', async (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input);
+    let body;
+    if (url.pathname === '/auth/v1/user') body = { id: supplierCompany };
+    else if (url.pathname.endsWith('/m2m_profiles')) body = { id: supplierCompany, role: 'admin', is_active: true };
+    else if (url.pathname.endsWith('/rpc/m2m_create_valued_supplier_sponsorship')) { writes.push(JSON.parse(init.body)); body = 'valued-booking'; }
+    else if (url.pathname.endsWith('/m2m_audit_events')) body = [];
+    else throw new Error(`Unexpected endpoint: ${url.pathname}`);
+    return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+  });
+  const request = { method: 'POST', headers: { authorization: 'Bearer sample-token', 'content-type': 'application/json' }, body: { action: 'createSupplier', eventId: supplierEvent, eventCompanyId: supplierCompany, contribution: 'Two fourballs', prizeValueMinor: 500050 } };
+  const saved = response(); await handler(request, saved);
+  assert.equal(saved.statusCode, 200);
+  assert.equal(writes[0].p_prize_value_minor, 500050);
+  assert.equal(writes[0].p_slot_id, null);
+  for (const invalid of [-1, 1.5, 2147483648]) {
+    const rejected = response(); await handler({ ...request, body: { ...request.body, prizeValueMinor: invalid } }, rejected);
+    assert.equal(rejected.statusCode, 400);
+  }
+  assert.equal(writes.length, 1);
+});

@@ -1,3 +1,4 @@
+import { prizeValueRand, supplierPrizeSummary } from "./supplierValues";
 import { PlayerInputs, playerFields } from "../ops/PlayerInputs";
 import { glendowerHoleGuide } from "./holeGuide";
 import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
@@ -445,7 +446,7 @@ function sponsorshipCategoryLabel(category?: string) {
 }
 
 interface SponsorshipType { id: string; name: string; category: string; capacity: number; priceMinor: number; requiresHole: boolean; isActive: boolean }
-interface SponsorshipCommitment { contribution: string; category?: string; requiresHole: boolean; id: string; eventCompanyId: string; companyName: string; sponsorshipTypeId: string; typeName: string; status: string; quantity: number; confirmedAmountMinor: number; invoiceReference: string; paymentStatus: string; notes: string; units: Array<{ id: string; unitNumber: number; holeSlotId: string | null }> }
+interface SponsorshipCommitment { prizeValueMinor: number | null; contribution: string; category?: string; requiresHole: boolean; id: string; eventCompanyId: string; companyName: string; sponsorshipTypeId: string; typeName: string; status: string; quantity: number; confirmedAmountMinor: number; invoiceReference: string; paymentStatus: string; notes: string; units: Array<{ id: string; unitNumber: number; holeSlotId: string | null }> }
 interface SponsorPayload { ok: true; holes: Array<{ id: string; number: number; label: string }>; types: SponsorshipType[]; commitments: SponsorshipCommitment[]; holeSlots: Array<{ id: string; holeId: string | null; holeNumber: number | null; locationName: string; label: string; displayLabel: string; unitId: string | null; sponsorshipTypeId: string | null }>; companies: Array<{ id: string; name: string }> }
 function HoleAllocationBoard({ data, venueName, companyId, busy, onAllocate, onCreateSlot }: { data: SponsorPayload; venueName: string; companyId: string; busy: boolean; onAllocate: (unitId: string, slotId: string) => Promise<void>; onCreateSlot: (holeId: string, label: string) => Promise<boolean> }) {
   const [selectedNumber, setSelectedNumber] = useState(1);
@@ -507,15 +508,17 @@ function Suppliers({ event, version, onRefresh }: { event: EventRecord; version:
   }
   async function saveContribution(formEvent: FormEvent<HTMLFormElement>, item: SponsorshipCommitment) {
     formEvent.preventDefault(); const form = new FormData(formEvent.currentTarget);
-    await action({ action: "updateCommitment", id: item.id, contribution: form.get("contribution"), notes: form.get("notes"), status: form.get("status") });
+    await action({ action: "updateCommitment", id: item.id, contribution: form.get("contribution"), prizeValueMinor: Math.round(Number(form.get("prizeValue")) * 100), notes: form.get("notes"), status: form.get("status") });
   }
   const suppliers = (data?.commitments || []).filter((item) => (item.category || data?.types.find((type) => type.id === item.sponsorshipTypeId)?.category) === "supplier");
+  const prizeSummary = supplierPrizeSummary(suppliers);
   const visible = suppliers.filter((item) => (showCancelled || item.status !== "cancelled") && `${item.companyName} ${item.contribution} ${item.notes} ${item.units.map((unit) => data?.holeSlots.find((slot) => slot.id === unit.holeSlotId)?.displayLabel || "").join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()));
   return <div className="suppliers-page">
     <SectionHeader eyebrow="Contributions register" title="Suppliers" copy="Keep track of what is being sponsored and who is providing it." actions={<button className="primary-button" disabled={!data || busy} aria-expanded={showAdd} aria-controls="supplier-add" onClick={() => setShowAdd(!showAdd)}>{showAdd ? "Close form" : "+ Add supplier / sponsor"}</button>} />
     <ErrorBanner message={error} />
     {message ? <p className="success-banner" role="status">{message}</p> : null}
     {data ? <>
+      <section className="supplier-prize-total" aria-label="Total prize value" aria-live="polite"><span>Total prize value</span><strong>{prizeValueRand(prizeSummary.totalMinor)}</strong><p>All active supplier contributions. Cancelled contributions are excluded.</p>{prizeSummary.unvalued > 0 ? <p>{prizeSummary.unvalued} contribution{prizeSummary.unvalued === 1 ? " still needs" : "s still need"} a value.</p> : null}</section>
       <div id="supplier-add" hidden={!showAdd}>
         <SupplierEntryForm eventId={event.id} data={data} busy={busy} onSave={action} onCompanyAdded={(company) => { setData((current) => current ? { ...current, companies: [...current.companies.filter((item) => item.id !== company.id), company] } : current); onRefresh(); }} />
       </div>
@@ -525,10 +528,12 @@ function Suppliers({ event, version, onRefresh }: { event: EventRecord; version:
         {visible.length ? <div className="commitment-list">{visible.map((item) => <article className="commitment-card supplier-record" key={item.id}>
           <header><div><p className="eyebrow">Supplier / sponsor</p><h4>{item.companyName}</h4></div><Pill value={item.status} /></header>
           <div className="supplier-contribution"><span>What they are sponsoring</span><p>{item.contribution || "Contribution details not yet supplied"}</p></div>
+          <p className="supplier-prize-value"><strong>Prize value:</strong> {item.prizeValueMinor == null ? "Not entered" : prizeValueRand(item.prizeValueMinor)}</p>
           {item.notes ? <p className="supplier-notes"><strong>Notes:</strong> {item.notes}</p> : null}
           {item.status !== "cancelled" ? <details className="action-disclosure"><summary>Location · {item.units.map((unit) => data.holeSlots.find((slot) => slot.id === unit.holeSlotId)?.displayLabel || "Not assigned").join("; ")}</summary><p className="muted-copy">Optional. Choose a hole or a venue position, or leave this contribution without a location.</p>{item.units.map((unit) => <SponsorshipPlacementCard key={unit.id} unit={unit} item={item} data={data} busy={busy} onAllocate={allocate} />)}</details> : null}
           <details className="action-disclosure"><summary>Edit contribution</summary><form className="stack-form" onSubmit={(formEvent) => saveContribution(formEvent, item)}>
             <label><span>What are they sponsoring?</span><textarea name="contribution" required maxLength={2000} defaultValue={item.contribution} /></label>
+            <label><span>Prize value (R)</span><input name="prizeValue" type="number" min="0" max="21474836.47" step="0.01" required defaultValue={item.prizeValueMinor == null ? "" : item.prizeValueMinor / 100} placeholder="e.g. 5000.00" /></label>
             <label><span>Status</span><select name="status" defaultValue={item.status}><option value="draft">Draft</option><option value="reserved">Reserved</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label>
             <label><span>Notes</span><textarea name="notes" maxLength={5000} defaultValue={item.notes} /></label>
             <FormActions busy={busy} label="Save contribution" />
@@ -556,7 +561,7 @@ function SupplierEntryForm({ eventId, data, busy, onSave, onCompanyAdded }: { ev
         // Retain the new company after a failed contribution save so retrying cannot duplicate it.
         selectedId = company.id; setCompanyId(company.id); setCreatedCompany(company); onCompanyAdded(company);
       }
-      if (await onSave({ action: "createSupplier", eventCompanyId: selectedId, contribution: form.get("contribution"), holeSlotId: form.get("holeSlotId") || null })) {
+      if (await onSave({ action: "createSupplier", eventCompanyId: selectedId, contribution: form.get("contribution"), prizeValueMinor: Math.round(Number(form.get("prizeValue")) * 100), holeSlotId: form.get("holeSlotId") || null })) {
         element.reset(); setCompanyId(""); setCreatedCompany(null);
       }
     } catch (caught) { setError(caught instanceof Error ? caught.message : "The supplier could not be added."); }
@@ -571,6 +576,7 @@ function SupplierEntryForm({ eventId, data, busy, onSave, onCompanyAdded }: { ev
         <label><span>Contact phone (optional)</span><input name="primaryContactPhone" type="tel" maxLength={40} /></label><p className="muted-copy">If adding a contact, enter both their name and email.</p>
       </> : null}
       <label><span>What are they sponsoring?</span><textarea name="contribution" required maxLength={2000} placeholder="e.g. 200 bottled waters, competition prizes or catering" /></label>
+      <label><span>Prize value (R)</span><input name="prizeValue" type="number" min="0" max="21474836.47" step="0.01" required placeholder="e.g. 5000.00" /></label><p className="muted-copy">Enter the total Rand value of this contribution, including all items or prizes supplied.</p>
       <label><span>Location (optional)</span><select name="holeSlotId" defaultValue=""><option value="">No location / decide later</option>{data.holeSlots.filter((slot) => !slot.unitId && (!slot.sponsorshipTypeId || data.types.some((type) => type.id === slot.sponsorshipTypeId && type.name === "Supplier sponsorship" && type.category === "supplier"))).map((slot) => <option key={slot.id} value={slot.id}>{slot.displayLabel}</option>)}</select></label>
       <p className="muted-copy">Add venue positions such as the putting green in Locations below. Contributions are saved as confirmed with no cash payment due.</p>
       <FormActions busy={busy || creating} label="Save supplier / sponsor" />
