@@ -7,7 +7,7 @@ const attendance = z.enum(['pending', 'confirmed', 'declined']);
 const guest = z.object({ id: z.string().uuid().optional(), fullName: z.string().trim().max(160).default(''), email: z.union([z.string().email(), z.literal('')]).default(''), phone: z.string().trim().max(40).default(''), dietaryRequirements: z.string().trim().max(1000).default(''), attendance: attendance.default('confirmed') });
 const schema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('cancelAttendance'), eventId: z.string().uuid(), partyId: z.string().uuid(), guestId: z.string().uuid().optional() }),
-  z.object({ action: z.literal('saveParty'), eventId: z.string().uuid(), id: z.string().uuid().optional(), name: z.string().trim().min(1).max(160), tableName: z.string().trim().max(80).default(''), quantity: z.number().int().min(0).max(100).optional(), guests: z.array(guest).max(100).default([]) }),
+  z.object({ action: z.literal('saveParty'), eventId: z.string().uuid(), id: z.string().uuid().optional(), name: z.string().trim().min(1).max(160), tableName: z.string().trim().max(80).default(''), category: z.enum(['invited_guest', 'staff']).optional(), quantity: z.number().int().min(0).max(100).optional(), guests: z.array(guest).max(100).default([]) }),
   z.object({ action: z.literal('savePlayer'), eventId: z.string().uuid(), id: z.string().uuid(), partyId: z.string().uuid().nullable(), attendance }),
 ]);
 
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       const quantity = input.quantity ?? input.guests.length;
       if (quantity < input.guests.length) throw apiFailure('invalid_quantity', 'Quantity cannot be less than the guest records supplied.', 400);
       const guests = Array.from({ length: quantity }, (_, index) => input.guests[index] || { fullName: '', email: '', phone: '', dietaryRequirements: '', attendance: 'confirmed' });
-      const row = { event_id: input.eventId, name: input.name, table_name: input.tableName, guests: guests.map(g => ({ ...g, id: g.id || randomUUID() })) };
+      const row = { ...(input.category ? { category: input.category } : {}), event_id: input.eventId, name: input.name, table_name: input.tableName, guests: guests.map(g => ({ ...g, id: g.id || randomUUID() })) };
       result = input.id
         ? await client.from('m2m_gala_parties').update(row).eq('id', input.id).eq('event_id', input.eventId).select('id').maybeSingle()
         : await client.from('m2m_gala_parties').insert(row).select('id').single();

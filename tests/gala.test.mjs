@@ -73,3 +73,15 @@ test('cancelled golfers and guests disappear from dinner, catering and table tot
   assert.equal(sheets[2].rows.length, 0);
   assert.equal(sheets[3].rows.length, 2);
 });
+
+test('categories distinguish staff and invited guests without changing golfer classification or totals', () => {
+  const classified = { ...data, parties: [{ ...party, category: 'staff' }, { ...party, id: 'invited', guests: [{ ...party.guests[0], id: 'invite' }] }] };
+  const rows = galaAttendees(classified);
+  assert.equal(rows.find(p => p.id === 'john').category, 'fourball');
+  assert.equal(rows.find(p => p.id === 'wife').category, 'staff');
+  assert.equal(rows.find(p => p.id === 'invite').category, 'invited_guest');
+  const sheet = galaSheets(classified)[0];
+  assert.equal(sheet.columns.at(-1).name, 'Category');
+  assert.deepEqual(sheet.rows.map(r => r.at(-1)).sort(), ['Fourball', 'Invited guest', 'Staff']);
+  assert.equal(sheet.rows.length, 3);
+});

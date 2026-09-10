@@ -81,3 +81,13 @@ test('family and individual guest cancellation use an event-scoped atomic operat
   }
   assert.deepEqual(calls.map(c => c.body), [{ p_event_id: eventId, p_party_id: id, p_guest_id: null }, { p_event_id: eventId, p_party_id: id, p_guest_id: id }]);
 });
+
+test('party categories persist and reject manually classifying dinner guests as fourballs', async t => {
+  const calls = mock(t);
+  for (const category of ['staff', 'invited_guest', 'fourball']) {
+    const res = response();
+    await handler({ method: 'POST', headers, body: { action: 'saveParty', eventId, name: 'Team', quantity: 2, category } }, res);
+    assert.equal(res.statusCode, category === 'fourball' ? 400 : 200);
+  }
+  assert.deepEqual(calls.map(c => c.body.category), ['staff', 'invited_guest']);
+});
