@@ -77,3 +77,33 @@
 .ops-body .placement-hole-options span{font-size:10px}
 .ops-body .placement-option:hover,.ops-body .placement-hole-options button:hover{border-color:var(--navy)}
 @media(max-width:700px){.ops-body .commitment-list{grid-template-columns:1fr}.ops-body .hole-number-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px}.ops-body .hole-number-grid button{padding:10px;min-height:110px}.ops-body .hole-number-grid .hole-company-names{font-size:10px}}
+
+/* Fourball entry: separate everyday player entry from booking setup. */
+.ops-body .fourball-view-panel[hidden],.ops-body .fourball-editor-panel[hidden]{display:none}
+.ops-body .fourball-view-switch,.ops-body .fourball-editor-switch{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;padding-bottom:8px;flex-wrap:wrap}
+.ops-body .fourball-view-switch button,.ops-body .fourball-editor-switch button{border:0;border-radius:7px;background:transparent;padding:11px 15px;color:var(--muted);font:inherit;font-size:12px;cursor:pointer}
+.ops-body .fourball-view-switch button[aria-pressed=true],.ops-body .fourball-editor-switch button[aria-pressed=true]{background:var(--navy);color:white}
+.ops-body .fourball-editor-switch{margin:20px 0 0;padding-bottom:0;border:0}
+.ops-body .fourball-editor-switch span{margin-left:8px;font-size:10px;opacity:.8}
+.ops-body .fourball-new-booking{max-width:860px}
+.ops-body .fourball-new-booking>.form-grid{margin-top:22px}
+.ops-body .fourball-new-booking .two-fields{grid-column:1/-1}
+.ops-body .fourball-workspace{grid-template-columns:minmax(230px,.55fr) minmax(0,1.45fr)}
+.ops-body .fourball-row{padding:12px 14px}
+.ops-body .fourball-row-meta{margin-top:8px;gap:7px}
+.ops-body .fourball-row-host{margin-top:4px}
+.ops-body .fourball-player-section .fourball-player-tabs{margin:16px 0 12px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.ops-body .fourball-detail .player-editor-grid{margin-top:0}
+.ops-body .fourball-detail .player-editor{padding:16px;background:#fafbfd}
+.ops-body .fourball-detail .player-editor>button{position:sticky;bottom:12px;background:var(--navy);color:white;box-shadow:0 4px 14px #10244720}
+.ops-body .fourball-detail .fourball-card header small{display:block;margin-top:7px;font-size:10px;color:var(--muted)}
+.ops-body .mobile-team-toggle{display:none}
+.ops-body .fourball-view-switch button:focus-visible,.ops-body .fourball-editor-switch button:focus-visible{outline:3px solid #527dbd;outline-offset:2px}
+@media(max-width:1000px){.ops-body .fourball-workspace{grid-template-columns:minmax(200px,.6fr) minmax(0,1fr)}}
+@media(max-width:850px){.ops-body .fourball-workspace{grid-template-columns:1fr}.ops-body .mobile-team-toggle{display:block;width:100%;margin-bottom:12px}.ops-body .fourball-workspace:not(.show-team-list) .fourball-browser{display:none}.ops-body .fourball-workspace.show-team-list .fourball-detail{display:none}.ops-body .fourball-results{max-height:55vh}.ops-body .fourball-toolbar{padding:12px;gap:12px;margin-bottom:12px}.ops-body .fourball-filters button{padding:8px 10px}.ops-body .fourball-detail .fourball-card{padding:16px}.ops-body .fourball-editor-heading{margin-bottom:12px}.ops-body .fourball-view-switch button{padding:10px;font-size:11px}}
+.ops-body .fourball-page>.section-header{margin-bottom:18px}
+.ops-body .fourball-page .fourball-toolbar{display:grid;grid-template-columns:minmax(170px,.6fr) minmax(220px,1fr);gap:12px;padding:14px;align-items:end}
+.ops-body .fourball-page .fourball-toolbar .company-filter{margin:0;max-width:none}
+.ops-body .fourball-page .fourball-toolbar .fourball-search{max-width:none}
+.ops-body .fourball-page .fourball-filters{grid-column:1/-1}
+@media(max-width:600px){.ops-body .fourball-page .fourball-toolbar{grid-template-columns:1fr}.ops-body .fourball-page>.section-header{gap:12px}.ops-body .fourball-page .fourball-view-switch{margin-bottom:12px}}
