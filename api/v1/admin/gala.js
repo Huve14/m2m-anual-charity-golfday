@@ -4,9 +4,9 @@ import { adminClient, apiFailure, fromSupabase, parseJsonBody, recordAudit, requ
 import { galaAttendees, loadGalaData } from '../../_gala.js';
 
 const attendance = z.enum(['pending', 'confirmed', 'declined']);
-const guest = z.object({ id: z.string().uuid().optional(), fullName: z.string().trim().min(1).max(160), email: z.union([z.string().email(), z.literal('')]).default(''), phone: z.string().trim().max(40).default(''), dietaryRequirements: z.string().trim().max(1000).default(''), attendance });
+const guest = z.object({ id: z.string().uuid().optional(), fullName: z.string().trim().max(160).default(''), email: z.union([z.string().email(), z.literal('')]).default(''), phone: z.string().trim().max(40).default(''), dietaryRequirements: z.string().trim().max(1000).default(''), attendance: attendance.default('confirmed') });
 const schema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('saveParty'), eventId: z.string().uuid(), id: z.string().uuid().optional(), name: z.string().trim().min(1).max(160), tableName: z.string().trim().max(80), guests: z.array(guest).max(100) }),
+  z.object({ action: z.literal('saveParty'), eventId: z.string().uuid(), id: z.string().uuid().optional(), name: z.string().trim().min(1).max(160), tableName: z.string().trim().max(80).default(''), quantity: z.number().int().min(0).max(100).optional(), guests: z.array(guest).max(100).default([]) }),
   z.object({ action: z.literal('savePlayer'), eventId: z.string().uuid(), id: z.string().uuid(), partyId: z.string().uuid().nullable(), attendance }),
 ]);
 
@@ -23,13 +23,16 @@ export default async function handler(req, res) {
     const input = validate(schema, parseJsonBody(req));
     let result;
     if (input.action === 'saveParty') {
-      const row = { event_id: input.eventId, name: input.name, table_name: input.tableName, guests: input.guests.map(g => ({ ...g, id: g.id || randomUUID() })) };
+      const quantity = input.quantity ?? input.guests.length;
+      if (quantity < input.guests.length) throw apiFailure('invalid_quantity', 'Quantity cannot be less than the guest records supplied.', 400);
+      const guests = Array.from({ length: quantity }, (_, index) => input.guests[index] || { fullName: '', email: '', phone: '', dietaryRequirements: '', attendance: 'confirmed' });
+      const row = { event_id: input.eventId, name: input.name, table_name: input.tableName, guests: guests.map(g => ({ ...g, id: g.id || randomUUID() })) };
       result = input.id
         ? await client.from('m2m_gala_parties').update(row).eq('id', input.id).eq('event_id', input.eventId).select('id').maybeSingle()
         : await client.from('m2m_gala_parties').insert(row).select('id').single();
     } else {
       // Composite foreign keys prevent linking a player or party from another event.
-      result = await client.from('m2m_gala_players').upsert({ id: input.id, event_id: input.eventId, party_id: input.partyId, attendance: input.attendance }).select('id').single();
+      result = await client.from('m2m_gala_players').upsert({ id: input.id, event_id: input.eventId, party_id: input.partyId, attendance: 'confirmed' }).select('id').single();
     }
     if (result.error) throw fromSupabase(result.error, 'gala_save_failed', 'The dinner details could not be saved. Check the player and party belong to this event.');
     if (!result.data) throw apiFailure('not_found', 'This dinner party no longer exists.', 404);

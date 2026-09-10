@@ -15,17 +15,17 @@ test('golfers and dinner companions share a party/table with live player dietary
   assert.equal(rows.find(p => p.id === 'john').dietaryRequirements, 'Vegetarian');
   assert.equal(galaAttendees({ ...data, players: [{ ...golfer, dietary_requirements: 'Vegan' }] }).find(p => p.id === 'john').dietaryRequirements, 'Vegan');
 });
-test('unnamed slots, cancelled bookings and cancelled companies do not become attendees', () => {
+test('unnamed slots are confirmed while cancelled bookings and companies are excluded', () => {
   const players = [golfer, { ...golfer, id: 'blank', full_name: ' ' }, { ...golfer, id: 'cancel', fourball: { ...golfer.fourball, booking_status: 'cancelled' } }, { ...golfer, id: 'company', fourball: { ...golfer.fourball, eventCompany: { relationship_status: 'cancelled' } } }];
-  assert.deepEqual(galaAttendees({ players }).map(p => p.id), ['john']);
-  assert.equal(galaAttendees({ players })[0].attendance, 'pending');
+  assert.deepEqual(galaAttendees({ players }).map(p => p.id).sort(), ['blank', 'john']);
+  assert.equal(galaAttendees({ players })[0].attendance, 'confirmed');
 });
 test('confirmed dinner and catering totals exclude pending and declined; holistic register retains them', () => {
-  const mixed = { ...data, settings: [], parties: [{ ...party, guests: [...party.guests, { ...party.guests[0], id: 'declined', fullName: 'Not coming', attendance: 'declined' }] }] };
+  const mixed = { ...data, parties: [{ ...party, guests: [...party.guests, { ...party.guests[0], id: 'declined', fullName: 'Not coming', attendance: 'declined' }] }] };
   const sheets = galaSheets(mixed, true);
-  assert.equal(sheets[0].rows.length, 1);
-  assert.equal(sheets[1].rows.length, 1);
-  assert.deepEqual(sheets[2].rows, [['Table 4', 1]]);
+  assert.equal(sheets[0].rows.length, 2);
+  assert.equal(sheets[1].rows.length, 2);
+  assert.deepEqual(sheets[2].rows, [['Table 4', 2]]);
   assert.equal(sheets[3].rows.length, 3);
   assert.equal(galaSheets(mixed).length, 3);
   assert.ok(exportTypes.includes('gala') && exportTypes.includes('attendees'));
@@ -44,4 +44,22 @@ test('gala loading paginates every source and scopes each query by event', async
   assert.equal(result.players.length, 501);
   assert.equal(result.parties.length, 501);
   assert.equal(calls.length, 6);
+});
+
+test('all fourball places are confirmed even with previous pending or declined settings', () => {
+  const players = Array.from({ length: 4 }, (_, i) => ({ ...golfer, id: `player-${i}`, position: i + 1, full_name: i === 0 ? 'John' : '' }));
+  const rows = galaAttendees({ players, settings: [{ id: 'player-0', attendance: 'pending' }, { id: 'player-1', attendance: 'declined' }] });
+  assert.equal(rows.length, 4);
+  assert.ok(rows.every(p => p.attendance === 'confirmed'));
+  assert.equal(rows.filter(p => p.fullName.includes('details pending')).length, 3);
+});
+test('adding names to reserved party seats preserves counts and shared table assignments', () => {
+  const guests = Array.from({ length: 5 }, (_, i) => ({ id: `guest-${i}`, fullName: '', email: '', phone: '', dietaryRequirements: '', attendance: 'confirmed' }));
+  const before = { parties: [{ ...party, guests }] };
+  const after = { parties: [{ ...party, guests: guests.map((g, i) => i === 0 ? { ...g, fullName: 'Jane', dietaryRequirements: 'Vegan' } : g) }] };
+  assert.equal(galaAttendees(before).length, 5);
+  assert.equal(galaAttendees(after).length, 5);
+  assert.deepEqual(galaSheets(after)[2].rows, [['Table 4', 5]]);
+  assert.equal(galaSheets(after)[1].rows.length, 1);
+  assert.ok(galaAttendees(after).every(p => p.tableName === 'Table 4'));
 });

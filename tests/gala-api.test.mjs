@@ -42,8 +42,23 @@ test('party updates are event scoped and report missing rows', async t => {
   assert.equal(calls[0].url.searchParams.get('event_id'), `eq.${eventId}`);
   assert.equal(calls[0].url.searchParams.get('id'), `eq.${id}`);
 });
-test('invalid event IDs and unnamed companions are rejected without database writes', async t => {
+test('invalid event IDs and invalid quantities are rejected without database writes', async t => {
   const calls = mock(t);
-  for (const req of [{ method: 'GET', query: { eventId: 'invalid' } }, { method: 'POST', body: { action: 'saveParty', eventId, name: 'Smiths', tableName: '', guests: [{ fullName: '', attendance: 'confirmed' }] } }]) { const res = response(); await handler({ ...req, headers }, res); assert.equal(res.statusCode, 400); }
+  for (const req of [{ method: 'GET', query: { eventId: 'invalid' } }, { method: 'POST', body: { action: 'saveParty', eventId, name: 'Smiths', tableName: '', quantity: -1, guests: [] } }]) { const res = response(); await handler({ ...req, headers }, res); assert.equal(res.statusCode, 400); }
+  assert.equal(calls.length, 0);
+});
+
+test('a party name and quantity reserves confirmed seats without guest details', async t => {
+  const calls = mock(t); const res = response();
+  await handler({ method: 'POST', headers, body: { action: 'saveParty', eventId, name: 'Smith family', quantity: 5 } }, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(calls[0].body.guests.length, 5);
+  assert.ok(calls[0].body.guests.every(g => g.fullName === '' && g.attendance === 'confirmed'));
+  assert.equal(new Set(calls[0].body.guests.map(g => g.id)).size, 5);
+});
+test('quantity cannot silently discard supplied guest details', async t => {
+  const calls = mock(t); const res = response();
+  await handler({ method: 'POST', headers, body: { action: 'saveParty', eventId, name: 'Smith family', quantity: 0, guests: [{ fullName: 'Jane' }] } }, res);
+  assert.equal(res.statusCode, 400);
   assert.equal(calls.length, 0);
 });
