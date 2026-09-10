@@ -7,15 +7,15 @@ import { AccountGate, SignIn, signOut, useOpsSession } from "../ops/Auth";
 import { dateTime, money, OpsApiError, opsApi, toIso, toLocalInput } from "../ops/client";
 import type { EventCompany, EventRecord, FourballRecord, UserRecord } from "../ops/types";
 
-type Tab = "overview" | "setup" | "companies" | "sponsorships" | "fourballs" | "tee" | "hosts" | "players" | "imports" | "exports" | "enquiries";
+type Tab = "overview" | "setup" | "companies" | "sponsorships" | "suppliers" | "fourballs" | "tee" | "hosts" | "players" | "imports" | "exports" | "enquiries";
 
 const tabs: Array<{ id: Tab; label: string; icon: string }> = [
   { id: "overview", label: "Overview", icon: "01" }, { id: "setup", label: "Event setup", icon: "02" },
   { id: "companies", label: "Companies", icon: "03" }, { id: "sponsorships", label: "Sponsorships", icon: "04" },
-  { id: "fourballs", label: "Fourballs", icon: "05" }, { id: "tee", label: "Tee sheet", icon: "06" },
-  { id: "hosts", label: "Hosts", icon: "07" }, { id: "players", label: "Players", icon: "08" },
-  { id: "imports", label: "Imports", icon: "09" }, { id: "exports", label: "Exports", icon: "10" },
-  { id: "enquiries", label: "Website enquiries", icon: "11" },
+  { id: "suppliers", label: "Suppliers", icon: "05" }, { id: "fourballs", label: "Fourballs", icon: "06" },
+  { id: "tee", label: "Tee sheet", icon: "07" }, { id: "hosts", label: "Hosts", icon: "08" },
+  { id: "players", label: "Players", icon: "09" }, { id: "imports", label: "Imports", icon: "10" },
+  { id: "exports", label: "Exports", icon: "11" }, { id: "enquiries", label: "Website enquiries", icon: "12" },
 ];
 
 const golfFormats = [
@@ -206,6 +206,7 @@ function EventTab({ event, tab, version, onRefresh }: { event: EventRecord; tab:
   if (tab === "setup") return <EventSetup event={event} onRefresh={onRefresh} />;
   if (tab === "companies") return <Companies event={event} version={version} onRefresh={onRefresh} />;
   if (tab === "sponsorships") return <Sponsorships event={event} version={version} onRefresh={onRefresh} />;
+  if (tab === "suppliers") return <Suppliers key={event.id} event={event} version={version} onRefresh={onRefresh} />;
   if (tab === "fourballs") return <Fourballs event={event} version={version} onRefresh={onRefresh} />;
   if (tab === "tee") return <TeeSheet event={event} version={version} onRefresh={onRefresh} />;
   if (tab === "hosts") return <Hosts event={event} version={version} onRefresh={onRefresh} />;
@@ -418,12 +419,7 @@ function Companies({ event, version, onRefresh }: { event: EventRecord; version:
         </section>
         <section className="panel"><header><h3>Sponsorships</h3>{activeSponsors.length ? <button className="text-button" disabled={busy} aria-expanded={editor === "sponsorships"} onClick={() => toggleEditor("sponsorships")}>{editor === "sponsorships" ? "Close details" : "Sponsorship details"}</button> : null}</header>
           {!cancelled ? <><fieldset className="company-sponsorship-category"><legend>Sponsorship category</legend>{[["alcoholic_hole", "Alc (Alcoholic)"], ["non_alcoholic_hole", "Non Alc (Non-alcoholic)"], ...((sponsors?.types || []).some((type) => type.isActive && !["alcoholic_hole", "non_alcoholic_hole", "supplier"].includes(type.category)) ? [["other", "Branded / other"]] : [])].map(([value, label]) => <label key={value}><input type="radio" name="company-sponsorship-category" value={value} checked={sponsorshipCategory === value} disabled={busy} onChange={() => setSponsorshipCategory(value)} />{label}</label>)}</fieldset><QuickBookingForm key={sponsorshipCategory} label="Sponsorship" currency={event.currency} disabled={busy || !sponsorshipCategory} emptyMessage={sponsorshipCategory ? "No packages available in this category" : "Choose a category first"} options={(sponsors?.types || []).filter((type) => type.isActive && (sponsorshipCategory === "other" ? !["alcoholic_hole", "non_alcoholic_hole", "supplier"].includes(type.category) : type.category === sponsorshipCategory)).map((type) => ({ ...type, available: type.capacity - (sponsors?.commitments || []).filter((item) => item.sponsorshipTypeId === type.id && ["reserved", "confirmed"].includes(item.status)).reduce((total, item) => total + item.quantity, 0) })).filter((type) => type.available > 0)} onAdd={(typeId) => quickAdd("sponsorships", typeId)} /></> : null}
-          {!cancelled && sponsors ? <SupplierSponsorshipForm data={sponsors} companyId={selectedCompany.id} busy={busy} onSave={async (body) => {
-            setBusy(true); setError("");
-            try { await jsonMutation("/api/v1/admin/sponsorships", "POST", { eventId: event.id, ...body }); setLocalVersion((value) => value + 1); onRefresh(); setMessage("Supplier sponsorship saved. Open Sponsorship details to manage its location."); return true; }
-            catch (caught) { setError(caught instanceof Error ? caught.message : "Supplier sponsorship could not be saved."); return false; }
-            finally { setBusy(false); }
-          }} /> : null}
+          {!cancelled ? <p className="muted-copy">Track products, services and prizes in <a href={`/admin/suppliers?event=${event.id}`}>Suppliers →</a>.</p> : null}
           {activeSponsors.length ? activeSponsors.map((item) => <div className="company-booking-row" key={item.id}><div><strong>{item.typeName}</strong>{item.contribution ? <span>Supplying: {item.contribution}</span> : null}<span>{sponsorshipCategoryLabel(sponsors?.types.find((type) => type.id === item.sponsorshipTypeId)?.category)}</span><span>{item.quantity} unit{item.quantity === 1 ? "" : "s"} · {money(item.confirmedAmountMinor, event.currency)}</span><span>{item.units.map((unit) => sponsors?.holeSlots.find((slot) => slot.id === unit.holeSlotId)?.displayLabel || "Location not assigned").join(" · ")}</span></div><div className="company-booking-actions"><Pill value={item.status} /><button className="danger-link" disabled={busy} aria-label={`Remove sponsorship ${item.typeName}`} onClick={() => removeBooking("sponsorships", item.id)}>Remove</button></div></div>) : <p className="muted-copy">No sponsorships booked. Add one above to enter details.</p>}
         </section>
       </div>
@@ -482,23 +478,104 @@ function HoleAllocationBoard({ data, venueName, companyId, busy, onAllocate, onC
   </section>;
 }
 
-function SupplierSponsorshipForm({ data, companyId, busy, onSave }: { data: SponsorPayload; companyId: string; busy: boolean; onSave: (body: Record<string, unknown>) => Promise<boolean> }) {
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const element = event.currentTarget;
-    const form = new FormData(element);
-    if (await onSave({ action: "createSupplier", eventCompanyId: companyId || form.get("eventCompanyId"), contribution: form.get("contribution"), holeSlotId: form.get("holeSlotId") || null })) element.reset();
+function Suppliers({ event, version, onRefresh }: { event: EventRecord; version: number; onRefresh: () => void }) {
+  const [data, setData] = useState<SponsorPayload | null>(null);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [localVersion, setLocalVersion] = useState(0);
+  const [showAdd, setShowAdd] = useState(false);
+  const [query, setQuery] = useState("");
+  const [showCancelled, setShowCancelled] = useState(false);
+  useEffect(() => {
+    let active = true;
+    opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}&includeCancelled=true`)
+      .then((payload) => { if (active) setData(payload); })
+      .catch((caught: Error) => { if (active) setError(caught.message); });
+    return () => { active = false; };
+  }, [event.id, version, localVersion]);
+  async function action(body: Record<string, unknown>) {
+    setBusy(true); setError(""); setMessage("");
+    try {
+      await jsonMutation("/api/v1/admin/sponsorships", "POST", { eventId: event.id, ...body });
+      setLocalVersion((value) => value + 1); onRefresh(); setMessage("Supplier changes saved."); return true;
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Supplier changes could not be saved."); return false; }
+    finally { setBusy(false); }
   }
-  return <section className="panel"><details className="action-disclosure"><summary>Add supplier sponsorship</summary>
-    <p className="muted-copy">Record products, services or prizes supplied for the event. Add the supplier under Companies first. You can choose a location now or later.</p>
-    <form className="stack-form" onSubmit={submit}>
-      {companyId ? <p><strong>Supplier:</strong> {data.companies.find((company) => company.id === companyId)?.name}</p> : <label><span>Supplier / company</span><select name="eventCompanyId" required defaultValue=""><option value="">Select supplier</option>{data.companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>}
-      <label><span>What are they sponsoring?</span><textarea name="contribution" required maxLength={2000} placeholder="e.g. 200 bottled waters and a drinks fridge" /></label>
-      <label><span>Where will it go?</span><select name="holeSlotId" defaultValue=""><option value="">Assign later / no location needed</option>{data.holeSlots.filter((slot) => !slot.unitId && !slot.sponsorshipTypeId).map((slot) => <option key={slot.id} value={slot.id}>{slot.displayLabel}</option>)}</select></label>
-      <p className="muted-copy">Saved as a confirmed contribution with no cash payment due. Use Venue sponsorship positions in Sponsorships to add places such as the putting green or clubhouse.</p>
-      <FormActions busy={busy} label="Add supplier sponsorship" />
-    </form>
-  </details></section>;
+  async function allocate(unitId: string, holeSlotId: string) {
+    await action({ action: holeSlotId ? "allocate" : "unallocate", unitId, ...(holeSlotId ? { holeSlotId } : {}) });
+  }
+  async function saveContribution(formEvent: FormEvent<HTMLFormElement>, item: SponsorshipCommitment) {
+    formEvent.preventDefault(); const form = new FormData(formEvent.currentTarget);
+    await action({ action: "updateCommitment", id: item.id, contribution: form.get("contribution"), notes: form.get("notes"), status: form.get("status") });
+  }
+  const suppliers = (data?.commitments || []).filter((item) => (item.category || data?.types.find((type) => type.id === item.sponsorshipTypeId)?.category) === "supplier");
+  const visible = suppliers.filter((item) => (showCancelled || item.status !== "cancelled") && `${item.companyName} ${item.contribution} ${item.notes} ${item.units.map((unit) => data?.holeSlots.find((slot) => slot.id === unit.holeSlotId)?.displayLabel || "").join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()));
+  return <div className="suppliers-page">
+    <SectionHeader eyebrow="Contributions register" title="Suppliers" copy="Keep track of what is being sponsored and who is providing it." actions={<button className="primary-button" disabled={!data || busy} aria-expanded={showAdd} aria-controls="supplier-add" onClick={() => setShowAdd(!showAdd)}>{showAdd ? "Close form" : "+ Add supplier / sponsor"}</button>} />
+    <ErrorBanner message={error} />
+    {message ? <p className="success-banner" role="status">{message}</p> : null}
+    {data ? <>
+      <div id="supplier-add" hidden={!showAdd}>
+        <SupplierEntryForm eventId={event.id} data={data} busy={busy} onSave={action} onCompanyAdded={(company) => { setData((current) => current ? { ...current, companies: [...current.companies.filter((item) => item.id !== company.id), company] } : current); onRefresh(); }} />
+      </div>
+      <section className="panel">
+        <header className="supplier-register-heading"><div><h3>Suppliers & sponsors</h3><p className="muted-copy">{suppliers.filter((item) => item.status !== "cancelled").length} active contribution{suppliers.filter((item) => item.status !== "cancelled").length === 1 ? "" : "s"}</p></div><label className="check-inline"><input type="checkbox" checked={showCancelled} onChange={(change) => setShowCancelled(change.target.checked)} />Show cancelled</label></header>
+        <label className="company-filter"><span>Find a supplier or contribution</span><input type="search" value={query} onChange={(change) => setQuery(change.target.value)} placeholder="Search names, contributions or locations" /></label>
+        {visible.length ? <div className="commitment-list">{visible.map((item) => <article className="commitment-card supplier-record" key={item.id}>
+          <header><div><p className="eyebrow">Supplier / sponsor</p><h4>{item.companyName}</h4></div><Pill value={item.status} /></header>
+          <div className="supplier-contribution"><span>What they are sponsoring</span><p>{item.contribution || "Contribution details not yet supplied"}</p></div>
+          {item.notes ? <p className="supplier-notes"><strong>Notes:</strong> {item.notes}</p> : null}
+          {item.status !== "cancelled" ? <details className="action-disclosure"><summary>Location · {item.units.map((unit) => data.holeSlots.find((slot) => slot.id === unit.holeSlotId)?.displayLabel || "Not assigned").join("; ")}</summary><p className="muted-copy">Optional. Choose a hole or a venue position, or leave this contribution without a location.</p>{item.units.map((unit) => <SponsorshipPlacementCard key={unit.id} unit={unit} item={item} data={data} busy={busy} onAllocate={allocate} />)}</details> : null}
+          <details className="action-disclosure"><summary>Edit contribution</summary><form className="stack-form" onSubmit={(formEvent) => saveContribution(formEvent, item)}>
+            <label><span>What are they sponsoring?</span><textarea name="contribution" required maxLength={2000} defaultValue={item.contribution} /></label>
+            <label><span>Status</span><select name="status" defaultValue={item.status}><option value="draft">Draft</option><option value="reserved">Reserved</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label>
+            <label><span>Notes</span><textarea name="notes" maxLength={5000} defaultValue={item.notes} /></label>
+            <FormActions busy={busy} label="Save contribution" />
+          </form></details>
+        </article>)}</div> : <Empty title={suppliers.length ? "No matching contributions" : "No suppliers or sponsors yet"} copy={suppliers.length ? "Change your search or show cancelled records." : "Add a supplier or sponsor and describe the products, services or prizes they are providing."} />}
+      </section>
+      <details className="panel action-disclosure"><summary>Locations (optional)</summary><VenuePositions data={data} companyId="" busy={busy} onSave={action} onAllocate={allocate} /></details>
+    </> : <Loading />}
+  </div>;
+}
+
+function SupplierEntryForm({ eventId, data, busy, onSave, onCompanyAdded }: { eventId: string; data: SponsorPayload; busy: boolean; onSave: (body: Record<string, unknown>) => Promise<boolean>; onCompanyAdded: (company: SponsorPayload["companies"][number]) => void }) {
+  const [companyId, setCompanyId] = useState(data.companies.length ? "" : "new");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+  const [createdCompany, setCreatedCompany] = useState<SponsorPayload["companies"][number] | null>(null);
+  const companies = createdCompany && !data.companies.some((company) => company.id === createdCompany.id) ? [...data.companies, createdCompany] : data.companies;
+  async function submit(formEvent: FormEvent<HTMLFormElement>) {
+    formEvent.preventDefault(); const element = formEvent.currentTarget; const form = new FormData(element);
+    setCreating(true); setError("");
+    let selectedId = companyId;
+    try {
+      if (selectedId === "new") {
+        const { company } = await jsonMutation<{ company: EventCompany }>("/api/v1/admin/companies", "POST", { eventId, name: form.get("name"), relationshipStatus: "confirmed", primaryContactName: form.get("primaryContactName"), primaryContactEmail: form.get("primaryContactEmail"), primaryContactPhone: form.get("primaryContactPhone") });
+        // Retain the new company after a failed contribution save so retrying cannot duplicate it.
+        selectedId = company.id; setCompanyId(company.id); setCreatedCompany(company); onCompanyAdded(company);
+      }
+      if (await onSave({ action: "createSupplier", eventCompanyId: selectedId, contribution: form.get("contribution"), holeSlotId: form.get("holeSlotId") || null })) {
+        element.reset(); setCompanyId(""); setCreatedCompany(null);
+      }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "The supplier could not be added."); }
+    finally { setCreating(false); }
+  }
+  return <section className="panel"><h3>Add supplier / sponsor</h3><ErrorBanner message={error} />
+    <form className="stack-form" onSubmit={submit}><fieldset className="supplier-entry-fields" disabled={busy || creating}>
+      <label><span>Supplier / sponsor</span><select name="eventCompanyId" required value={companyId} onChange={(change) => setCompanyId(change.target.value)}><option value="">Choose an existing company or add a new one</option><option value="new">+ Add a new supplier / sponsor</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
+      {companyId === "new" ? <>
+        <label><span>Supplier / sponsor name</span><input name="name" required minLength={2} maxLength={180} placeholder="Company or supplier name" /></label>
+        <div className="two-fields"><label><span>Contact name (optional)</span><input name="primaryContactName" maxLength={160} /></label><label><span>Contact email (optional)</span><input name="primaryContactEmail" type="email" /></label></div>
+        <label><span>Contact phone (optional)</span><input name="primaryContactPhone" type="tel" maxLength={40} /></label><p className="muted-copy">If adding a contact, enter both their name and email.</p>
+      </> : null}
+      <label><span>What are they sponsoring?</span><textarea name="contribution" required maxLength={2000} placeholder="e.g. 200 bottled waters, competition prizes or catering" /></label>
+      <label><span>Location (optional)</span><select name="holeSlotId" defaultValue=""><option value="">No location / decide later</option>{data.holeSlots.filter((slot) => !slot.unitId && (!slot.sponsorshipTypeId || data.types.some((type) => type.id === slot.sponsorshipTypeId && type.name === "Supplier sponsorship" && type.category === "supplier"))).map((slot) => <option key={slot.id} value={slot.id}>{slot.displayLabel}</option>)}</select></label>
+      <p className="muted-copy">Add venue positions such as the putting green in Locations below. Contributions are saved as confirmed with no cash payment due.</p>
+      <FormActions busy={busy || creating} label="Save supplier / sponsor" />
+    </fieldset></form>
+  </section>;
 }
 
 function VenuePositions({ data, companyId, busy, onSave, onAllocate }: { data: SponsorPayload; companyId: string; busy: boolean; onSave: (body: Record<string, unknown>) => Promise<boolean>; onAllocate: (unitId: string, slotId: string) => Promise<void> }) {
@@ -560,7 +637,7 @@ function Sponsorships({ event, version, onRefresh, companyId = "" }: { companyId
   const [companyFilter, setCompanyFilter] = useState(companyId);
   const [showInventory, setShowInventory] = useState(false);
   const [message, setMessage] = useState("");
-  const commitments = (data?.commitments || []).filter((item) => (!companyFilter || item.eventCompanyId === companyFilter) && (!companyId || item.status !== "cancelled"));
+  const commitments = (data?.commitments || []).filter((item) => (companyId || (item.category || data?.types.find((type) => type.id === item.sponsorshipTypeId)?.category) !== "supplier") && (!companyFilter || item.eventCompanyId === companyFilter) && (!companyId || item.status !== "cancelled"));
   useEffect(() => { let active = true; opsApi<SponsorPayload>(`/api/v1/admin/sponsorships?eventId=${event.id}${companyId ? "&includeCancelled=true" : ""}`).then((payload) => { if (active) setData(payload); }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [event.id, version, localVersion, companyId]);
   async function action(body: Record<string, unknown>) { setBusy(true); setError(""); setMessage(""); try { await jsonMutation("/api/v1/admin/sponsorships", "POST", { eventId: event.id, ...body }); setLocalVersion((v) => v + 1); onRefresh(); setMessage("Sponsorship changes saved."); return true; } catch (caught) { setError(caught instanceof Error ? caught.message : "Sponsorship update failed."); return false; } finally { setBusy(false); } }
   async function addType(formEvent: FormEvent<HTMLFormElement>) { formEvent.preventDefault(); const formElement = formEvent.currentTarget; const form = new FormData(formElement); const saved = await action({ action: "createType", name: form.get("name"), category: form.get("category"), capacity: Number(form.get("capacity")), priceMinor: Math.round(Number(form.get("price")) * 100), requiresHole: form.get("requiresHole") === "on", isActive: true }); if (saved) formElement.reset(); }
@@ -575,14 +652,13 @@ function Sponsorships({ event, version, onRefresh, companyId = "" }: { companyId
     {!companyId ? <label className="company-filter"><span>Company</span><select value={companyFilter} onChange={(change) => setCompanyFilter(change.target.value)}><option value="">All companies</option>{data?.companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label> : null}
     {!companyId ? data ? <HoleAllocationBoard venueName={event.venueName} data={data} companyId={companyFilter} busy={busy} onAllocate={allocate} onCreateSlot={(holeId, label) => action({ action: "createHoleSlot", holeId, label })} /> : <Loading /> : null}
     {data ? <>
-      <SupplierSponsorshipForm data={data} companyId={companyId || companyFilter} busy={busy} onSave={action} />
       <VenuePositions data={data} companyId={companyId || companyFilter} busy={busy} onSave={action} onAllocate={allocate} />
     </> : null}
     <div hidden={!showInventory} className="sponsor-setup">
-    {data ? <div className="inventory-grid">{data.types.map((type) => <SponsorshipInventoryCard key={type.id} type={type} used={usedByType.get(type.id) || 0} currency={event.currency} busy={busy} onSave={(capacity) => action({ action: "updateType", id: type.id, capacity })} />)}</div> : <Loading />}
+    {data ? <div className="inventory-grid">{data.types.filter((type) => type.category !== "supplier").map((type) => <SponsorshipInventoryCard key={type.id} type={type} used={usedByType.get(type.id) || 0} currency={event.currency} busy={busy} onSave={(capacity) => action({ action: "updateType", id: type.id, capacity })} />)}</div> : <Loading />}
     <div className="split-panels">
-      <section className="panel"><details className="action-disclosure"><summary>Configure sponsorship type</summary><form className="stack-form" onSubmit={addType}><label><span>Name</span><input name="name" required /></label><label><span>Category</span><select name="category"><option value="alcoholic_hole">Alcoholic hole</option><option value="non_alcoholic_hole">Non-alcoholic hole</option><option value="branded_hole">Branded hole</option><option value="supplier">Supplier sponsorship</option><option value="other">Other / venue sponsorship</option></select></label><div className="two-fields"><label><span>Capacity</span><input type="number" name="capacity" min="0" required /></label><label><span>Price ({event.currency})</span><input type="number" name="price" min="0" required /></label></div><label className="check-inline"><input type="checkbox" name="requiresHole" />Requires hole allocation</label><FormActions busy={busy} label="Add type" /></form></details></section>
-      <section className="panel"><details className="action-disclosure"><summary>Confirm sponsorship</summary><form className="stack-form" onSubmit={addCommitment}><label><span>Company</span><select name="eventCompanyId" defaultValue={companyId} required><option value="">Select company</option>{data?.companies.filter((c) => !companyId || c.id === companyId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label><span>Inventory type</span><select name="sponsorshipTypeId" required><option value="">Select type</option>{data?.types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></label><div className="two-fields"><label><span>Status</span><select name="status" defaultValue="confirmed"><option value="draft">Draft</option><option value="reserved">Reserved</option><option value="confirmed">Confirmed</option></select></label><label><span>Quantity</span><input type="number" name="quantity" min="1" defaultValue="1" required /></label></div><label><span>Confirmed amount ({event.currency})</span><input type="number" name="amount" min="0" step="0.01" required /></label><label><span>Payment</span><select name="paymentStatus"><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option><option value="waived">Waived</option></select></label><label><span>Invoice reference</span><input name="invoiceReference" /></label><label><span>What are they sponsoring?</span><textarea name="contribution" maxLength={2000} placeholder="Describe the contribution (required for suppliers)" /></label><FormActions busy={busy} label="Add sponsorship" /></form></details></section>
+      <section className="panel"><details className="action-disclosure"><summary>Configure sponsorship type</summary><form className="stack-form" onSubmit={addType}><label><span>Name</span><input name="name" required /></label><label><span>Category</span><select name="category"><option value="alcoholic_hole">Alcoholic hole</option><option value="non_alcoholic_hole">Non-alcoholic hole</option><option value="branded_hole">Branded hole</option><option value="other">Other / venue sponsorship</option></select></label><div className="two-fields"><label><span>Capacity</span><input type="number" name="capacity" min="0" required /></label><label><span>Price ({event.currency})</span><input type="number" name="price" min="0" required /></label></div><label className="check-inline"><input type="checkbox" name="requiresHole" />Requires hole allocation</label><FormActions busy={busy} label="Add type" /></form></details></section>
+      <section className="panel"><details className="action-disclosure"><summary>Confirm sponsorship</summary><form className="stack-form" onSubmit={addCommitment}><label><span>Company</span><select name="eventCompanyId" defaultValue={companyId} required><option value="">Select company</option>{data?.companies.filter((c) => !companyId || c.id === companyId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label><span>Inventory type</span><select name="sponsorshipTypeId" required><option value="">Select type</option>{data?.types.filter((type) => type.category !== "supplier").map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></label><div className="two-fields"><label><span>Status</span><select name="status" defaultValue="confirmed"><option value="draft">Draft</option><option value="reserved">Reserved</option><option value="confirmed">Confirmed</option></select></label><label><span>Quantity</span><input type="number" name="quantity" min="1" defaultValue="1" required /></label></div><label><span>Confirmed amount ({event.currency})</span><input type="number" name="amount" min="0" step="0.01" required /></label><label><span>Payment</span><select name="paymentStatus"><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option><option value="waived">Waived</option></select></label><label><span>Invoice reference</span><input name="invoiceReference" /></label><label><span>What are they sponsoring?</span><textarea name="contribution" maxLength={2000} placeholder="Describe the contribution (required for suppliers)" /></label><FormActions busy={busy} label="Add sponsorship" /></form></details></section>
     </div>
     </div>
     <section className="panel"><h3>Company sponsorships</h3>{data && commitments.length ? <div className="commitment-list">{commitments.map((item) => <article className="commitment-card" key={item.id}><header><div><h4>{item.companyName}</h4><p>{sponsorshipCategoryLabel(item.category || data.types.find((type) => type.id === item.sponsorshipTypeId)?.category)} · {item.typeName} · {item.quantity} unit{item.quantity === 1 ? "" : "s"}</p></div><div className="pill-row"><Pill value={item.status} /><Pill value={item.paymentStatus} /></div></header><div className="unit-list">{item.contribution ? <p><strong>Supplying:</strong> {item.contribution}</p> : null}{item.units.map((unit) => <SponsorshipPlacementCard key={unit.id} unit={unit} item={item} data={data} busy={busy} onAllocate={allocate} />)}</div><details className="action-disclosure"><summary>Edit contribution, quantity and payment</summary><form className="form-grid compact" onSubmit={(submitEvent) => saveCommitment(submitEvent, item)}><label><span>Status</span><select name="status" defaultValue={item.status}><option value="draft">Draft</option><option value="reserved">Reserved</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label><label><span>Quantity</span><input type="number" name="quantity" min="1" max="99" defaultValue={item.quantity} required /></label><label><span>Confirmed amount ({event.currency})</span><input type="number" name="amount" min="0" step="0.01" defaultValue={item.confirmedAmountMinor / 100} required /></label><label><span>Payment status</span><select name="paymentStatus" defaultValue={item.paymentStatus}><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option><option value="waived">Waived</option></select></label><label><span>Invoice reference</span><input name="invoiceReference" defaultValue={item.invoiceReference} /></label><label className="span-2"><span>What are they sponsoring?</span><textarea name="contribution" maxLength={2000} defaultValue={item.contribution} required={item.category === "supplier"} placeholder="e.g. 200 bottled waters, prizes or catering" /></label><label className="span-2"><span>Notes</span><textarea name="notes" defaultValue={item.notes} /></label><FormActions busy={busy} label="Save sponsorship" /></form></details></article>)}</div> : <Empty title="No sponsorship commitments" copy="Add a company and confirm its first sponsorship." />}</section>
