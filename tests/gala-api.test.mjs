@@ -17,6 +17,7 @@ function mock(t, { role = 'admin', found = true } = {}) {
     if (url.pathname === '/auth/v1/user') payload = { id };
     else if (table === 'm2m_profiles') payload = { id, role, is_active: true };
     else if (table === 'm2m_audit_events') payload = {};
+    else if (table === 'm2m_cancel_gala_attendance') { calls.push({ url, body: JSON.parse(init.body) }); payload = id; }
     else { calls.push({ url, body: init.body && JSON.parse(init.body), method: init.method }); payload = init.method === 'GET' ? [] : found ? { id } : null; }
     return new Response(JSON.stringify(payload), { status: 200, headers: { 'content-type': 'application/json' } });
   });
@@ -61,4 +62,22 @@ test('quantity cannot silently discard supplied guest details', async t => {
   await handler({ method: 'POST', headers, body: { action: 'saveParty', eventId, name: 'Smith family', quantity: 0, guests: [{ fullName: 'Jane' }] } }, res);
   assert.equal(res.statusCode, 400);
   assert.equal(calls.length, 0);
+});
+
+test('individual cancellation persists the golfer override without changing golf records', async t => {
+  const calls = mock(t); const res = response();
+  await handler({ method: 'POST', headers, body: { action: 'savePlayer', eventId, id, partyId: null, attendance: 'declined' } }, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].body.attendance, 'declined');
+  assert.match(calls[0].url.pathname, /m2m_gala_players$/);
+});
+test('family and individual guest cancellation use an event-scoped atomic operation', async t => {
+  const calls = mock(t);
+  for (const guestId of [undefined, id]) {
+    const res = response();
+    await handler({ method: 'POST', headers, body: { action: 'cancelAttendance', eventId, partyId: id, guestId } }, res);
+    assert.equal(res.statusCode, 200);
+  }
+  assert.deepEqual(calls.map(c => c.body), [{ p_event_id: eventId, p_party_id: id, p_guest_id: null }, { p_event_id: eventId, p_party_id: id, p_guest_id: id }]);
 });
