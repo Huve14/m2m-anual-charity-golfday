@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_table('public', 'm2m_gala_parties', 'Dinner parties exist');
+select has_table('public', 'm2m_gala_players', 'Golfer dinner settings exist');
+select ok((select relrowsecurity from pg_class where oid = 'public.m2m_gala_parties'::regclass), 'Party RLS enabled');
+select ok((select relrowsecurity from pg_class where oid = 'public.m2m_gala_players'::regclass), 'Player dinner RLS enabled');
+select ok(not has_table_privilege('anon', 'public.m2m_gala_parties', 'SELECT'), 'Anonymous users cannot read parties');
+select ok(not has_table_privilege('authenticated', 'public.m2m_gala_parties', 'INSERT'), 'Clients cannot bypass the admin API');
+select ok(not has_table_privilege('authenticated', 'public.m2m_gala_players', 'UPDATE'), 'Hosts cannot change dinner settings directly');
+select ok(has_table_privilege('service_role', 'public.m2m_gala_parties', 'INSERT'), 'Admin service can save parties');
+select * from finish();
+rollback;

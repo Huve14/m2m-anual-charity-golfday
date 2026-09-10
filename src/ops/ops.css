@@ -140,3 +140,7 @@
 .supplier-prize-total>p{font-size:12px;line-height:1.6;margin:6px 0 0;color:#dce3ec}
 .ops-body .supplier-record .supplier-prize-value{font-size:16px;color:var(--navy);margin:12px 0 20px}
 .export-section{margin-top:28px}.export-section>h3{margin:0 0 8px;color:var(--navy)}.export-section>p{margin:0 0 18px;color:#59667a;font-size:13px;line-height:1.6}.export-card[aria-disabled="true"]{opacity:.65;cursor:wait}
+
+.gala-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.gala-guest { border-top: 1px solid var(--border, #dce2df); margin-top: 1rem; padding: 1rem 0; }
+.gala-guest h4 { margin: 0 0 1rem; }
