@@ -22,7 +22,7 @@ export type Database = {
       m2m_event_companies: Table<IdDates & EventOwned & { company_id: string; relationship_status: "prospect" | "pending" | "confirmed" | "cancelled"; primary_contact_name: string | null; primary_contact_email: string | null; primary_contact_phone: string | null; primary_contact_profile_id: string | null; notes: string | null }>;
       m2m_sponsorship_types: Table<IdDates & EventOwned & { name: string; category: "alcoholic_hole" | "non_alcoholic_hole" | "branded_hole" | "supplier" | "other"; capacity: number; price_minor: number; requires_hole: boolean; is_active: boolean; sort_order: number }>;
       m2m_fourball_types: Table<IdDates & EventOwned & { name: string; capacity: number; price_minor: number; is_active: boolean; sort_order: number }>;
-      m2m_sponsorship_commitments: Table<IdDates & EventOwned & { event_company_id: string; sponsorship_type_id: string; status: "draft" | "reserved" | "confirmed" | "cancelled"; quantity: number; confirmed_amount_minor: number; invoice_reference: string | null; payment_status: "unpaid" | "partial" | "paid" | "waived"; contribution: string; notes: string | null }>;
+      m2m_sponsorship_commitments: Table<IdDates & EventOwned & { event_company_id: string; sponsorship_type_id: string; status: "draft" | "reserved" | "confirmed" | "cancelled"; quantity: number; confirmed_amount_minor: number; invoice_reference: string | null; payment_status: "unpaid" | "partial" | "paid" | "waived"; contribution: string; prize_value_minor: number | null; notes: string | null }>;
       m2m_hole_sponsorship_slots: Table<EventOwned & { id: string; hole_id: string | null; location_name: string | null; label: string; sponsorship_type_id: string | null; sort_order: number; created_at: string }>;
       m2m_sponsorship_units: Table<EventOwned & { id: string; commitment_id: string; unit_number: number; hole_slot_id: string | null; allocated_at: string | null; allocated_by: string | null; created_at: string }>;
       m2m_fourballs: Table<IdDates & EventOwned & { event_company_id: string; fourball_type_id: string | null; team_name: string; booking_status: "pending" | "confirmed" | "cancelled"; unit_price_minor: number; confirmed_amount_minor: number; invoice_reference: string | null; payment_status: "unpaid" | "partial" | "paid" | "waived"; submission_status: "draft" | "submitted" | "reopened"; submitted_at: string | null; submitted_by: string | null; consent_version: string | null; consented_at: string | null; notes: string | null }>;
@@ -37,6 +37,7 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      m2m_create_valued_supplier_sponsorship: { Args: { p_event_id: string; p_event_company_id: string; p_contribution: string; p_prize_value_minor: number; p_slot_id?: string | null; p_actor_id?: string | null }; Returns: string };
       m2m_create_supplier_sponsorship: { Args: { p_event_id: string; p_event_company_id: string; p_contribution: string; p_slot_id?: string | null; p_actor_id?: string | null }; Returns: string };
       m2m_activate_event: { Args: { p_event_id: string; p_actor_id: string }; Returns: undefined };
       m2m_allocate_sponsorship_unit: { Args: { p_event_id: string; p_unit_id: string; p_hole_slot_id: string; p_actor_id: string }; Returns: undefined };

@@ -134,3 +134,8 @@
 .supplier-record .supplier-notes{white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:16px}
 .supplier-record>.action-disclosure{margin-top:12px}
 .supplier-record summary{overflow-wrap:anywhere}
+.supplier-prize-total{padding:24px;margin-bottom:24px;border:1px solid var(--line);border-radius:12px;background:var(--navy);color:white}
+.supplier-prize-total>span{display:block;font-size:13px}
+.supplier-prize-total>strong{display:block;font-size:clamp(28px,4vw,44px);line-height:1.3;margin:8px 0;overflow-wrap:anywhere}
+.supplier-prize-total>p{font-size:12px;line-height:1.6;margin:6px 0 0;color:#dce3ec}
+.ops-body .supplier-record .supplier-prize-value{font-size:16px;color:var(--navy);margin:12px 0 20px}
