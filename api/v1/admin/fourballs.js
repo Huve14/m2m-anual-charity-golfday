@@ -16,11 +16,11 @@ const createSchema = z.object({
 
 const playerSchema = z.object({
   id: z.string().uuid(), eventId: z.string().uuid(), fourballId: z.string().uuid(),
-  fullName: z.string().trim().max(160).default(""), email: z.union([z.string().email(), z.literal("")]).default(""),
-  phone: z.string().trim().max(40).default(""), handicap: z.string().trim().max(20).default(""),
-  shirtSize: z.string().trim().max(20).default(""), dietaryRequirements: z.string().trim().max(1000).default(""),
-  specialRequirements: z.string().trim().max(1000).default(""), homeClub: z.string().trim().max(160).default(""),
-  golfId: z.string().trim().max(80).default(""),
+  fullName: z.string().trim().max(160).optional(), email: z.union([z.string().email(), z.literal("")]).optional(),
+  phone: z.string().trim().max(40).optional(), handicap: z.string().trim().max(20).optional(),
+  shirtSize: z.string().trim().max(20).optional(), dietaryRequirements: z.string().trim().max(1000).optional(),
+  specialRequirements: z.string().trim().max(1000).optional(), homeClub: z.string().trim().max(160).optional(),
+  golfId: z.string().trim().max(80).optional(),
 });
 
 const actionSchema = z.discriminatedUnion("action", [

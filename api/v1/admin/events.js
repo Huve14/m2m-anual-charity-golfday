@@ -10,6 +10,8 @@ import {
   validate,
 } from "../../_ops.js";
 
+const playerFieldKeys = ["full_name", "email", "phone", "handicap", "shirt_size", "dietary_requirements", "special_requirements", "home_club", "golf_id"];
+
 const optionalDate = z.union([z.string().datetime({ offset: true }), z.literal(""), z.null()]).optional();
 const eventSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -25,6 +27,7 @@ const eventSchema = z.object({
   rules: z.string().trim().max(20_000).default(""),
   primaryColour: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#0C1735"),
   accentColour: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#ED1C24"),
+  visiblePlayerFields: z.array(z.enum(playerFieldKeys)).default(playerFieldKeys),
   requiredPlayerFields: z.array(z.enum([
     "full_name", "email", "phone", "handicap", "shirt_size", "dietary_requirements",
     "special_requirements", "home_club", "golf_id",
@@ -58,6 +61,7 @@ function row(input) {
     rules: input.rules,
     primary_colour: input.primaryColour,
     accent_colour: input.accentColour,
+    visible_player_fields: input.visiblePlayerFields,
     required_player_fields: input.requiredPlayerFields,
     shirt_size_options: input.shirtSizeOptions,
     reminder_offsets_days: input.reminderOffsetsDays,
@@ -83,6 +87,7 @@ function publicEvent(event) {
     accentColour: event.accent_colour,
     logoPath: event.logo_path,
     bannerPath: event.banner_path,
+    visiblePlayerFields: event.visible_player_fields || playerFieldKeys,
     requiredPlayerFields: event.required_player_fields || [],
     shirtSizeOptions: event.shirt_size_options || [],
     reminderOffsetsDays: event.reminder_offsets_days || [],
@@ -108,6 +113,7 @@ async function list(req, res) {
 async function create(req, res) {
   const profile = await requireAdmin(req);
   const input = validate(eventSchema, parseJsonBody(req));
+  input.requiredPlayerFields = input.requiredPlayerFields.filter((field) => input.visiblePlayerFields.includes(field));
   const client = adminClient();
   const { data: event, error } = await client
     .from("m2m_events")
@@ -167,6 +173,12 @@ async function update(req, res) {
     if (error) throw fromSupabase(error, "event_status_failed", "The event status could not be changed.");
     await recordAudit({ eventId: input.id, actorId: profile.id, action: `event.${status}`, entityType: "event", entityId: input.id });
   } else {
+    if (input.visiblePlayerFields !== undefined || input.requiredPlayerFields !== undefined) {
+      const { data: current, error } = await client.from("m2m_events").select("visible_player_fields,required_player_fields").eq("id", input.id).single();
+      if (error) throw fromSupabase(error, "event_load_failed");
+      const visible = input.visiblePlayerFields ?? current.visible_player_fields ?? playerFieldKeys;
+      input.requiredPlayerFields = (input.requiredPlayerFields ?? current.required_player_fields ?? []).filter((field) => visible.includes(field));
+    }
     const allowed = row({
       name: input.name,
       slug: input.slug,
@@ -181,6 +193,7 @@ async function update(req, res) {
       rules: input.rules,
       primaryColour: input.primaryColour,
       accentColour: input.accentColour,
+      visiblePlayerFields: input.visiblePlayerFields,
       requiredPlayerFields: input.requiredPlayerFields,
       shirtSizeOptions: input.shirtSizeOptions,
       reminderOffsetsDays: input.reminderOffsetsDays,
