@@ -1,8 +1,8 @@
 import { fromSupabase } from "./_ops.js";
 
-export const exportTypes = ["players", "fourballs", "sponsors", "suppliers", "hosts", "confirmations", "confirmed-companies", "confirmed-fourballs", "confirmed-sponsors", "confirmed-suppliers"];
+export const exportTypes = ["players", "fourballs", "sponsors", "suppliers", "hosts", "confirmations", "confirmed-companies", "confirmed-fourballs", "confirmed-sponsors", "confirmed-suppliers", "invoices"];
 
-const companyJoin = "eventCompany:m2m_event_companies(relationship_status,primary_contact_name,primary_contact_email,primary_contact_phone,company:m2m_companies(name))";
+const companyJoin = "eventCompany:m2m_event_companies(id,relationship_status,primary_contact_name,primary_contact_email,primary_contact_phone,company:m2m_companies(name,billing_email))";
 const fourballJoin = `fourball:m2m_fourballs(team_name,booking_status,submission_status,${companyJoin})`;
 const sources = {
   companies: ["m2m_event_companies", "id,relationship_status,primary_contact_name,primary_contact_email,primary_contact_phone,notes,company:m2m_companies(name,billing_email,phone)"],
@@ -16,6 +16,7 @@ const sources = {
 // Page every source so exports never silently stop at the Data API row limit.
 export async function loadExportData(client, eventId, type) {
   const names = type === "confirmations" ? Object.keys(sources)
+    : type === "invoices" ? ["fourballs", "sponsors"]
     : type === "confirmed-sponsors" ? ["sponsors", "sponsorshipTypes"]
       : [type.replace("confirmed-", "").replace("suppliers", "sponsors")];
   const entries = await Promise.all(names.map(async (name) => {
@@ -73,6 +74,7 @@ function sponsorsSheet(rows, confirmed, name = "Sponsorships", title = "Sponsors
 }
 
 export function buildExportSheets(data, type) {
+  if (type === "invoices") return invoiceSheets(data);
   const confirmed = type === "confirmations" || type.startsWith("confirmed-");
   const companies = (data.companies || []).filter((row) => row.relationship_status === "confirmed");
   const fourballs = (data.fourballs || []).filter((row) => !confirmed || (row.booking_status === "confirmed" && activeCompany(row)));
@@ -108,5 +110,38 @@ export function buildExportSheets(data, type) {
     ] },
     companiesSheet(companies), fourballsSheet(fourballs, true), playersSheet(players, true), hostsSheet(hosts, true),
     sponsorsSheet(suppliers, true, "Suppliers", "Confirmed suppliers"), ...sponsorshipSheets(),
+  ];
+}
+
+function invoiceSheets(data) {
+  const groups = new Map();
+  const details = [];
+  const add = (row, kind, description, quantity) => {
+    if (!activeCompany(row)) return;
+    const company = row.eventCompany;
+    // Group by event participation identity, never by a potentially duplicated company name.
+    if (!company?.id) throw new Error("An invoice record is missing its company identity.");
+    if (!groups.has(company.id)) groups.set(company.id, { company, fourballs: 0, amounts: { Fourball: 0, Sponsorship: 0, Supplier: 0 }, waived: 0, refs: new Set(), payments: new Set() });
+    const group = groups.get(company.id);
+    const agreed = row.confirmed_amount_minor;
+    const waived = row.payment_status === "waived" ? agreed : 0;
+    const charge = row.payment_status === "waived" ? 0 : agreed;
+    group.amounts[kind] += charge;
+    group.waived += waived;
+    if (kind === "Fourball") group.fourballs += 1;
+    if (row.invoice_reference?.trim()) group.refs.add(row.invoice_reference.trim());
+    group.payments.add(label(row.payment_status));
+    details.push([companyName(row), kind, description, quantity, rand(agreed), rand(waived), rand(charge), label(row.payment_status), row.invoice_reference]);
+  };
+  for (const row of data.fourballs || []) if (row.booking_status === "confirmed") add(row, "Fourball", row.team_name, 1);
+  for (const row of data.sponsors || []) if (row.status === "confirmed") add(row, row.type?.category === "supplier" ? "Supplier" : "Sponsorship", [row.type?.name, row.contribution].filter(Boolean).join(" — "), row.quantity);
+  const editable = (name, width = 24, extra = {}) => ({ ...column(name, width), editable: true, ...extra });
+  return [
+    { name: "Invoice tracker", title: "Company invoice tracker", noteHeight: 56, note: "Confirmed bookings only. Waived items contribute R0. Totals are invoice values, not outstanding balances; review existing references before invoicing. Blue columns are for your team to edit in Excel; edits do not sync to the website.", columns: [column("Company", 32), column("Fourballs", 14, "integer"), moneyColumn("Fourball amount"), moneyColumn("Sponsorship amount"), moneyColumn("Supplier amount"), moneyColumn("Waived amount"), moneyColumn("Total to invoice"), textColumn("Existing invoice references"), column("Source payment statuses", 28), editable("Invoice status", 28, { options: ["To invoice", "Review existing invoice", "Review payment", "In progress", "Invoiced", "No invoice required"] }), editable("Invoice number"), editable("Invoice date", 24, { format: "date" }), editable("Owner"), editable("Tracking notes", 40), textColumn("Billing email"), column("Contact", 28), textColumn("Contact email"), column("Phone")], rows: byCompany([...groups.values()].map((group) => {
+      const total = group.amounts.Fourball + group.amounts.Sponsorship + group.amounts.Supplier;
+      const status = total === 0 ? "No invoice required" : group.refs.size ? "Review existing invoice" : group.payments.has("Paid") || group.payments.has("Partial") ? "Review payment" : "To invoice";
+      return [group.company.company?.name, group.fourballs, rand(group.amounts.Fourball), rand(group.amounts.Sponsorship), rand(group.amounts.Supplier), rand(group.waived), rand(total), [...group.refs].sort().join("\n"), [...group.payments].sort().join(", "), status, null, null, null, null, group.company.company?.billing_email, group.company.primary_contact_name, group.company.primary_contact_email, group.company.primary_contact_phone];
+    })) },
+    { name: "Invoice items", title: "Invoice booking breakdown", note: "Confirmed bookings only. One row per booking or commitment; amounts are totals, not unit prices. Waived charges are R0. Prize donation values are not invoiced.", columns: [column("Company", 32), column("Booking type", 22), textColumn("Description"), column("Quantity", 14, "integer"), moneyColumn("Agreed amount"), moneyColumn("Waived amount"), moneyColumn("Amount to invoice"), column("Payment status"), column("Existing invoice reference", 30)], rows: byCompany(details) },
   ];
 }
