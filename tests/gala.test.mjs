@@ -46,11 +46,12 @@ test('gala loading paginates every source and scopes each query by event', async
   assert.equal(calls.length, 6);
 });
 
-test('all fourball places are confirmed even with previous pending or declined settings', () => {
+test('fourball places default to confirmed but explicit cancellation takes precedence', () => {
   const players = Array.from({ length: 4 }, (_, i) => ({ ...golfer, id: `player-${i}`, position: i + 1, full_name: i === 0 ? 'John' : '' }));
   const rows = galaAttendees({ players, settings: [{ id: 'player-0', attendance: 'pending' }, { id: 'player-1', attendance: 'declined' }] });
   assert.equal(rows.length, 4);
-  assert.ok(rows.every(p => p.attendance === 'confirmed'));
+  assert.equal(rows.filter(p => p.attendance === 'confirmed').length, 3);
+  assert.equal(rows.find(p => p.id === 'player-1').attendance, 'declined');
   assert.equal(rows.filter(p => p.fullName.includes('details pending')).length, 3);
 });
 test('adding names to reserved party seats preserves counts and shared table assignments', () => {
@@ -62,4 +63,13 @@ test('adding names to reserved party seats preserves counts and shared table ass
   assert.deepEqual(galaSheets(after)[2].rows, [['Table 4', 5]]);
   assert.equal(galaSheets(after)[1].rows.length, 1);
   assert.ok(galaAttendees(after).every(p => p.tableName === 'Table 4'));
+});
+
+test('cancelled golfers and guests disappear from dinner, catering and table totals', () => {
+  const cancelled = { ...data, settings: [{ id: 'john', party_id: 'party', attendance: 'declined' }], parties: [{ ...party, guests: party.guests.map(g => ({ ...g, attendance: 'declined' })) }] };
+  const sheets = galaSheets(cancelled, true);
+  assert.equal(sheets[0].rows.length, 0);
+  assert.equal(sheets[1].rows.length, 0);
+  assert.equal(sheets[2].rows.length, 0);
+  assert.equal(sheets[3].rows.length, 2);
 });
