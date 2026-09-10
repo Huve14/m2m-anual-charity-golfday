@@ -2,10 +2,12 @@ import { z } from "zod";
 import { adminClient, fromSupabase, parseJsonBody, recordAudit, requireAdmin, sendError, sendJson, validate } from "../../_ops.js";
 
 const actionSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("createType"), eventId: z.string().uuid(), name: z.string().trim().min(2).max(160), category: z.enum(["alcoholic_hole", "non_alcoholic_hole", "branded_hole", "other"]), capacity: z.number().int().min(0).max(999), priceMinor: z.number().int().min(0), requiresHole: z.boolean(), isActive: z.boolean().default(true) }),
-  z.object({ action: z.literal("updateType"), eventId: z.string().uuid(), id: z.string().uuid(), name: z.string().trim().min(2).max(160).optional(), category: z.enum(["alcoholic_hole", "non_alcoholic_hole", "branded_hole", "other"]).optional(), capacity: z.number().int().min(0).max(999).optional(), priceMinor: z.number().int().min(0).optional(), requiresHole: z.boolean().optional(), isActive: z.boolean().optional() }),
-  z.object({ action: z.literal("createCommitment"), eventId: z.string().uuid(), eventCompanyId: z.string().uuid(), sponsorshipTypeId: z.string().uuid(), status: z.enum(["draft", "reserved", "confirmed", "cancelled"]), quantity: z.number().int().min(1).max(99), confirmedAmountMinor: z.number().int().min(0), invoiceReference: z.string().trim().max(120).optional(), paymentStatus: z.enum(["unpaid", "partial", "paid", "waived"]), notes: z.string().trim().max(5000).optional() }),
-  z.object({ action: z.literal("updateCommitment"), eventId: z.string().uuid(), id: z.string().uuid(), status: z.enum(["draft", "reserved", "confirmed", "cancelled"]).optional(), quantity: z.number().int().min(1).max(99).optional(), confirmedAmountMinor: z.number().int().min(0).optional(), invoiceReference: z.string().trim().max(120).nullable().optional(), paymentStatus: z.enum(["unpaid", "partial", "paid", "waived"]).optional(), notes: z.string().trim().max(5000).nullable().optional() }),
+  z.object({ action: z.literal("createType"), eventId: z.string().uuid(), name: z.string().trim().min(2).max(160), category: z.enum(["alcoholic_hole", "non_alcoholic_hole", "branded_hole", "supplier", "other"]), capacity: z.number().int().min(0).max(999), priceMinor: z.number().int().min(0), requiresHole: z.boolean(), isActive: z.boolean().default(true) }),
+  z.object({ action: z.literal("updateType"), eventId: z.string().uuid(), id: z.string().uuid(), name: z.string().trim().min(2).max(160).optional(), category: z.enum(["alcoholic_hole", "non_alcoholic_hole", "branded_hole", "supplier", "other"]).optional(), capacity: z.number().int().min(0).max(999).optional(), priceMinor: z.number().int().min(0).optional(), requiresHole: z.boolean().optional(), isActive: z.boolean().optional() }),
+  z.object({ action: z.literal("createCommitment"), eventId: z.string().uuid(), eventCompanyId: z.string().uuid(), sponsorshipTypeId: z.string().uuid(), status: z.enum(["draft", "reserved", "confirmed", "cancelled"]), quantity: z.number().int().min(1).max(99), confirmedAmountMinor: z.number().int().min(0), invoiceReference: z.string().trim().max(120).optional(), paymentStatus: z.enum(["unpaid", "partial", "paid", "waived"]), contribution: z.string().trim().max(2000).optional(), notes: z.string().trim().max(5000).optional() }),
+  z.object({ action: z.literal("updateCommitment"), eventId: z.string().uuid(), id: z.string().uuid(), status: z.enum(["draft", "reserved", "confirmed", "cancelled"]).optional(), quantity: z.number().int().min(1).max(99).optional(), confirmedAmountMinor: z.number().int().min(0).optional(), invoiceReference: z.string().trim().max(120).nullable().optional(), paymentStatus: z.enum(["unpaid", "partial", "paid", "waived"]).optional(), contribution: z.string().trim().max(2000).optional(), notes: z.string().trim().max(5000).nullable().optional() }),
+  z.object({ action: z.literal("createSupplier"), eventId: z.string().uuid(), eventCompanyId: z.string().uuid(), contribution: z.string().trim().min(1).max(2000), holeSlotId: z.string().uuid().nullable().optional() }),
+  z.object({ action: z.literal("createVenueSlot"), eventId: z.string().uuid(), locationName: z.string().trim().min(1).max(120), label: z.string().trim().min(1).max(120) }),
   z.object({ action: z.literal("createHoleSlot"), eventId: z.string().uuid(), holeId: z.string().uuid(), label: z.string().trim().min(1).max(120), sponsorshipTypeId: z.string().uuid().nullable().optional() }),
   z.object({ action: z.literal("allocate"), eventId: z.string().uuid(), unitId: z.string().uuid(), holeSlotId: z.string().uuid() }),
   z.object({ action: z.literal("unallocate"), eventId: z.string().uuid(), unitId: z.string().uuid() }),
@@ -31,11 +33,11 @@ async function list(req, res) {
       sponsorshipTypeId: item.sponsorship_type_id, typeName: item.type?.name || "", category: item.type?.category || "other",
       requiresHole: Boolean(item.type?.requires_hole), status: item.status, quantity: item.quantity,
       confirmedAmountMinor: item.confirmed_amount_minor, invoiceReference: item.invoice_reference || "",
-      paymentStatus: item.payment_status, notes: item.notes || "",
+      paymentStatus: item.payment_status, contribution: item.contribution || "", notes: item.notes || "",
       units: (item.units || []).toSorted((a, b) => a.unit_number - b.unit_number).map((unit) => ({ id: unit.id, unitNumber: unit.unit_number, holeSlotId: unit.hole_slot_id, allocatedAt: unit.allocated_at })),
     })),
     holes: holes.data.map((hole) => ({ id: hole.id, number: hole.hole_number, label: hole.label })),
-    holeSlots: slots.data.map((item) => ({ id: item.id, holeId: item.hole_id, holeNumber: item.hole?.hole_number, label: item.label, displayLabel: `${item.hole?.label || "Hole"} · ${item.label}`, sponsorshipTypeId: item.sponsorship_type_id, typeName: item.type?.name || "Any hole sponsorship", unitId: item.unit?.[0]?.id || null })),
+    holeSlots: slots.data.map((item) => ({ id: item.id, holeId: item.hole_id, holeNumber: item.hole?.hole_number || null, locationName: item.location_name || "", label: item.label, displayLabel: `${item.hole?.label || item.location_name} · ${item.label}`, sponsorshipTypeId: item.sponsorship_type_id, typeName: item.type?.name || "Any sponsorship", unitId: item.unit?.[0]?.id || null })),
     companies: companies.data.filter((item) => item.relationship_status !== "cancelled").map((item) => ({ id: item.id, name: item.company?.name || "" })),
   });
 }
@@ -45,7 +47,15 @@ async function mutate(req, res) {
   const input = validate(actionSchema, parseJsonBody(req));
   const client = adminClient();
   let entityId = input.id || input.unitId || "new";
-  if (input.action === "createType") {
+  if (input.action === "createSupplier") {
+    const { data, error } = await client.rpc("m2m_create_supplier_sponsorship", { p_event_id: input.eventId, p_event_company_id: input.eventCompanyId, p_contribution: input.contribution, p_slot_id: input.holeSlotId || null, p_actor_id: profile.id });
+    if (error) throw fromSupabase(error, "supplier_create_failed", "The supplier sponsorship could not be created.");
+    entityId = data;
+  } else if (input.action === "createVenueSlot") {
+    const { data, error } = await client.from("m2m_hole_sponsorship_slots").insert({ event_id: input.eventId, location_name: input.locationName, label: input.label }).select("id").single();
+    if (error) throw fromSupabase(error, "venue_slot_create_failed", "The venue position could not be created.");
+    entityId = data.id;
+  } else if (input.action === "createType") {
     const { data, error } = await client.from("m2m_sponsorship_types").insert({ event_id: input.eventId, name: input.name, category: input.category, capacity: input.capacity, price_minor: input.priceMinor, requires_hole: input.requiresHole, is_active: input.isActive }).select("id").single();
     if (error) throw fromSupabase(error, "sponsorship_type_create_failed", "The sponsorship type could not be created.");
     entityId = data.id;
@@ -60,7 +70,7 @@ async function mutate(req, res) {
     const { error } = await client.from("m2m_sponsorship_types").update(changes).eq("id", input.id).eq("event_id", input.eventId);
     if (error) throw fromSupabase(error, "sponsorship_type_update_failed", "The sponsorship type could not be updated.");
   } else if (input.action === "createCommitment") {
-    const { data, error } = await client.from("m2m_sponsorship_commitments").insert({ event_id: input.eventId, event_company_id: input.eventCompanyId, sponsorship_type_id: input.sponsorshipTypeId, status: input.status, quantity: input.quantity, confirmed_amount_minor: input.confirmedAmountMinor, invoice_reference: input.invoiceReference || null, payment_status: input.paymentStatus, notes: input.notes || null }).select("id").single();
+    const { data, error } = await client.from("m2m_sponsorship_commitments").insert({ event_id: input.eventId, event_company_id: input.eventCompanyId, sponsorship_type_id: input.sponsorshipTypeId, status: input.status, quantity: input.quantity, confirmed_amount_minor: input.confirmedAmountMinor, contribution: input.contribution || "", invoice_reference: input.invoiceReference || null, payment_status: input.paymentStatus, notes: input.notes || null }).select("id").single();
     if (error) throw fromSupabase(error, "sponsorship_create_failed", "The sponsorship could not be created.");
     entityId = data.id;
   } else if (input.action === "updateCommitment") {
@@ -70,6 +80,7 @@ async function mutate(req, res) {
     if (input.confirmedAmountMinor !== undefined) changes.confirmed_amount_minor = input.confirmedAmountMinor;
     if (input.invoiceReference !== undefined) changes.invoice_reference = input.invoiceReference || null;
     if (input.paymentStatus !== undefined) changes.payment_status = input.paymentStatus;
+    if (input.contribution !== undefined) changes.contribution = input.contribution;
     if (input.notes !== undefined) changes.notes = input.notes || null;
     const { error } = await client.from("m2m_sponsorship_commitments").update(changes).eq("id", input.id).eq("event_id", input.eventId);
     if (error) throw fromSupabase(error, "sponsorship_update_failed", "The sponsorship could not be updated.");

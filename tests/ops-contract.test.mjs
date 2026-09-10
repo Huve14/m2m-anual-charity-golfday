@@ -159,7 +159,7 @@ test("edits company details and sponsorship commercial records", async () => {
   assert.match(sponsorships, /confirmed_amount_minor/);
   assert.match(sponsorships, /payment_status/);
   assert.match(admin, /Edit company/);
-  assert.match(admin, /Edit quantity, price and payment/);
+  assert.match(admin, /Edit contribution, quantity and payment/);
   assert.match(admin, /Save sponsorship/);
 });
 test("supports event-scoped host creation, co-hosts and primary reassignment", async () => {

@@ -131,7 +131,7 @@ test("builds the confirmed M2M Invitational experience for Vercel", async () => 
   assert.match(adminLogic, /Operational exports/);
   assert.match(adminLogic, /Administrators and hosts/);
   assert.match(adminLogic, /Website enquiries/);
-  assert.match(adminLogic, /Sponsorships & holes/);
+  assert.match(adminLogic, /Sponsorships & locations/);
   assert.doesNotMatch(adminLogic, /SUPABASE_(?:SECRET|SERVICE_ROLE)/);
   assert.doesNotMatch(adminLogic, /raw_registration|consent_text_snapshot|user_id/);
 });
