@@ -6,10 +6,10 @@ import {
 
 const playerInput = z.object({
   action: z.literal("savePlayer"), eventId: z.string().uuid(), fourballId: z.string().uuid(), playerId: z.string().uuid(),
-  fullName: z.string().trim().max(160), email: z.union([z.string().email(), z.literal("")]),
-  phone: z.string().trim().max(40), handicap: z.string().trim().max(20), shirtSize: z.string().trim().max(20),
-  dietaryRequirements: z.string().trim().max(1000), specialRequirements: z.string().trim().max(1000),
-  homeClub: z.string().trim().max(160), golfId: z.string().trim().max(80),
+  fullName: z.string().trim().max(160).optional(), email: z.union([z.string().email(), z.literal("")]).optional(),
+  phone: z.string().trim().max(40).optional(), handicap: z.string().trim().max(20).optional(), shirtSize: z.string().trim().max(20).optional(),
+  dietaryRequirements: z.string().trim().max(1000).optional(), specialRequirements: z.string().trim().max(1000).optional(),
+  homeClub: z.string().trim().max(160).optional(), golfId: z.string().trim().max(80).optional(),
 });
 const actionSchema = z.discriminatedUnion("action", [
   playerInput,
@@ -59,7 +59,7 @@ async function list(req, res) {
     return;
   }
   const [eventsResult, fourballsResult, fieldsResult] = await Promise.all([
-    client.from("m2m_events").select("id,name,slug,status,venue_name,venue_address,format,timezone,shotgun_start_at,player_deadline_at,rules,primary_colour,accent_colour,logo_path,banner_path,required_player_fields,shirt_size_options,privacy_notice_version").in("id", eventIds),
+    client.from("m2m_events").select("id,name,slug,status,venue_name,venue_address,format,timezone,shotgun_start_at,player_deadline_at,rules,primary_colour,accent_colour,logo_path,banner_path,visible_player_fields,required_player_fields,shirt_size_options,privacy_notice_version").in("id", eventIds),
     client.from("m2m_fourballs").select("*,players:m2m_players(*,responses:m2m_player_field_responses(field_id,value)),eventCompany:m2m_event_companies(id,company:m2m_companies(id,name)),teeSlot:m2m_tee_slots(id,slot_label,hole:m2m_event_holes(id,label))").in("id", fourballIds),
     client.from("m2m_event_player_fields").select("id,event_id,field_key,label,field_type,options,is_required,sort_order").in("event_id", eventIds).order("sort_order"),
   ]);
@@ -72,7 +72,7 @@ async function list(req, res) {
     format: event.format, timezone: event.timezone, shotgunStartAt: event.shotgun_start_at,
     playerDeadlineAt: event.player_deadline_at, rules: event.rules, primaryColour: event.primary_colour,
     accentColour: event.accent_colour, logoPath: event.logo_path, bannerPath: event.banner_path,
-    requiredPlayerFields: event.required_player_fields || [], shirtSizeOptions: event.shirt_size_options || [], privacyNoticeVersion: event.privacy_notice_version,
+    visiblePlayerFields: event.visible_player_fields, requiredPlayerFields: event.required_player_fields || [], shirtSizeOptions: event.shirt_size_options || [], privacyNoticeVersion: event.privacy_notice_version,
     customFields: eventFields.map((field) => ({ id: field.id, key: field.field_key, label: field.label, type: field.field_type, options: field.options || [], required: field.is_required })),
     fourballs: assignments.filter((assignment) => assignment.event_id === event.id).map((assignment) => ({
       ...publicFourball(fourballMap.get(assignment.fourball_id), event, eventFields), isPrimaryHost: assignment.is_primary,

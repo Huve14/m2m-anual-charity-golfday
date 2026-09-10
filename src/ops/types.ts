@@ -6,7 +6,7 @@ export interface EventRecord {
   format: string; timezone: string; currency: string; shotgunStartAt: string | null;
   registrationDeadlineAt: string | null; playerDeadlineAt: string | null; rules: string;
   primaryColour: string; accentColour: string; logoPath: string | null; bannerPath: string | null;
-  requiredPlayerFields: string[]; shirtSizeOptions: string[]; reminderOffsetsDays: number[];
+  visiblePlayerFields?: string[]; requiredPlayerFields: string[]; shirtSizeOptions: string[]; reminderOffsetsDays: number[];
   createdAt: string; updatedAt: string;
 }
 
