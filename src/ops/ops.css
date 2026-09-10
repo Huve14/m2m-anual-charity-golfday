@@ -107,3 +107,5 @@
 .ops-body .fourball-page .fourball-toolbar .fourball-search{max-width:none}
 .ops-body .fourball-page .fourball-filters{grid-column:1/-1}
 @media(max-width:600px){.ops-body .fourball-page .fourball-toolbar{grid-template-columns:1fr}.ops-body .fourball-page>.section-header{gap:12px}.ops-body .fourball-page .fourball-view-switch{margin-bottom:12px}}
+.ops-body .company-field-error{display:block;margin-top:7px;color:#a5283b;font-size:12px;line-height:1.5}
+.ops-body [aria-invalid=true]{border-color:#b72b42;background:#fff7f8;outline-color:#b72b42}
