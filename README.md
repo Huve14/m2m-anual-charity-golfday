@@ -104,3 +104,7 @@ All four player places from non-cancelled fourballs and companies appear automat
 Validation: `npm test`, `npx tsc --noEmit`, `npm run lint`. With local Supabase running, execute `supabase test db supabase/tests/gala_dinner.test.sql --local` for database access checks.
 
 Cancel an individual from the gala attendee list or use **Cancel family attendance** to cancel the whole party, including linked golfers. The active list, catering exports and table totals exclude cancelled attendees. Use the **Cancelled** filter to review retained details; reconfirm a guest through Edit party or a golfer through Dinner details. Family cancellation is applied atomically and leaves golf bookings unchanged.
+
+The gala page has **All attendees**, **Fourballs**, **Invited guests**, and **Staff** tabs, with active attendee counts. Tabs filter the attendee list, summary metrics and relevant parties; attendance and search filters still apply. Golfers are labelled Fourball automatically. Dinner-only parties have an Invited guests / Staff category selector, and new parties started from Staff default to Staff. Category labels are included in Excel exports; exports retain the complete event view across categories.
+
+Apply `supabase/migrations/20260910202442_gala_party_categories.sql` for these tabs. It defaults existing dinner parties to Invited guests without changing their details, tables or attendance.
