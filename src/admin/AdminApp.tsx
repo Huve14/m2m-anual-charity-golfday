@@ -5,7 +5,7 @@ import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo,
 import readXlsxFile from "read-excel-file/browser";
 import { strFromU8, unzipSync } from "fflate";
 import { AccountGate, SignIn, signOut, useOpsSession } from "../ops/Auth";
-import { dateTime, money, OpsApiError, opsApi, toIso, toLocalInput } from "../ops/client";
+import { currentSession, dateTime, money, OpsApiError, opsApi, toIso, toLocalInput } from "../ops/client";
 import type { EventCompany, EventRecord, FourballRecord, UserRecord } from "../ops/types";
 
 type Tab = "overview" | "setup" | "companies" | "sponsorships" | "suppliers" | "fourballs" | "tee" | "hosts" | "players" | "imports" | "exports" | "enquiries";
@@ -883,8 +883,63 @@ function ConfirmedImports({ event, onRefresh }: { event: EventRecord; onRefresh:
 }
 
 function Exports({ event }: { event: EventRecord }) {
-  const exports = [["players", "Complete player list", "Contact, golf, clothing and special requirements"], ["fourballs", "Fourballs and tee sheet", "Teams, hosts, payment and shotgun starts"], ["sponsors", "Sponsor allocation sheet", "Commitments, commercial status and hole allocations"], ["hosts", "Outstanding host report", "Invitation, acceptance, reminder and submission states"]];
-  return <><SectionHeader eyebrow="Event handoff" title="Operational exports" copy="Exports are generated for this event only and protect spreadsheet cells from formula injection." /><div className="export-grid">{exports.map(([type, title, copy]) => <a key={type} className="export-card" href={`/api/v1/admin/exports?eventId=${event.id}&type=${type}`} onClick={async (click) => { click.preventDefault(); const exportUrl = click.currentTarget.href; try { const client = (await import("../ops/client")).getSupabase; const supabase = await client(); const { data } = await supabase.auth.getSession(); const response = await fetch(exportUrl, { headers: { Authorization: `Bearer ${data.session?.access_token || ""}` } }); if (!response.ok) throw new Error("Export failed."); const blob = await response.blob(); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `m2m-${type}.csv`; anchor.click(); URL.revokeObjectURL(url); } catch { window.alert("The export could not be downloaded."); } }}><span>CSV</span><h3>{title}</h3><p>{copy}</p><strong>Download →</strong></a>)}</div></>;
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const confirmations = [
+    ["confirmations", "All confirmations", "One workbook with a summary, companies, fourballs, players, hosts, suppliers and a tab for every sponsorship type."],
+    ["confirmed-companies", "Confirmed companies", "Company participation, primary contacts and billing details."],
+    ["confirmed-fourballs", "Confirmed fourballs", "Confirmed bookings, hosts, tee allocations, amounts and payment status."],
+    ["confirmed-sponsors", "Confirmed sponsorships", "Every sponsorship type on its own tab, with contributions and allocations."],
+    ["confirmed-suppliers", "Confirmed suppliers", "Supplier contributions, prize values, contacts and locations."],
+  ];
+  const operational = [
+    ["players", "Complete player list", "Contact, golf, clothing and special requirements."],
+    ["fourballs", "Fourballs and tee sheet", "Teams, hosts, payment and shotgun starts across all booking statuses."],
+    ["sponsors", "Sponsorship commitments", "Every sponsorship status, with quantities, values and allocations."],
+    ["suppliers", "Supplier contributions", "Every supplier status, with contributions, prize values and contacts."],
+    ["hosts", "Host invitation report", "Invitation, acceptance, reminder and player submission states."],
+  ];
+  async function download(exportUrl: string, type: string) {
+    setBusy(type);
+    setError("");
+    try {
+      const session = await currentSession();
+      if (!session?.access_token) throw new Error("Sign in again to download this workbook.");
+      const response = await fetch(exportUrl, { cache: "no-store", headers: { Authorization: `Bearer ${session.access_token}` } });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({})) as { message?: string };
+        throw new Error(payload.message || "The Excel export could not be downloaded.");
+      }
+      if (!response.headers.get("Content-Type")?.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) throw new Error("The server did not return an Excel workbook. Please try again.");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = response.headers.get("Content-Disposition")?.match(/filename="([^"/\\]+\.xlsx)"/i)?.[1] || `m2m-${type}.xlsx`;
+      document.body.appendChild(anchor);
+      try { anchor.click(); } finally {
+        anchor.remove();
+        // Give the browser time to start reading the download before releasing it.
+        window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The Excel export could not be downloaded.");
+    } finally { setBusy(""); }
+  }
+  function cards(items: string[][]) {
+    return <div className="export-grid">{items.map(([type, title, copy]) => <a key={type} className="export-card" href={`/api/v1/admin/exports?eventId=${event.id}&type=${type}`} aria-disabled={Boolean(busy)} onClick={(click) => {
+      click.preventDefault();
+      const exportUrl = click.currentTarget.href;
+      if (!busy) return download(exportUrl, type);
+    }}><span>EXCEL · .XLSX</span><h3>{title}</h3><p>{copy}</p><strong>{busy === type ? "Preparing workbook…" : "Download Excel →"}</strong></a>)}</div>;
+  }
+  return <>
+    <SectionHeader eyebrow="Event handoff" title="Operational exports" copy="Branded Excel workbooks with your M2M logo, event colours, filters and frozen headings." />
+    <ErrorBanner message={error} />
+    {busy ? <p role="status">Preparing your Excel workbook…</p> : null}
+    <section className="export-section" aria-label="Confirmed records"><h3>Confirmations</h3><p>Confirmed records only. Players and hosts in the combined workbook belong to confirmed fourballs.</p>{cards(confirmations)}</section>
+    <section className="export-section" aria-label="All operational records"><h3>All operational records</h3><p>Includes pending, reserved, draft and cancelled records where applicable.</p>{cards(operational)}</section>
+  </>;
 }
 
 interface Enquiry { registrationId: string; submittedAt: string; status: string; email: string; contactName: string; company: string; phone: string; fourballCount: number; players: Array<{ name?: string; handicap?: string }>; sponsorshipLabel: string; sponsorshipAmount: number; totalAmount: number; notes: string; conversion: { event_id: string; converted_at: string } | null }

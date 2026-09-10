@@ -16,6 +16,7 @@
     { "source": "/host/:path*", "destination": "/host" }
   ],
   "functions": {
+    "api/v1/admin/exports.js": { "regions": ["dub1"], "includeFiles": "public/assets/m2m-logo.png" },
     "api/*.js": { "regions": ["dub1"] },
     "api/v1/**/*.js": { "regions": ["dub1"] }
   },
