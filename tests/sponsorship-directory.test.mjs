@@ -24,6 +24,7 @@ test('sponsorship directory returns numeric holes and stable company/allocation 
     else if (url.pathname.endsWith('/m2m_event_companies')) body = [{ id: 'company-event', company: { name: 'Example Company' } }];
     else if (url.pathname.endsWith('/m2m_event_holes')) body = [{ id: 'hole-1', hole_number: 1, label: 'Hole 1' }, { id: 'hole-2', hole_number: 2, label: 'Hole 2' }];
     else throw new Error(`Unexpected endpoint: ${url.pathname}`);
+    if (url.pathname.endsWith('/m2m_hole_sponsorship_slots')) body.push({ id: 'venue-slot', hole_id: null, location_name: 'Putting green', label: 'Prize display', hole: null, unit: [] });
     if (url.pathname.endsWith('/m2m_sponsorship_commitments')) body.push(
       { ...body[0], id: 'cancelled-company-booking', eventCompany: { relationship_status: 'cancelled', company: { name: 'Cancelled Company' } } },
       { ...body[0], id: 'cancelled-booking', status: 'cancelled' },
@@ -41,6 +42,8 @@ test('sponsorship directory returns numeric holes and stable company/allocation 
   assert.equal(res.body.commitments[0].eventCompanyId, res.body.companies[0].id);
   assert.equal(res.body.commitments[0].units[0].holeSlotId, res.body.holeSlots[0].id);
   assert.equal(res.body.holeSlots[0].unitId, 'unit');
+  assert.equal(res.body.holeSlots[1].holeNumber, null);
+  assert.equal(res.body.holeSlots[1].displayLabel, 'Putting green · Prize display');
   assert.equal(res.body.commitments[0].requiresHole, true);
   for (const url of requested.filter((url) => url.pathname.startsWith('/rest/v1/') && !url.pathname.endsWith('/m2m_profiles'))) {
     assert.equal(url.searchParams.get('event_id'), 'eq.event');
@@ -84,4 +87,49 @@ test('fourball directory excludes cancelled participation and preserves explicit
   await fourballs({ method: 'GET', headers: { authorization: 'Bearer sample-token' }, query: { eventId: 'event', includeCancelled: 'true' } }, history);
   assert.equal(history.statusCode, 200);
   assert.equal(history.body.fourballs.length, 3);
+});
+
+const supplierEvent = '00000000-0000-4000-8000-000000000001';
+const supplierCompany = '00000000-0000-4000-8000-000000000002';
+const supplierSlot = '00000000-0000-4000-8000-000000000003';
+
+test('supplier creation passes contribution and optional venue placement through one atomic booking call', async (t) => {
+  const mutations = [];
+  t.mock.method(globalThis, 'fetch', async (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input);
+    let body;
+    if (url.pathname === '/auth/v1/user') body = { id: supplierCompany };
+    else if (url.pathname.endsWith('/m2m_profiles')) body = { id: supplierCompany, role: 'admin', is_active: true };
+    else if (url.pathname.endsWith('/rpc/m2m_create_supplier_sponsorship')) { mutations.push(JSON.parse(init.body)); body = 'booking-id'; }
+    else if (url.pathname.endsWith('/m2m_audit_events')) body = [];
+    else throw new Error(`Unexpected endpoint: ${url.pathname}`);
+    return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+  });
+  const res = response();
+  await handler({ method: 'POST', headers: { authorization: 'Bearer sample-token', 'content-type': 'application/json' }, body: { action: 'createSupplier', eventId: supplierEvent, eventCompanyId: supplierCompany, contribution: '  200 bottled waters  ', holeSlotId: supplierSlot } }, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.id, 'booking-id');
+  assert.deepEqual(mutations, [{ p_event_id: supplierEvent, p_event_company_id: supplierCompany, p_contribution: '200 bottled waters', p_slot_id: supplierSlot, p_actor_id: supplierCompany }]);
+  const invalid = response();
+  await handler({ method: 'POST', headers: { authorization: 'Bearer sample-token', 'content-type': 'application/json' }, body: { action: 'createSupplier', eventId: supplierEvent, eventCompanyId: supplierCompany, contribution: '   ' } }, invalid);
+  assert.equal(invalid.statusCode, 400);
+  assert.equal(mutations.length, 1);
+});
+
+test('venue positions save a named event location without inventing a numbered hole', async (t) => {
+  let position;
+  t.mock.method(globalThis, 'fetch', async (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input);
+    let body;
+    if (url.pathname === '/auth/v1/user') body = { id: supplierCompany };
+    else if (url.pathname.endsWith('/m2m_profiles')) body = { id: supplierCompany, role: 'admin', is_active: true };
+    else if (url.pathname.endsWith('/m2m_hole_sponsorship_slots')) { position = JSON.parse(init.body); body = { id: supplierSlot }; }
+    else if (url.pathname.endsWith('/m2m_audit_events')) body = [];
+    else throw new Error(`Unexpected endpoint: ${url.pathname}`);
+    return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+  });
+  const res = response();
+  await handler({ method: 'POST', headers: { authorization: 'Bearer sample-token', 'content-type': 'application/json' }, body: { action: 'createVenueSlot', eventId: supplierEvent, locationName: 'Putting green', label: 'Prize display' } }, res);
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(position, { event_id: supplierEvent, location_name: 'Putting green', label: 'Prize display' });
 });
