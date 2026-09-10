@@ -12,8 +12,8 @@
     { "source": "/api/admin/allocations/:id", "destination": "/api/admin-allocation?id=:id" },
     { "source": "/api/portal/me", "destination": "/api/portal-me" },
     { "source": "/api/portal/fourballs/:id/players", "destination": "/api/portal-players?id=:id" },
-    { "source": "/admin/:path*", "destination": "/admin.html" },
-    { "source": "/host/:path*", "destination": "/host.html" }
+    { "source": "/admin/:path*", "destination": "/admin" },
+    { "source": "/host/:path*", "destination": "/host" }
   ],
   "functions": {
     "api/*.js": { "regions": ["dub1"] },
