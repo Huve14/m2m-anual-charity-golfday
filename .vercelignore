@@ -2,3 +2,6 @@
 outputs/
 work/
 skills-lock.json
+
+.playwright-cli/
+output/
