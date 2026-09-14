@@ -10,6 +10,7 @@ import {
   validate,
 } from "../../_ops.js";
 import {
+  deletePhotos,
   issuePhotoLink,
   issuePhotoLinkBatch,
   listPhotos,
@@ -20,6 +21,15 @@ import {
 } from "../../_photos.js";
 const uuid = z.string().uuid();
 const schema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("delete"),
+    eventId: uuid,
+    ids: z
+      .array(uuid)
+      .min(1)
+      .max(100)
+      .refine((ids) => new Set(ids).size === ids.length),
+  }),
   z.object({
     action: z.literal("link-batch"),
     eventId: uuid,
@@ -122,6 +132,10 @@ export default async function handler(req, res) {
       return sendJson(res, 200, { ok: true, settings, fourballs, links });
     }
     const input = validate(schema, parseJsonBody(req));
+    if (input.action === "delete") {
+      await deletePhotos(input.eventId, input.ids, profile.id);
+      return sendJson(res, 200, { ok: true });
+    }
     if (input.action === "link-batch") {
       const links = await issuePhotoLinkBatch({
         ...input,

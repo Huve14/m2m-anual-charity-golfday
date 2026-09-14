@@ -137,3 +137,10 @@ Admin batches create up to 500 fourball links in one atomic request, with a sepa
 allowance of five new batches per minute. Retrying the same batch returns the same
 links without consuming another batch or creating duplicates. Individual link
 creation retains its ten-links-per-minute limit.
+
+Admins can select photos in any approval queue and choose **Delete permanently**.
+After confirmation, this removes originals, previews, staging files, photo records
+and fourball tags rather than keeping images in Rejected. If file removal fails,
+public access is withdrawn and the records remain available in Rejected for retry.
+Previously downloaded copies cannot be recalled; already displayed images may
+remain visible until the next gallery refresh.

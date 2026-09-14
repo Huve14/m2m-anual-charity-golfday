@@ -90,6 +90,21 @@ export function AdminPhotos({
       setEditTags(false);
     }
   }
+  async function removeSelected() {
+    if (
+      !window.confirm(
+        `Permanently delete ${selected.length} selected photo${selected.length === 1 ? "" : "s"}? This removes the files and all gallery and review entries, including Rejected. This cannot be undone.`,
+      )
+    )
+      return;
+    const result = await mutate({ action: "delete", ids: selected });
+    setRevision((v) => v + 1);
+    setSelected([]);
+    if (result) {
+      setEditTags(false);
+      setMessage("Photos permanently deleted.");
+    }
+  }
   async function create(replace?: Link) {
     const result = await mutate({
       action: "link",
@@ -312,6 +327,13 @@ export function AdminPhotos({
                 />
               ) : null}
               <div className="photo-actions">
+                <button
+                  className="secondary-button"
+                  disabled={busy}
+                  onClick={() => void removeSelected()}
+                >
+                  Delete permanently
+                </button>
                 {status !== "approved" ? (
                   <button
                     className="primary-button"
