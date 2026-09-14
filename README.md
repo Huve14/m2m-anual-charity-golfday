@@ -108,3 +108,32 @@ Cancel an individual from the gala attendee list or use **Cancel family attendan
 The gala page has **All attendees**, **Fourballs**, **Invited guests**, and **Staff** tabs, with active attendee counts. Tabs filter the attendee list, summary metrics and relevant parties; attendance and search filters still apply. Golfers are labelled Fourball automatically. Dinner-only parties have an Invited guests / Staff category selector, and new parties started from Staff default to Staff. Category labels are included in Excel exports; exports retain the complete event view across categories.
 
 Apply `supabase/migrations/20260910202442_gala_party_categories.sql` for these tabs. It defaults existing dinner parties to Invited guests without changing their details, tables or attendance.
+
+### Golf-day photos
+
+**Admin → event → Photos** manages approval, fourball tagging, staff upload links and access controls. The fourball editor and host portal can create a golfer gallery link and downloadable/printable QR. Save the generated link or QR when it is issued: only its hash is retained on the server. Hosts can issue links only for assigned fourballs. Admins can revoke or replace links without altering host login access.
+
+Staff choose one or more fourballs (or General event) before capturing/selecting photos. Golfer submissions default to their fourball. Uploads begin after camera confirmation or file selection. Contributors can adjust their own pending photo tags; only signed-in admins can approve, reject or withdraw photos. Every approved image appears in All event photos; My fourball filters by its tags. Open galleries refresh every five seconds and announce new photos without moving the viewer's current position.
+
+The feature uses `/api/v1/photos` (capability in `X-Photo-Token`), `/api/v1/photo-links` (authenticated host/admin link creation), and `/api/v1/admin/photos` (admin moderation and settings). Link tokens travel in URL fragments, are removed from the address bar after opening, and remain in that browser tab's session storage. They never confer player-data or host-editing access.
+
+Apply `supabase/migrations/20260914155811_golf_day_photos.sql` before deploying. It adds five RLS-enabled tables, service-only functions and two private buckets. Set `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (or `SUPABASE_SERVICE_ROLE_KEY`) and `SUPABASE_PUBLISHABLE_KEY` in each deployment environment. Preserve existing migration history; do not apply unrelated pending migrations just to enable photos.
+
+Signed TUS uploads must use `/storage/v1/upload/resumable/sign` with `x-signature`, not the ordinary authenticated resumable endpoint. Uploads go to staging; completion validates the entire raster and writes immutable final objects. Full-size downloads are normalised JPEGs with orientation corrected and metadata stripped; previews are WebP. Read URLs expire after 60 seconds. Revocation prevents new API access immediately, but previously issued storage credentials last until expiry; their paths cannot overwrite reviewed photos. Previously downloaded files cannot be recalled.
+
+Limits: JPEG/PNG/WebP, 25 MiB and 60 megapixels per image, 100 images per batch, 20 fourball tags, 200 golfer or 2,000 staff photos per link per rolling 24 hours. Each event defaults to 10,000 reserved images and 250 GiB of declared upload bytes. Reservations (including failed uploads) count toward quotas to prevent repeated storage allocation. Links allow 240 API requests/minute and 10 new batches/minute. Link creation is limited to 10/minute per operator, with 20 active gallery links per fourball and 100 staff links per event. These quotas are enforced transactionally in PostgreSQL. Keep the page open during uploads; browser closure and direct camera syncing are outside this release.
+
+Verification: `npm test`, `npm run lint`, `npx tsc --noEmit`. Photo tests include embedded PostgreSQL migration/permission checks without Docker, API access tests and actual image decoding. Before production release, rehearse with staff on an iPhone and Android: scan QR, capture, interrupt/retry a transfer, approve, view both galleries, download/share, withdraw approval and revoke a link. Physical camera and native share-sheet behaviour still need those device checks. Deployment rollback can retain the additive photo schema; disable photo access in the event settings if needed.
+
+An opt-in integration rehearsal is available as `node --env-file=<server-env-file> scripts/rehearse-photos.mjs --allow-test-fixtures`. It creates no user accounts and removes its temporary event, companies, fourballs, links and images in a `finally` block. Set `PHOTO_PREVIEW_URL` to exercise the deployed API through `vercel curl` (requires an authenticated Vercel CLI); otherwise it invokes local handlers against the configured Supabase project. Use only the intended test database or an explicitly approved shared database. Never commit the server environment file.
+
+Batch cart QR codes: in an event's **Photos** section, select all or specific
+fourballs under **Print QR codes for fourball carts**, then create the batch.
+Download the print sheet (four labelled cards per A4 page) and open it to print
+or save as PDF. Download the CSV for the corresponding gallery links. Save these
+files before leaving the page to retain the original codes for reprints.
+Completed codes are kept during retries; only unfinished fourballs are processed.
+Admin batches create up to 500 fourball links in one atomic request, with a separate
+allowance of five new batches per minute. Retrying the same batch returns the same
+links without consuming another batch or creating duplicates. Individual link
+creation retains its ten-links-per-minute limit.

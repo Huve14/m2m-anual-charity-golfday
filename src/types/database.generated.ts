@@ -15,6 +15,12 @@ type EventOwned = { event_id: string };
 export type Database = {
   public: {
     Tables: {
+      m2m_photo_link_batches: Table<{ id: string; event_id: string; actor_id: string; requests: Json; created_at: string }>;
+      m2m_photo_settings: Table<EventOwned & { gallery_enabled: boolean; uploads_enabled: boolean; photo_limit: number; byte_limit: number }>;
+      m2m_photo_links: Table<EventOwned & { id: string; fourball_id: string | null; kind: "gallery" | "staff"; label: string; token_hash: string; created_by: string | null; created_at: string; revoked_at: string | null; expires_at: string | null; rate_started_at: string; rate_count: number }>;
+      m2m_photo_batches: Table<EventOwned & { id: string; link_id: string; created_at: string }>;
+      m2m_photos: Table<EventOwned & { id: string; batch_id: string; link_id: string; source: "gallery" | "staff"; filename: string; content_type: "image/jpeg" | "image/png" | "image/webp"; byte_size: number; staging_path: string; original_path: string | null; preview_path: string | null; upload_status: "uploading" | "complete"; status: "pending" | "approved" | "rejected"; created_at: string; completed_at: string | null; reviewed_at: string | null; reviewed_by: string | null }>;
+      m2m_photo_fourballs: Table<EventOwned & { photo_id: string; fourball_id: string }>;
       m2m_profiles: Table<IdDates & { email: string; full_name: string; role: "super_admin" | "admin" | "host"; is_active: boolean; last_seen_at: string | null }>;
       m2m_events: Table<IdDates & { name: string; slug: string; status: "draft" | "active" | "completed" | "archived"; venue_name: string; venue_address: string; format: string; timezone: string; currency: string; shotgun_start_at: string | null; registration_deadline_at: string | null; player_deadline_at: string | null; rules: string; primary_colour: string; accent_colour: string; logo_path: string | null; banner_path: string | null; visible_player_fields: Json; required_player_fields: Json; shirt_size_options: Json; reminder_offsets_days: Json; privacy_notice_version: string; created_by: string | null }>;
       m2m_event_holes: Table<EventOwned & { id: string; hole_number: number; label: string; par: number | null; sort_order: number; created_at: string }>;
@@ -37,6 +43,12 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      m2m_photo_access: { Args: { p_hash: string }; Returns: Database["public"]["Tables"]["m2m_photo_links"]["Row"] };
+      m2m_photo_reserve: { Args: { p_link: string; p_batch: string; p_files: Json; p_fourballs: string[] }; Returns: Database["public"]["Tables"]["m2m_photos"]["Row"][] };
+      m2m_photo_moderate: { Args: { p_event: string; p_ids: string[]; p_actor: string | null; p_status: string | null; p_fourballs?: string[] | null }; Returns: undefined };
+      m2m_photo_retag: { Args: { p_link: string; p_photo: string; p_fourballs: string[] }; Returns: undefined };
+      m2m_photo_issue_link_batch: { Args: { p_id: string; p_event: string; p_actor: string; p_links: Json }; Returns: Database["public"]["Tables"]["m2m_photo_links"]["Row"][] };
+      m2m_photo_issue_link: { Args: { p_event: string; p_fourball: string | null; p_kind: string; p_label: string; p_hash: string; p_actor: string | null; p_replace?: string | null }; Returns: Database["public"]["Tables"]["m2m_photo_links"]["Row"] };
       m2m_create_valued_supplier_sponsorship: { Args: { p_event_id: string; p_event_company_id: string; p_contribution: string; p_prize_value_minor: number; p_slot_id?: string | null; p_actor_id?: string | null }; Returns: string };
       m2m_create_supplier_sponsorship: { Args: { p_event_id: string; p_event_company_id: string; p_contribution: string; p_slot_id?: string | null; p_actor_id?: string | null }; Returns: string };
       m2m_activate_event: { Args: { p_event_id: string; p_actor_id: string }; Returns: undefined };
