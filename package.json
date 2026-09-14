@@ -36,7 +36,7 @@
     "zod": "4.1.11"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.53.0",
+    "@cloudflare/vite-plugin": "1.54.9",
     "@cloudflare/workers-types": "5.20260829.1",
     "@electric-sql/pglite": "0.5.8",
     "@eslint/js": "9.39.4",
@@ -61,7 +61,7 @@
     "typescript-eslint": "8.67.0",
     "vinext": "1.0.0-beta.7",
     "vite": "8.2.2",
-    "wrangler": "4.124.0"
+    "wrangler": "4.131.2"
   },
   "overrides": {
     "exceljs": {
