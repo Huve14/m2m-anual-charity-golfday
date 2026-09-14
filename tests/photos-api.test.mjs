@@ -355,3 +355,55 @@ test("hosts cannot create admin batches", async (t) => {
   assert.equal(res.statusCode, 403);
   assert.ok(!calls.some((c) => c.url.pathname.includes("issue_link_batch")));
 });
+
+test("photo deletion requires admin access", async t => {
+  const calls = mock(t, {role: "host"});
+  const res = response();
+  await adminHandler({...req({}, {action:"delete",eventId:event,ids:[photo]}), headers:{authorization:"Bearer host-token", "content-type":"application/json"}},res);
+  assert.equal(res.statusCode,403);
+  assert.ok(!calls.some(c=>c.url.pathname.includes('m2m_photos')));
+});
+
+test("permanent deletion validates event ownership before touching files", async t => {
+  const calls = mock(t, {photo: []});
+  const res = response();
+  await adminHandler({...req({}, {action:"delete",eventId:event,ids:[photo]}), headers:{authorization:"Bearer admin-token", "content-type":"application/json"}},res);
+  assert.equal(res.statusCode,404);
+  assert.ok(!calls.some(c=>c.url.pathname.includes('/storage/')));
+  assert.equal(calls.find(c=>c.url.pathname.endsWith('/m2m_photos')).url.searchParams.get('event_id'),`eq.${event}`);
+});
+
+test("deletion removes originals, previews and staging files before the photo record", async t => {
+  const {deletePhotos} = await import('../api/_photos.js');
+  const calls=[];
+  t.mock.method(globalThis,'fetch',async (input,init={})=>{
+    const url=new URL(input instanceof Request?input.url:input);
+    calls.push({path:url.pathname,method:init.method,body:init.body?JSON.parse(init.body):null});
+    if(url.pathname.endsWith('/m2m_photos') && init.method==='GET') return Response.json([{id:photo,original_path:'event/full.jpg',preview_path:'event/preview.webp',staging_path:'event/staging'}]);
+    return Response.json([]);
+  });
+  await deletePhotos(event,[photo],actor);
+  const storage=calls.filter(c=>c.path.includes('/storage/'));
+  assert.equal(storage.length,2);
+  assert.deepEqual(storage.find(c=>c.path.endsWith('/m2m-photos')).body.prefixes,['event/full.jpg','event/preview.webp']);
+  assert.deepEqual(storage.find(c=>c.path.endsWith('/m2m-photo-staging')).body.prefixes,['event/staging']);
+  const moderation=calls.findIndex(c=>c.path.endsWith('/m2m_photo_moderate'));
+  const deletion=calls.findIndex(c=>c.path.endsWith('/m2m_photos')&&c.method==='DELETE');
+  assert.ok(moderation< calls.indexOf(storage[0]));
+  assert.ok(deletion>calls.indexOf(storage[1]));
+  assert.equal(calls.at(-1).body.action,'photos.deleted');
+});
+
+test("failed storage deletion preserves photo records for retry", async t => {
+  const {deletePhotos} = await import('../api/_photos.js');
+  const calls=[];
+  t.mock.method(globalThis,'fetch',async (input,init={})=>{
+    const url=new URL(input instanceof Request?input.url:input); calls.push({path:url.pathname,method:init.method});
+    if(url.pathname.endsWith('/m2m_photos') && init.method==='GET') return Response.json([{id:photo,original_path:'full.jpg',preview_path:'preview.webp',staging_path:'staging'}]);
+    if(url.pathname.includes('/storage/')) return Response.json({message:'storage unavailable'},{status:500});
+    return Response.json([]);
+  });
+  await assert.rejects(deletePhotos(event,[photo],actor), /Deletion could not finish/);
+  assert.ok(calls.some(c=>c.path.endsWith('/m2m_photo_moderate')));
+  assert.ok(!calls.some(c=>c.path.endsWith('/m2m_photos')&&c.method==='DELETE'));
+});

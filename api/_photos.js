@@ -6,6 +6,7 @@ import {
   apiFailure,
   fromSupabase,
   opsConfig,
+  recordAudit,
   validate,
 } from "./_ops.js";
 
@@ -438,4 +439,70 @@ export async function completePhoto(link, id) {
   }
   await client.storage.from(STAGING_BUCKET).remove([photo.staging_path]);
   return { id, complete: true };
+}
+
+export async function deletePhotos(eventId, ids, actorId) {
+  const client = adminClient();
+  const photos = await photoResult(
+    client
+      .from("m2m_photos")
+      .select("id,original_path,preview_path,staging_path")
+      .eq("event_id", eventId)
+      .eq("upload_status", "complete")
+      .in("id", ids),
+  );
+  if (photos.length !== ids.length)
+    throw apiFailure(
+      "photo_missing",
+      "Some selected photos no longer exist in this event. Refresh and select them again.",
+      404,
+    );
+  // Withdraw public access first. Keep records and their paths until every storage
+  // removal succeeds, so a failed deletion can be retried from the rejected queue.
+  await photoResult(
+    client.rpc("m2m_photo_moderate", {
+      p_event: eventId,
+      p_ids: ids,
+      p_actor: actorId,
+      p_status: "rejected",
+      p_fourballs: null,
+    }),
+  );
+  try {
+    const results = await Promise.allSettled([
+      photoResult(
+        client.storage
+          .from(PHOTO_BUCKET)
+          .remove(
+            photos
+              .flatMap((p) => [p.original_path, p.preview_path])
+              .filter(Boolean),
+          ),
+      ),
+      photoResult(
+        client.storage
+          .from(STAGING_BUCKET)
+          .remove(photos.map((p) => p.staging_path).filter(Boolean)),
+      ),
+    ]);
+    if (results.some((result) => result.status === "rejected"))
+      throw new Error("Storage removal failed");
+    await photoResult(
+      client.from("m2m_photos").delete().eq("event_id", eventId).in("id", ids),
+    );
+  } catch {
+    throw apiFailure(
+      "photo_delete_failed",
+      "Deletion could not finish. The photos were withdrawn from public galleries. Refresh the Rejected view and retry Delete permanently.",
+      503,
+    );
+  }
+  await recordAudit({
+    eventId,
+    actorId,
+    action: "photos.deleted",
+    entityType: "event",
+    entityId: eventId,
+    metadata: { photoIds: ids, count: ids.length },
+  });
 }
