@@ -43,6 +43,7 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      m2m_change_sponsorship_unit_type: { Args: { p_event: string; p_unit: string; p_type: string }; Returns: string };
       m2m_photo_access: { Args: { p_hash: string }; Returns: Database["public"]["Tables"]["m2m_photo_links"]["Row"] };
       m2m_photo_reserve: { Args: { p_link: string; p_batch: string; p_files: Json; p_fourballs: string[] }; Returns: Database["public"]["Tables"]["m2m_photos"]["Row"][] };
       m2m_photo_moderate: { Args: { p_event: string; p_ids: string[]; p_actor: string | null; p_status: string | null; p_fourballs?: string[] | null }; Returns: undefined };
