@@ -2,6 +2,7 @@ import { z } from "zod";
 import { adminClient, fromSupabase, parseJsonBody, recordAudit, requireAdmin, sendError, sendJson, validate } from "../../_ops.js";
 
 const actionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("changeUnitType"), eventId: z.string().uuid(), unitId: z.string().uuid(), sponsorshipTypeId: z.string().uuid() }),
   z.object({ action: z.literal("createType"), eventId: z.string().uuid(), name: z.string().trim().min(2).max(160), category: z.enum(["alcoholic_hole", "non_alcoholic_hole", "branded_hole", "supplier", "other"]), capacity: z.number().int().min(0).max(999), priceMinor: z.number().int().min(0), requiresHole: z.boolean(), isActive: z.boolean().default(true) }),
   z.object({ action: z.literal("updateType"), eventId: z.string().uuid(), id: z.string().uuid(), name: z.string().trim().min(2).max(160).optional(), category: z.enum(["alcoholic_hole", "non_alcoholic_hole", "branded_hole", "supplier", "other"]).optional(), capacity: z.number().int().min(0).max(999).optional(), priceMinor: z.number().int().min(0).optional(), requiresHole: z.boolean().optional(), isActive: z.boolean().optional() }),
   z.object({ action: z.literal("createCommitment"), eventId: z.string().uuid(), eventCompanyId: z.string().uuid(), sponsorshipTypeId: z.string().uuid(), status: z.enum(["draft", "reserved", "confirmed", "cancelled"]), quantity: z.number().int().min(1).max(99), confirmedAmountMinor: z.number().int().min(0), invoiceReference: z.string().trim().max(120).optional(), paymentStatus: z.enum(["unpaid", "partial", "paid", "waived"]), prizeValueMinor: z.number().int().min(0).max(2147483647).nullable().optional(), contribution: z.string().trim().max(2000).optional(), notes: z.string().trim().max(5000).optional() }),
@@ -47,7 +48,11 @@ async function mutate(req, res) {
   const input = validate(actionSchema, parseJsonBody(req));
   const client = adminClient();
   let entityId = input.id || input.unitId || "new";
-  if (input.action === "createSupplier") {
+  if (input.action === "changeUnitType") {
+    const {data, error} = await client.rpc("m2m_change_sponsorship_unit_type", {p_event: input.eventId, p_unit: input.unitId, p_type: input.sponsorshipTypeId});
+    if (error) throw fromSupabase(error, "sponsorship_type_change_failed", "Could not change the hole type. Check package capacity and any restrictions on its position.");
+    entityId = data;
+  } else if (input.action === "createSupplier") {
     const { data, error } = await client.rpc(input.prizeValueMinor == null ? "m2m_create_supplier_sponsorship" : "m2m_create_valued_supplier_sponsorship", { ...(input.prizeValueMinor == null ? {} : { p_prize_value_minor: input.prizeValueMinor }), p_event_id: input.eventId, p_event_company_id: input.eventCompanyId, p_contribution: input.contribution, p_slot_id: input.holeSlotId || null, p_actor_id: profile.id });
     if (error) throw fromSupabase(error, "supplier_create_failed", "The supplier sponsorship could not be created.");
     entityId = data;
