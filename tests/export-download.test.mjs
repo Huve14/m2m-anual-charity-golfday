@@ -7,7 +7,8 @@ import { exportTypes } from "../api/_export-data.js";
 
 const source = await readFile(new URL("../src/admin/AdminApp.tsx", import.meta.url), "utf8");
 const component = source.slice(source.indexOf("function Exports("), source.indexOf("\ninterface Enquiry"));
-const compiled = ts.transpileModule(component, { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS } }).outputText;
+const helper = (await readFile(new URL("../src/admin/downloadWorkbook.ts", import.meta.url), "utf8")).replace(/^import .*;\n/m, "").replace("export async function", "async function");
+const compiled = ts.transpileModule(helper + "\n" + component, { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS } }).outputText;
 const require = createRequire(import.meta.url);
 
 function harness({ token = "test-token", status = 200, contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename, message = "Please sign in again." } = {}) {

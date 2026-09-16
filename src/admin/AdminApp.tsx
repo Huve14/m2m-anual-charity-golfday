@@ -1,4 +1,6 @@
 import { AdminPhotos } from "../photos/AdminPhotos";
+import { downloadWorkbook } from "./downloadWorkbook";
+import { PageExport } from "./PageExport";
 import { FourballPhotoLink } from "../photos/PhotoLink";
 import { GalaDinner } from "./GalaDinner";
 import { prizeValueRand, supplierPrizeSummary } from "./supplierValues";
@@ -8,7 +10,7 @@ import { type CSSProperties, type FormEvent, type ReactNode, useEffect, useMemo,
 import { readSheet as readXlsxFile } from "read-excel-file/browser";
 import { strFromU8, unzipSync } from "fflate";
 import { AccountGate, SignIn, signOut, useOpsSession } from "../ops/Auth";
-import { currentSession, dateTime, money, OpsApiError, opsApi, toIso, toLocalInput } from "../ops/client";
+import { dateTime, money, OpsApiError, opsApi, toIso, toLocalInput } from "../ops/client";
 import type { EventCompany, EventRecord, FourballRecord, UserRecord } from "../ops/types";
 
 type Tab = "photos" | "overview" | "setup" | "companies" | "sponsorships" | "suppliers" | "fourballs" | "tee" | "hosts" | "players" | "data" | "gala" | "enquiries";
@@ -163,7 +165,7 @@ function AdminApp() {
             <div className="event-identity" style={{ "--event-accent": selected.accentColour } as CSSProperties}><Pill value={selected.status} /><h1>{selected.name}</h1><p>{selected.venueName || "Venue to follow"}</p><span>{dateTime(selected.shotgunStartAt)}</span></div>
             <nav aria-label="Event workspace">{tabs.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => chooseTab(item.id)}><span>{item.icon}</span>{item.label}</button>)}</nav>
           </aside>
-          <main className="workspace-main"><ErrorBanner message={error} /><EventTab event={selected} tab={tab} version={version} onRefresh={refresh} /></main>
+          <main className="workspace-main">{!["data", "enquiries", "photos"].includes(tab) && <PageExport eventId={selected.id} tab={tab} key={`${selected.id}-${tab}`} eventName={selected.name} pageName={`${tabs.find((item) => item.id === tab)!.icon} ${tabs.find((item) => item.id === tab)!.label}`} />}<div id="event-page-content"><ErrorBanner message={error} /><EventTab event={selected} tab={tab} version={version} onRefresh={refresh} /></div></main>
         </div>
       ) : (
         <main className="event-directory">
@@ -911,6 +913,10 @@ function Exports({ event, galaOnly = false }: { event: EventRecord; galaOnly?: b
     ["attendees", "Complete attendance register", "Golfers and dinner-only guests, with attendance status, parties, tables and dietary requirements, plus confirmed dinner sheets."],
   ];
   const operational = [
+    ["overview", "Event overview", "Dashboard metrics and setup readiness."],
+    ["setup", "Event setup", "Saved event settings, player requirements and course holes."],
+    ["companies", "All companies", "Every company participation status and contact details."],
+    ["tee", "Tee sheet", "All starting positions, open slots and unassigned teams."],
     ["players", "Complete player list", "Contact, golf, clothing and special requirements."],
     ["fourballs", "Fourballs and tee sheet", "Teams, hosts, payment and shotgun starts across all booking statuses."],
     ["sponsors", "Sponsorship commitments", "Every sponsorship status, with quantities, values and allocations."],
@@ -921,25 +927,7 @@ function Exports({ event, galaOnly = false }: { event: EventRecord; galaOnly?: b
     setBusy(type);
     setError("");
     try {
-      const session = await currentSession();
-      if (!session?.access_token) throw new Error("Sign in again to download this workbook.");
-      const response = await fetch(exportUrl, { cache: "no-store", headers: { Authorization: `Bearer ${session.access_token}` } });
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({})) as { message?: string };
-        throw new Error(payload.message || "The Excel export could not be downloaded.");
-      }
-      if (!response.headers.get("Content-Type")?.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) throw new Error("The server did not return an Excel workbook. Please try again.");
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = response.headers.get("Content-Disposition")?.match(/filename="([^"/\\]+\.xlsx)"/i)?.[1] || `m2m-${type}.xlsx`;
-      document.body.appendChild(anchor);
-      try { anchor.click(); } finally {
-        anchor.remove();
-        // Give the browser time to start reading the download before releasing it.
-        window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
-      }
+      await downloadWorkbook(exportUrl, type);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The Excel export could not be downloaded.");
     } finally { setBusy(""); }
