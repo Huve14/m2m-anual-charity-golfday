@@ -8,9 +8,9 @@ process.env.SUPABASE_SECRET_KEY = "test-secret";
 process.env.SUPABASE_PUBLISHABLE_KEY = "test-public";
 const { default: handler } = await import("../api/v1/admin/exports.js");
 const headers = { authorization: "Bearer test-token" };
-const tables = { m2m_event_companies: "companies", m2m_fourballs: "fourballs", m2m_players: "players", m2m_fourball_hosts: "hosts", m2m_sponsorship_commitments: "sponsors", m2m_sponsorship_types: "sponsorshipTypes" };
+const tables = { m2m_event_holes: "holes", m2m_tee_slots: "tee", m2m_sponsorship_units: "units", m2m_event_companies: "companies", m2m_fourballs: "fourballs", m2m_players: "players", m2m_fourball_hosts: "hosts", m2m_sponsorship_commitments: "sponsors", m2m_sponsorship_types: "sponsorshipTypes" };
 function response() { return { statusCode: 200, headers: {}, status(code) { this.statusCode = code; return this; }, setHeader(name, value) { this.headers[name] = value; }, end(body) { this.body = body; } }; }
-function mockDatabase(t, { rows = data, role = "admin", found = true, failTable } = {}) {
+function mockDatabase(t, { rows = data, role = "admin", found = true, failTable, dashboard = false } = {}) {
   const queries = [], audits = [];
   t.mock.method(globalThis, "fetch", async (input, init = {}) => {
     const url = new URL(input instanceof Request ? input.url : input);
@@ -23,11 +23,11 @@ function mockDatabase(t, { rows = data, role = "admin", found = true, failTable 
     else {
       assert.ok(tables[table], `Unexpected query: ${table}`);
       assert.equal(url.searchParams.get("event_id"), `eq.${eventId}`, "Every export query is scoped to the requested event");
-      assert.equal(url.searchParams.get("order"), "id.asc");
+      if (!dashboard) assert.equal(url.searchParams.get("order"), "id.asc");
       queries.push(url);
       if (table === failTable) return new Response(JSON.stringify({ code: "XX000", message: "Simulated database failure" }), { status: 500, headers: { "content-type": "application/json" } });
       const offset = Number(url.searchParams.get("offset") || 0);
-      const limit = Number(url.searchParams.get("limit"));
+      const limit = Number(url.searchParams.get("limit") || 1000);
       payload = (rows[tables[table]] || []).slice(offset, offset + limit);
     }
     return new Response(JSON.stringify(payload), { status: 200, headers: { "content-type": "application/json" } });
@@ -94,3 +94,18 @@ test("a failed query cannot produce a partially populated workbook", async (t) =
   assert.match(res.headers["Content-Type"], /application\/json/);
   assert.deepEqual(db.audits, []);
 });
+
+for (const type of ["overview", "setup", "companies", "tee"]) {
+  test(`${type} page export returns its own workbook`, async (t) => {
+    mockDatabase(t, { dashboard: type === "overview", rows: { ...data, holes: [{ id: "hole", hole_number: 1, label: "Hole 1", par: 4, sort_order: 1 }], tee: [{ id: "slot", slot_label: "A", sort_order: 1, hole: { label: "Hole 1", hole_number: 1 }, fourball: null }] } });
+    const res = response();
+    await handler({ method: "GET", headers, query: { eventId, type } }, res);
+    assert.equal(res.statusCode, 200, String(res.body));
+    const book = await new ExcelJS.Workbook().xlsx.load(res.body);
+    const first = { overview: "Overview", setup: "Event setup", companies: "Companies", tee: "Tee sheet" }[type];
+    assert.equal(book.worksheets[0].name, first);
+    if (type === "companies") assert.equal(book.worksheets[0].rowCount, data.companies.length + 8);
+    if (type === "tee") assert.equal(book.worksheets[0].getCell("D9").value, "Open");
+    if (type === "setup") assert.equal(book.getWorksheet("Course holes").getCell("B9").value, "Hole 1");
+  });
+}

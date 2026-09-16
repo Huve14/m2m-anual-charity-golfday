@@ -150,3 +150,5 @@
 .gala-tabs button:focus-visible { outline: 3px solid #bb8b41; outline-offset: 2px; }
 .gala-tabs button span { border-radius: 20px; padding: 2px 8px; background: rgba(128,128,128,.15); font-size: 12px; }
 .gala-category-label { display: inline-block; padding: 4px 9px; border-radius: 20px; background: var(--wash); color: var(--navy); font-size: 12px; white-space: nowrap; }
+
+.page-export-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-bottom:24px}.page-export-toolbar p{margin:0;color:var(--muted);font-size:12px}.page-export-toolbar button{flex-shrink:0}.page-export-toolbar [role=alert]{color:#a32132}@media(max-width:600px){.page-export-toolbar{align-items:flex-start;flex-direction:column;gap:10px}.page-export-toolbar button{width:100%}}

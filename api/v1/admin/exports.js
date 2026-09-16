@@ -15,12 +15,12 @@ export default async function handler(req, res) {
     const actor = await requireAdmin(req);
     const { eventId, type } = validate(schema, req.query || {});
     const client = adminClient();
-    const { data: event, error } = await client.from("m2m_events").select("id,name,slug,venue_name,shotgun_start_at,timezone,currency,primary_colour,accent_colour").eq("id", eventId).maybeSingle();
+    const { data: event, error } = await client.from("m2m_events").select("id,name,slug,venue_name,shotgun_start_at,timezone,currency,primary_colour,accent_colour,status,venue_address,format,registration_deadline_at,player_deadline_at,rules,visible_player_fields,required_player_fields,shirt_size_options,reminder_offsets_days").eq("id", eventId).maybeSingle();
     if (error) throw fromSupabase(error);
     if (!event) throw apiFailure("event_not_found", "This event could not be found.", 404);
     const data = await loadExportData(client, eventId, type);
     const generatedAt = new Date();
-    const workbook = await createExportWorkbook(event, buildExportSheets(data, type), generatedAt);
+    const workbook = await createExportWorkbook(event, buildExportSheets(data, type, event), generatedAt);
     await recordAudit({ eventId, actorId: actor.id, action: "event.exported", entityType: "event", entityId: eventId, metadata: { type, format: "xlsx" } });
     const slug = String(event.slug || "event").replace(/[^a-z0-9-]/gi, "-").slice(0, 80);
     res.status(200);

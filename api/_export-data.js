@@ -1,11 +1,15 @@
+import { pageSheets } from "./_page-export-sheets.js";
 import { loadGalaData, galaSheets } from "./_gala.js";
+import { loadDashboardData } from "./_dashboard-data.js";
 import { fromSupabase } from "./_ops.js";
 
-export const exportTypes = ["gala", "attendees", "players", "fourballs", "sponsors", "suppliers", "hosts", "confirmations", "confirmed-companies", "confirmed-fourballs", "confirmed-sponsors", "confirmed-suppliers", "invoices"];
+export const exportTypes = ["overview", "setup", "companies", "tee", "gala", "attendees", "players", "fourballs", "sponsors", "suppliers", "hosts", "confirmations", "confirmed-companies", "confirmed-fourballs", "confirmed-sponsors", "confirmed-suppliers", "invoices"];
 
 const companyJoin = "eventCompany:m2m_event_companies(id,relationship_status,primary_contact_name,primary_contact_email,primary_contact_phone,company:m2m_companies(name,billing_email))";
 const fourballJoin = `fourball:m2m_fourballs(team_name,booking_status,submission_status,${companyJoin})`;
 const sources = {
+  holes: ["m2m_event_holes", "id,hole_number,label,par,sort_order"],
+  tee: ["m2m_tee_slots", `id,slot_label,sort_order,hole:m2m_event_holes(label,hole_number),fourball:m2m_fourballs(team_name,booking_status,${companyJoin})`],
   companies: ["m2m_event_companies", "id,relationship_status,primary_contact_name,primary_contact_email,primary_contact_phone,notes,company:m2m_companies(name,billing_email,phone)"],
   fourballs: ["m2m_fourballs", `id,team_name,booking_status,submission_status,payment_status,confirmed_amount_minor,invoice_reference,notes,type:m2m_fourball_types(name),${companyJoin},tee:m2m_tee_slots(slot_label,hole:m2m_event_holes(label)),hosts:m2m_fourball_hosts(is_primary,profile:m2m_profiles(full_name,email))`],
   players: ["m2m_players", `id,position,full_name,email,phone,handicap,shirt_size,dietary_requirements,special_requirements,home_club,golf_id,${fourballJoin}`],
@@ -16,8 +20,11 @@ const sources = {
 
 // Page every source so exports never silently stop at the Data API row limit.
 export async function loadExportData(client, eventId, type) {
+  if (type === "overview") return loadDashboardData(client, eventId);
   if (type === "gala" || type === "attendees") return loadGalaData(client, eventId);
-  const names = type === "confirmations" ? Object.keys(sources)
+  const names = type === "setup" ? ["holes"]
+    : type === "tee" ? ["tee", "fourballs"]
+    : type === "confirmations" ? ["companies", "fourballs", "players", "hosts", "sponsors", "sponsorshipTypes"]
     : type === "invoices" ? ["fourballs", "sponsors"]
     : type === "confirmed-sponsors" ? ["sponsors", "sponsorshipTypes"]
       : [type.replace("confirmed-", "").replace("suppliers", "sponsors")];
@@ -48,8 +55,8 @@ const dateColumn = (name) => column(name, 24, "date");
 const byCompany = (rows) => rows.sort((a, b) => String(a[0]).localeCompare(String(b[0])) || String(a[1]).localeCompare(String(b[1])) || String(a[2]).localeCompare(String(b[2]), undefined, { numeric: true }));
 const scope = (confirmed) => confirmed ? "Confirmed records only. Cancelled company participation is excluded." : "All statuses. Use the column filters to narrow this report.";
 
-function companiesSheet(rows) {
-  return { name: "Companies", title: "Confirmed companies", note: "Companies whose participation status is confirmed.", columns: [column("Company", 32), column("Status"), column("Primary contact", 28), textColumn("Contact email"), column("Contact phone"), textColumn("Billing email"), column("Company phone"), textColumn("Notes")], rows: byCompany(rows.map((row) => [row.company?.name, label(row.relationship_status), row.primary_contact_name, row.primary_contact_email, row.primary_contact_phone, row.company?.billing_email, row.company?.phone, row.notes])) };
+function companiesSheet(rows, confirmed = true) {
+  return { name: "Companies", title: confirmed ? "Confirmed companies" : "All companies", note: scope(confirmed), columns: [column("Company", 32), column("Status"), column("Primary contact", 28), textColumn("Contact email"), column("Contact phone"), textColumn("Billing email"), column("Company phone"), textColumn("Notes")], rows: byCompany(rows.map((row) => [row.company?.name, label(row.relationship_status), row.primary_contact_name, row.primary_contact_email, row.primary_contact_phone, row.company?.billing_email, row.company?.phone, row.notes])) };
 }
 
 function fourballsSheet(rows, confirmed) {
@@ -75,7 +82,8 @@ function sponsorsSheet(rows, confirmed, name = "Sponsorships", title = "Sponsors
   })) };
 }
 
-export function buildExportSheets(data, type) {
+export function buildExportSheets(data, type, event = {}) {
+  if (type === "overview" || type === "setup" || type === "tee") return pageSheets(data, type, event);
   if (type === "gala" || type === "attendees") return galaSheets(data, type === "attendees");
   if (type === "invoices") return invoiceSheets(data);
   const confirmed = type === "confirmations" || type.startsWith("confirmed-");
@@ -96,6 +104,7 @@ export function buildExportSheets(data, type) {
   if (type.endsWith("fourballs")) return [fourballsSheet(fourballs, confirmed)];
   if (type.endsWith("suppliers")) return [sponsorsSheet(suppliers, confirmed, "Suppliers", confirmed ? "Confirmed suppliers" : "Supplier contributions")];
   if (type === "sponsors") return [sponsorsSheet(sponsors, false)];
+  if (type === "companies") return [companiesSheet(data.companies || [], false)];
   if (type === "confirmed-companies") return [companiesSheet(companies)];
   if (type === "confirmed-sponsors") {
     const sheets = sponsorshipSheets();
