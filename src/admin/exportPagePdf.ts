@@ -14,6 +14,12 @@ const printStyles = `
   tr, img, .metric-card, .photo-card { break-inside: avoid; }
   h2, h3, h4, summary { break-after: avoid; }
   img { max-width: 100%; }
+  .hole-allocation-workspace { display: block !important; }
+  .hole-course { break-inside: avoid; margin-bottom: 20px; }
+  .hole-number-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; padding: 12px !important; }
+  .ops-body .hole-number-grid button { min-height: 64px; padding: 8px 12px; gap: 4px; break-inside: avoid; }
+  .hole-number-grid button > strong { font-size: 20px; }
+  .hole-editor { position: static !important; }
   .page-export-value { display: inline-block; white-space: pre-wrap; overflow-wrap: anywhere; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 `;
@@ -38,6 +44,9 @@ export async function exportPagePdf(content: HTMLElement, title: string) {
           : original.value || "—";
       copy.replaceWith(value);
     } else if (original.matches("button")) {
+      // Hole selectors also contain the course's placement counts and sponsors.
+      // Keep these informational cards with their grid and selected-hole styling.
+      if (original.matches(".hole-number-grid > button")) return;
       // Photo thumbnails are buttons too; retain their images in the export.
       if (copy.querySelector("img")) copy.replaceWith(...Array.from(copy.childNodes));
       else copy.remove();
