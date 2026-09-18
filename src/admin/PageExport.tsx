@@ -24,7 +24,7 @@ export function PageExport({ eventId, tab, eventName, pageName }: { eventId: str
   }
 
   return <div className="page-export-toolbar">
-    <p>{error ? <span role="alert">{error}</span> : busy ? <span role="status">Preparing export…</span> : "Excel: all tab records. PDF: current view; choose Save as PDF."}</p>
+    <p>{error ? <span role="alert">{error}</span> : busy ? <span role="status">Preparing export…</span> : "Excel: all tab records. PDF: opens a print preview of the current view; choose Save as PDF."}</p>
     <button type="button" className="secondary-button" disabled={busy} onClick={() => download("excel")} aria-label={`Export ${pageName} as Excel`}>Export Excel</button>
     <button type="button" className="secondary-button" disabled={busy} onClick={() => download("pdf")} aria-label={`Export ${pageName} page as PDF`}>
       Export PDF

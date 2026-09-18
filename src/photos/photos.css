@@ -345,14 +345,14 @@
   }
 }
 @media print {
-  body * {
+  body:not(.page-export-document) * {
     visibility: hidden !important;
   }
-  .photo-print-card,
-  .photo-print-card * {
+  body:not(.page-export-document) .photo-print-card,
+  body:not(.page-export-document) .photo-print-card * {
     visibility: visible !important;
   }
-  .photo-print-card {
+  body:not(.page-export-document) .photo-print-card {
     position: absolute;
     left: 0;
     top: 0;
@@ -360,7 +360,7 @@
     padding: 40px;
     text-align: center;
   }
-  .photo-print-card img {
+  body:not(.page-export-document) .photo-print-card img {
     margin: 20px auto;
     width: 300px;
     height: 300px;
