@@ -1,7 +1,12 @@
 const printStyles = `
   @page { size: A4 landscape; margin: 12mm; }
-  html, body { margin: 0 !important; background: white !important; }
+  html, body { margin: 0 !important; min-height: 0 !important; background: white !important; }
   body { padding: 0 !important; color: #172033; font-family: Arial, sans-serif; }
+  .page-export-controls { padding: 16px; background: #f3f6fa; margin-bottom: 20px; }
+  .page-export-controls p { margin: 8px 0 0; font-size: 13px; }
+  .page-export-controls button { padding: 10px 16px; border: 1px solid #b8c5d8; border-radius: 8px; background: white; color: #172033; }
+  @media screen { body { padding: 24px !important; } }
+  @media print { .page-export-controls { display: none !important; } }
   .page-export-heading { margin-bottom: 20px; border-bottom: 2px solid #172033; padding-bottom: 12px; }
   .page-export-heading h1 { font-size: 22px; margin: 0 0 8px; }
   .page-export-heading p { font-size: 11px; margin: 0; }
@@ -53,15 +58,20 @@ export async function exportPagePdf(content: HTMLElement, title: string) {
     }
   });
 
-  const frame = document.createElement("iframe");
-  frame.title = "Page export preview";
-  frame.setAttribute("aria-hidden", "true");
-  frame.style.cssText = "position:fixed;left:-10000px;top:0;width:1120px;height:800px;border:0";
-  document.body.appendChild(frame);
+  // Open synchronously from the export click so popup blockers can recognise it.
+  // Printing a visible document avoids off-screen iframe rendering issues.
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) throw new Error("Allow pop-ups for this site, then try Export PDF again.");
+  printWindow.opener = null;
+  let timeout: number | undefined;
   try {
-    const doc = frame.contentDocument;
-    const printWindow = frame.contentWindow;
-    if (!doc || !printWindow) throw new Error("Print preview unavailable");
+    const doc = printWindow.document;
+    doc.open();
+    doc.write("<!doctype html><html><head></head><body></body></html>");
+    doc.close();
+    const base = doc.createElement("base");
+    base.href = document.baseURI;
+    doc.head.appendChild(base);
     doc.title = title;
     doc.documentElement.lang = "en";
     const stylesReady = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'), (source) => {
@@ -76,7 +86,18 @@ export async function exportPagePdf(content: HTMLElement, title: string) {
     const style = doc.createElement("style");
     style.textContent = printStyles;
     doc.head.appendChild(style);
-    doc.body.className = document.body.className;
+    doc.body.className = `${document.body.className} page-export-document`;
+    const controls = doc.createElement("div");
+    controls.className = "page-export-controls";
+    const printButton = doc.createElement("button");
+    printButton.type = "button";
+    printButton.textContent = "Print / Save as PDF";
+    printButton.disabled = true;
+    printButton.onclick = () => { printWindow.focus(); printWindow.print(); };
+    const help = doc.createElement("p");
+    help.textContent = "Preparing your PDF…";
+    controls.append(printButton, help);
+    doc.body.appendChild(controls);
     const heading = doc.createElement("header");
     heading.className = "page-export-heading";
     const name = doc.createElement("h1");
@@ -92,16 +113,23 @@ export async function exportPagePdf(content: HTMLElement, title: string) {
       try { await img.decode(); } catch { /* Keep the image's alt text if unavailable. */ }
     });
     await Promise.race([
-      Promise.all([...stylesReady, ...imagesReady]).then(() => doc.fonts.ready),
-      new Promise((_, reject) => window.setTimeout(() => reject(new Error("Print preview timed out")), 20_000)),
+      Promise.all([...stylesReady, ...imagesReady]).then(async () => {
+        await doc.fonts.ready;
+        // Allow layout and paint to finish before opening the print dialog.
+        await new Promise<void>((resolve) => printWindow.requestAnimationFrame(() => printWindow.requestAnimationFrame(() => resolve())));
+      }),
+      new Promise((_, reject) => { timeout = window.setTimeout(() => reject(new Error("Print preview timed out. Please try again.")), 20_000); }),
     ]);
-    printWindow.addEventListener("afterprint", () => frame.remove(), { once: true });
+    printButton.disabled = false;
+    help.textContent = "Choose Save as PDF in the print dialog. You can print again using the button above, then close this tab when finished.";
     printWindow.focus();
     printWindow.print();
-    // Some browsers do not dispatch afterprint when the dialog is cancelled.
-    window.setTimeout(() => frame.remove(), 300_000);
+    // Keep the document alive: some browsers fire afterprint before PDF saving
+    // finishes. The user closes the preview, which also supports cancel/retry.
   } catch (error) {
-    frame.remove();
+    printWindow.close();
     throw error;
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
