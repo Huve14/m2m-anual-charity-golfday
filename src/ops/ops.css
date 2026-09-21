@@ -152,3 +152,5 @@
 .gala-category-label { display: inline-block; padding: 4px 9px; border-radius: 20px; background: var(--wash); color: var(--navy); font-size: 12px; white-space: nowrap; }
 
 .page-export-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-bottom:24px}.page-export-toolbar p{margin:0;color:var(--muted);font-size:12px}.page-export-toolbar button{flex-shrink:0}.page-export-toolbar [role=alert]{color:#a32132}@media(max-width:600px){.page-export-toolbar{align-items:flex-start;flex-direction:column;gap:10px}.page-export-toolbar button{width:100%}}
+
+.user-list .user-actions{flex-wrap:wrap;justify-content:flex-end}.user-list article>div:first-child{min-width:0;overflow-wrap:anywhere}

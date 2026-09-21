@@ -960,8 +960,43 @@ function Enquiries({ event, version, onRefresh }: { event: EventRecord; version:
 
 function UserDrawer({ onClose }: { onClose: () => void }) {
   const [users, setUsers] = useState<UserRecord[]>([]); const [canManageAdmins, setCanManageAdmins] = useState(false); const [error, setError] = useState(""); const [busy, setBusy] = useState(false); const [version, setVersion] = useState(0);
+  const [resetUser, setResetUser] = useState<UserRecord | null>(null);
+  const [success, setSuccess] = useState("");
   useEffect(() => { let active = true; opsApi<{ ok: true; users: UserRecord[]; canManageAdmins: boolean }>("/api/v1/admin/users").then((payload) => { if (active) { setUsers(payload.users); setCanManageAdmins(payload.canManageAdmins); } }).catch((caught: Error) => { if (active) setError(caught.message); }); return () => { active = false; }; }, [version]);
   async function invite(formEvent: FormEvent<HTMLFormElement>) { formEvent.preventDefault(); setBusy(true); setError(""); const formElement = formEvent.currentTarget; const form = new FormData(formElement); try { await jsonMutation("/api/v1/admin/users", "POST", { action: "invite", fullName: form.get("fullName"), email: form.get("email"), role: form.get("role"), temporaryPassword: form.get("temporaryPassword") }); formElement.reset(); setVersion((v) => v + 1); } catch (caught) { setError(caught instanceof Error ? caught.message : "Account creation failed."); } finally { setBusy(false); } }
   async function status(user: UserRecord) { setBusy(true); setError(""); try { await jsonMutation("/api/v1/admin/users", "PATCH", { action: user.isActive ? "deactivate" : "reactivate", profileId: user.id }); setVersion((v) => v + 1); } catch (caught) { setError(caught instanceof Error ? caught.message : "Account update failed."); } finally { setBusy(false); } }
-  return <div className="overlay"><section className="drawer" role="dialog" aria-modal="true" aria-labelledby="users-title"><div className="drawer-head"><div><p className="eyebrow">Account directory</p><h2 id="users-title">Administrators and hosts</h2></div><button className="icon-button" onClick={onClose} aria-label="Close">×</button></div><ErrorBanner message={error} /><form className="stack-form invite-form" onSubmit={invite}><h3>Create user account</h3><label><span>Full name</span><input name="fullName" required /></label><label><span>Email / username</span><input type="email" name="email" required /></label><label><span>Temporary password</span><input type="password" name="temporaryPassword" minLength={12} autoComplete="new-password" required /></label><p className="form-help">12+ characters with uppercase, lowercase, a number and symbol. Share it securely; the user must replace it at first sign in.</p><label><span>Role</span><select name="role"><option value="host">Host</option>{canManageAdmins ? <><option value="admin">Administrator</option><option value="super_admin">Super administrator</option></> : null}</select></label><FormActions busy={busy} label="Create account" /></form><div className="user-list">{users.map((user) => <article key={user.id}><div><strong>{user.fullName}</strong><span>{user.email}</span></div><div><Pill value={user.role} /><button className={user.isActive ? "danger-link" : "text-button"} disabled={busy || (!canManageAdmins && user.role !== "host")} onClick={() => status(user)}>{user.isActive ? "Deactivate" : "Reactivate"}</button></div></article>)}</div></section></div>;
+  async function resetPassword(formEvent: FormEvent<HTMLFormElement>) {
+    formEvent.preventDefault();
+    if (!resetUser) return;
+    const formElement = formEvent.currentTarget;
+    const form = new FormData(formElement);
+    setBusy(true); setError(""); setSuccess("");
+    try {
+      await jsonMutation("/api/v1/admin/users", "PATCH", {
+        action: "resetPassword", profileId: resetUser.id,
+        temporaryPassword: form.get("temporaryPassword"),
+      });
+      formElement.reset();
+      setSuccess(`Password reset for ${resetUser.email}. Share the temporary password securely. They must change it when they next sign in.`);
+      setResetUser(null);
+      setVersion((v) => v + 1);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Password reset failed.");
+    } finally { setBusy(false); }
+  }
+  return <div className="overlay"><section className="drawer" role="dialog" aria-modal="true" aria-labelledby="users-title"><div className="drawer-head"><div><p className="eyebrow">Account directory</p><h2 id="users-title">Administrators and hosts</h2></div><button className="icon-button" onClick={onClose} aria-label="Close">×</button></div><ErrorBanner message={error} />{success ? <p className="success-banner" role="status">{success}</p> : null}<form className="stack-form invite-form" onSubmit={invite}><h3>Create user account</h3><label><span>Full name</span><input name="fullName" required /></label><label><span>Email / username</span><input type="email" name="email" required /></label><label><span>Temporary password</span><input type="password" name="temporaryPassword" minLength={12} autoComplete="new-password" required /></label><p className="form-help">12+ characters with uppercase, lowercase, a number and symbol. Share it securely; the user must replace it at first sign in.</p><label><span>Role</span><select name="role"><option value="host">Host</option>{canManageAdmins ? <><option value="admin">Administrator</option><option value="super_admin">Super administrator</option></> : null}</select></label><FormActions busy={busy} label="Create account" /></form><div className="user-list">{users.map((user) => <div key={user.id}>
+    <article><div><strong>{user.fullName}</strong><span>{user.email}</span></div><div className="user-actions"><Pill value={user.role} />
+      <button type="button" className="text-button" disabled={busy || (!canManageAdmins && user.role !== "host")} aria-expanded={resetUser?.id === user.id} onClick={() => { setResetUser(resetUser?.id === user.id ? null : user); setError(""); setSuccess(""); }}>Reset password</button>
+      <button className={user.isActive ? "danger-link" : "text-button"} disabled={busy || (!canManageAdmins && user.role !== "host")} onClick={() => status(user)}>{user.isActive ? "Deactivate" : "Reactivate"}</button>
+    </div></article>
+    {resetUser?.id === user.id ? <form className="stack-form invite-form" onSubmit={resetPassword}>
+      <h3>Reset password for {user.fullName}</h3>
+      <p className="form-help">{user.email}</p>
+      <label><span>Temporary password</span><input type="password" name="temporaryPassword" minLength={12} maxLength={128} pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{12,128}" autoComplete="new-password" aria-describedby="reset-password-help" disabled={busy} required /></label>
+      <p className="form-help" id="reset-password-help">Use 12–128 characters with uppercase, lowercase, a number and a symbol. Share it securely; the user must choose a new password at their next sign in.</p>
+      {!user.isActive ? <p className="form-help">This account is inactive. Reactivate it separately to allow sign in.</p> : null}
+      <FormActions busy={busy} label="Set temporary password" />
+      <button type="button" className="text-button" disabled={busy} onClick={() => setResetUser(null)}>Cancel</button>
+    </form> : null}
+  </div>)}</div></section></div>;
 }

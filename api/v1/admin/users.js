@@ -24,6 +24,14 @@ const statusSchema = z.object({
   profileId: z.string().uuid(),
 });
 
+const resetPasswordSchema = z.object({
+  action: z.literal("resetPassword"),
+  profileId: z.string().uuid(),
+  temporaryPassword: inviteSchema.shape.temporaryPassword,
+});
+
+const updateSchema = z.discriminatedUnion("action", [statusSchema, resetPasswordSchema]);
+
 async function list(req, res) {
   const actor = await requireAdmin(req);
   const { data, error } = await adminClient().from("m2m_profiles").select("*").order("full_name");
@@ -43,6 +51,9 @@ async function invite(req, res) {
   const client = adminClient();
   const { data: existing, error: existingError } = await client.from("m2m_profiles").select("*").eq("email", input.email).maybeSingle();
   if (existingError) throw fromSupabase(existingError, "user_lookup_failed");
+  if (existing && existing.role !== "host" && actor.role !== "super_admin") {
+    throw apiFailure("permission_denied", "Only a super administrator can manage administrator accounts.", 403);
+  }
   let authUserId = existing?.id || null;
   if (existing) {
     const { error } = await client.auth.admin.updateUserById(existing.id, { password: input.temporaryPassword, email_confirm: true, user_metadata: { full_name: input.fullName } });
@@ -83,12 +94,25 @@ async function invite(req, res) {
 }
 
 async function changeStatus(req, res) {
-  const input = validate(statusSchema, parseJsonBody(req));
   const actor = await requireAdmin(req);
+  const input = validate(updateSchema, parseJsonBody(req, 4_000));
   const client = adminClient();
-  const { data: target, error: targetError } = await client.from("m2m_profiles").select("*").eq("id", input.profileId).single();
+  const { data: target, error: targetError } = await client.from("m2m_profiles").select("*").eq("id", input.profileId).maybeSingle();
   if (targetError) throw fromSupabase(targetError, "user_lookup_failed");
+  if (!target) throw apiFailure("user_not_found", "This user no longer exists.", 404);
   if (["admin", "super_admin"].includes(target.role)) await requireSuperAdmin(req);
+  if (input.action === "resetPassword") {
+    if (target.id === actor.id) throw apiFailure("self_password_reset", "Ask another administrator to reset your password.", 409);
+    // Set the access gate first so a partial failure cannot leave a temporary
+    // password with unrestricted access. A failed Auth update can be retried.
+    const { error: profileError } = await client.from("m2m_profiles")
+      .update({ must_change_password: true }).eq("id", target.id);
+    if (profileError) throw fromSupabase(profileError, "password_reset_failed", "The password reset could not be prepared. Try again.");
+    const { error: authError } = await client.auth.admin.updateUserById(target.id, { password: input.temporaryPassword });
+    if (authError) throw apiFailure("password_reset_failed", "The temporary password could not be set. Try again; the user will still be required to change their password.", 503);
+    await recordAudit({ actorId: actor.id, action: "user.password_reset", entityType: "profile", entityId: target.id });
+    return sendJson(res, 200, { ok: true });
+  }
   if (target.id === actor.id && input.action === "deactivate") throw apiFailure("self_deactivation", "You cannot deactivate your own account.", 409);
   const { error } = await client.from("m2m_profiles").update({ is_active: input.action === "reactivate" }).eq("id", target.id);
   if (error) throw fromSupabase(error, "user_status_failed", "The account status could not be changed.");
