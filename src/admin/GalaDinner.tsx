@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { opsApi } from '../ops/client';
+import { GalaAllocationImport } from './GalaAllocationImport';
 
 type Category = 'fourball' | 'invited_guest' | 'staff';
 const categoryTabs = [{ id: 'all', label: 'All attendees' }, { id: 'fourball', label: 'Fourballs' }, { id: 'invited_guest', label: 'Invited guests' }, { id: 'staff', label: 'Staff' }] as const;
@@ -80,6 +81,7 @@ export function GalaDinner({ eventId, exports }: { eventId: string; exports: Rea
     </section>
     {!!visibleParties.length && <section className="panel"><h3>Parties and tables</h3><div className="compact-list">{visibleParties.map(p => <div key={p.id}><div><strong>{p.name} · {categoryLabel(p.category || 'invited_guest')}</strong><span>{p.table_name || 'Table unassigned'} · {p.guests.length} dinner-only seats · {attendees.filter(a => a.partyId === p.id && a.attendance === 'confirmed').length} confirmed</span></div><button className="secondary-button" disabled={busy} onClick={() => editParty(p)}>Edit party</button>{attendees.some(a => a.partyId === p.id && a.attendance !== 'declined') && <button className="secondary-button" disabled={busy} onClick={() => void save({ action: 'cancelAttendance', partyId: p.id })}>Cancel family attendance</button>}</div>)}</div></section>}
     </div>
+    <GalaAllocationImport eventId={eventId} onComplete={() => setVersion(v => v + 1)} />
     {exports}
   </>;
 }
