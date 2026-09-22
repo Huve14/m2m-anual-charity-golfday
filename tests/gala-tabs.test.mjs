@@ -11,7 +11,7 @@ function harness() {
   const parties = attendees.filter(p => p.partyId && p.id !== 'cancelled').map(p => ({ id: p.partyId, name: `Party ${p.category}`, category: p.category, table_name: '', guests: [p] }));
   const state = [{ attendees, parties }]; let cursor = 0;
   const module = { exports: {} };
-  const mockRequire = name => name === 'react' ? { useEffect() {}, useState(initial) { const index = cursor++; if (!(index in state)) state[index] = initial; return [state[index], value => { state[index] = typeof value === 'function' ? value(state[index]) : value; }]; } } : name === '../ops/client' ? {} : require(name);
+  const mockRequire = name => name === 'react' ? { useEffect() {}, useState(initial) { const index = cursor++; if (!(index in state)) state[index] = initial; return [state[index], value => { state[index] = typeof value === 'function' ? value(state[index]) : value; }]; } } : name === '../ops/client' ? {} : name === './GalaAllocationImport' ? { GalaAllocationImport: () => null } : require(name);
   new Function('require', 'exports', code)(mockRequire, module.exports);
   function render() { cursor = 0; return module.exports.GalaDinner({ eventId: 'event', exports: null }); }
   function find(node, predicate, results = []) { if (!node) return results; if (Array.isArray(node)) { node.forEach(n => find(n, predicate, results)); return results; } if (predicate(node)) results.push(node); if (node.props) find(node.props.children, predicate, results); return results; }
