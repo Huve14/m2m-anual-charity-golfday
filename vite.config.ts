@@ -7,6 +7,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        galadinner: fileURLToPath(new URL("./galadinner.html", import.meta.url)),
         photos: fileURLToPath(new URL("./photos.html", import.meta.url)),
         main: fileURLToPath(new URL("./index.html", import.meta.url)),
         admin: fileURLToPath(new URL("./admin.html", import.meta.url)),
